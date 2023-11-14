@@ -18,7 +18,7 @@ import 'sms_departments.dart';
 class SMSConversation extends FusionModel {
   List<CrmContact> crmContacts = [];
   List<Contact> contacts = [];
-  String? groupName;
+  String groupName = "";
   late String hash;
   bool isGroup = false;
   String lastContactTime = "";
@@ -90,7 +90,7 @@ class SMSConversation extends FusionModel {
       ? map['lastMessage']['to']
       : map['lastMessage']['from'];
     this.conversationId = map['conversationId'] ?? map['groupId'];
-    this.groupName = map['groupName'];
+    this.groupName = map['groupName'] ?? 'group conversation';
     this.isGroup = map['isGroup'];
     this.lastContactTime = map['lastContactTime'];
     this.myNumber = map['myNumber'].toString().toLowerCase();
@@ -133,7 +133,7 @@ class SMSConversation extends FusionModel {
     
     Map<String, dynamic> data = convert.jsonDecode(dataString);
     this.conversationId = data['groupId'] != null ? data['groupId'] : data['conversationId'];
-    this.groupName = data['groupName'] ?? "";
+    this.groupName = data['groupName'] ?? 'group conversation';
     this.isGroup = (data['isGroup'] == 1 || data['isGroup'] == true) ? true : false;
     this.lastContactTime = data['lastContactTime'];
     this.lastContactTime = data['lastContactTime'];
@@ -263,6 +263,7 @@ class SMSConversationsStore extends FusionStore<SMSConversation> {
         : null;
     });
     fusionConnection.refreshUnreads();
+    List<PhoneContact> phoneContacts = fusionConnection.phoneContacts.getRecords();
     List<Coworker> coworkers = fusionConnection.coworkers.getRecords();
     fusionConnection.apiV2Call("get", "/messaging/group/${groupId}/conversations", {
       // 'numbers': numbers.join(","),
@@ -305,7 +306,9 @@ class SMSConversationsStore extends FusionStore<SMSConversation> {
               }
 
             } else if(convoMembersContacts.length == 0 && convoMembersLeads.length == 0 && number != ''){
-              PhoneContact? phoneContact = await fusionConnection.phoneContacts.searchDb(number);
+              PhoneContact? phoneContact = phoneContacts.isNotEmpty 
+                ? await fusionConnection.phoneContacts.searchDb(number)
+                : null;
               if(phoneContact != null){
                 contacts.add(phoneContact.toContact());
               } else {

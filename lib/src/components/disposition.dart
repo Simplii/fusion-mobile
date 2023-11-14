@@ -651,7 +651,7 @@ class _DispositionListViewState extends State<DispositionListView> {
                               if(_fromCallView){
                                 _onDone();
                               } else{
-                                if(_selectedDisposition == null){
+                                if(_selectedDisposition == null && _dispositionOptions().isNotEmpty){
                                   setState(() {
                                     _showError = true;
                                   });

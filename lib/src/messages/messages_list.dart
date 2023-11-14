@@ -526,11 +526,11 @@ class _SMSConversationSummaryViewState
   Widget build(BuildContext context) {
     String? convoLabel = '';
     DateTime date =
-        DateTime.fromMillisecondsSinceEpoch(_convo.message!.unixtime! * 1000);
+        DateTime.fromMillisecondsSinceEpoch(_convo.message!.unixtime * 1000);
     Coworker? _coworker;
 
-    if(_convo.isGroup!){
-      convoLabel = _convo.groupName ?? 'group conversation'.toTitleCase();
+    if(_convo.isGroup){
+      convoLabel = _convo.groupName.toTitleCase();
     } else {
       if(_convo.number!.contains("@")){
         _fusionConnection!.coworkers.getRecord(_convo.number, (p0) => _coworker = p0);
