@@ -46,3 +46,9 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 /android/app/build
+
+#ignore firebase files
+.google-services.json
+/ios/Runner/GoogleService-Info.plist
+/android/app/google-services.json
+/android/app/src/main/google-services.json
