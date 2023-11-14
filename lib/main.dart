@@ -122,7 +122,6 @@ Future<dynamic> backgroundMessageHandler(RemoteMessage message) async {
       flutterLocalNotificationsPlugin.cancel(id);
     });
   }
-
 }
 
 Future<void> main() async {
