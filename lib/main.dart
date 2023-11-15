@@ -58,18 +58,9 @@ registerNotifications() {
       android: initializationSettingsAndroid,
       iOS: initializationSettingsIOS);
   flutterLocalNotificationsPlugin.initialize(
-    initializationSettings, 
-    onDidReceiveNotificationResponse: _notificationResponse
+    initializationSettings,
   );
   return flutterLocalNotificationsPlugin;
-}
-
-void _notificationResponse(NotificationResponse response) {
-    
-  if(messageData.isNotEmpty){
-    print("MDBM message data ${messageData}");
-    // checkForIMNotification(messageData);
-  }
 }
 
 @pragma('vm:entry-point')
@@ -313,9 +304,9 @@ class _MyHomePageState extends State<MyHomePage> {
       _launchMessage = null;
     }
 
-    if (initialMessage != null) {
-      checkForIMNotification(initialMessage.data, username: username);
-    }
+    // if (initialMessage != null) {
+    //   checkForIMNotification(initialMessage.data, username: username);
+    // }
   }
 
   checkForIMNotification(Map<String, dynamic> data,{String? username}) {
@@ -415,11 +406,11 @@ class _MyHomePageState extends State<MyHomePage> {
 
     else if (data.containsKey('to_number') && !isGroup) {
       fusionConnection.contacts.search(data['from_number'], 10, 0,
-          (contacts, fromServer) {
-        if (contacts.isNotEmpty) {
+          (contacts, fromServer, fromPhonebook) {
+        if (fromServer || fromPhonebook) {
           fusionConnection.integratedContacts.search(data['from_number'], 10, 0,
               (crmContacts, fromServer, hasMore) {
-            if (contacts.isNotEmpty) {
+            if (fromServer || fromPhonebook) {
               contacts.addAll(crmContacts);
               showModalBottomSheet(
                   context: context,
@@ -474,6 +465,30 @@ class _MyHomePageState extends State<MyHomePage> {
   //     checkForIMNotification(event.data);
   //   });
   // }
+
+  registerAndroidForgroundNotification() {
+    FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = 
+      FlutterLocalNotificationsPlugin();
+
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('app_icon_background');
+
+    final InitializationSettings initializationSettings = InitializationSettings(
+      android: initializationSettingsAndroid
+    );
+    
+    flutterLocalNotificationsPlugin.initialize(
+      initializationSettings, 
+      onDidReceiveNotificationResponse: _notificationResponse
+    );
+    return flutterLocalNotificationsPlugin;
+  }
+
+  void _notificationResponse(NotificationResponse response) {
+    if(messageData.isNotEmpty){
+      checkForIMNotification(messageData);
+    }
+  }
   Future<void> _setupFirebase() async {
     // Get any messages which caused the application to open from
     // a terminated state.
@@ -488,15 +503,22 @@ class _MyHomePageState extends State<MyHomePage> {
     // Also handle any interaction when the app is in the background via a
     // Stream listener
     FirebaseMessaging.onMessageOpenedApp.listen(
-      (RemoteMessage message)=>checkForIMNotification(message.data)
+      (RemoteMessage message) {
+        checkForIMNotification(message.data);
+      }
     );
-    FirebaseMessaging.onMessage.listen(_handleForgroundMessage);
+    FirebaseMessaging.onMessage.listen((RemoteMessage message){
+      RemoteNotification? notification = message.notification;
+      AndroidNotification? android = message.notification?.android;
+      if (notification != null && android != null) {
+        _handleForgroundMessage(message);
+      }
+    });
   }
   
   void _handleForgroundMessage(RemoteMessage message) {
-    print("MDBM forground message");
     if(message.notification != null){
-      FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = registerNotifications();
+      FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = registerAndroidForgroundNotification();
       if(message.data.containsKey('remove_fusion_call')){
         var id = intIdForString(message.data['remove_fusion_call']);
         flutterLocalNotificationsPlugin.cancel(id);

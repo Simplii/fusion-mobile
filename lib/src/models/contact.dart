@@ -486,7 +486,7 @@ class ContactsStore extends FusionStore<Contact> {
   }
 
   searchPersisted(String query, int limit, int offset,
-      Function(List<Contact>, bool) callback) {
+      Function(List<Contact>, bool, bool fromPhonebook) callback) {
         print("MDBM query $query");
         getDatabasesPath().then((path){
           openDatabase(join(path,"fusion.db")).then((db){
@@ -510,14 +510,14 @@ class ContactsStore extends FusionStore<Contact> {
                     for (Map<String, dynamic> result in res) {
                       list.add(PhoneContact.unserialize(result['raw']).toContact());
                     }
-                    callback(list, false);
+                    callback(list, false, true);
                   });
               } else {
 
                 for (Map<String, dynamic> result in results) {
                   list.add(Contact.unserialize(result['raw']));
                 }
-                callback(list, false);
+                callback(list, false, false);
               }
             });
           });
@@ -525,7 +525,7 @@ class ContactsStore extends FusionStore<Contact> {
   }
 
   search(String query, int limit, int offset,
-      Function(List<Contact>, bool) callback) {
+      Function(List<Contact>, bool, bool fromPhoneBook) callback) {
     query = query.toLowerCase();
     searchPersisted(query, limit, offset, callback);
 
@@ -544,12 +544,12 @@ class ContactsStore extends FusionStore<Contact> {
         storeRecord(contact);
       });
 
-      callback(response, true);
+      callback(response, true, false);
     });
   }
 
   searchV2(String query, int limit, int offset, fromDialpad,
-      Function(List<Contact>, bool) callback) {
+      Function(List<Contact>, bool, bool fromPhoneBook) callback) {
     query = query.toLowerCase();
 
     searchPersisted(query, limit, offset, callback);
@@ -578,7 +578,7 @@ class ContactsStore extends FusionStore<Contact> {
         }
       });
 
-      callback(response, true);
+      callback(response, true, false);
     });
   }
 
