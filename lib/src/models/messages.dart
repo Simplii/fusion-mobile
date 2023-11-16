@@ -227,17 +227,17 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
     if (!notifiedMessages.containsKey(message.id)) {
       notifiedMessages[message.id] = true;
 
-      fusionConnection.callpopInfos.lookupPhone(message.from, (callpopInfo) {
-          String? name = message.from.toString().formatPhone();
-          callpopInfo!.contacts!.map((e) {
-            name = e.name;
-          });
-          // showSimpleNotification(
-          //       Text(name! + " says: " + message.message!),
-          //       background: smoke);
-      });
+      // fusionConnection.callpopInfos.lookupPhone(message.from, (callpopInfo) {
+      //     String? name = message.from.toString().formatPhone();
+      //     callpopInfo!.contacts!.map((e) {
+      //       name = e.name;
+      //     });
+      //     // showSimpleNotification(
+      //     //       Text(name! + " says: " + message.message!),
+      //     //       background: smoke);
+      // });
       List<SMSConversation>convos = fusionConnection.conversations.getRecords();
-      SMSConversation lastMessage = (await checkExistingConversation(DepartmentIds.AllMessages, message.from, [message.to],[]))!;
+      SMSConversation lastMessage = (await checkExistingConversation(DepartmentIds.AllMessages, message.from, [message.to],[]));
       if(lastMessage.conversationId != null){
         List<SMSConversation> convoToUpdateList = 
           convos.where((element) =>  element.conversationId == lastMessage.conversationId).toList();
@@ -649,7 +649,7 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
       failedMesages = messages.where((SMSMessage m) => m.messageStatus == "offline").toList();
     });
     
-    if(convo.conversationId != null && convo.isGroup!){
+    if(convo.conversationId != null && convo.isGroup){
       fusionConnection.apiV2Call(
         "get", 
         "/messaging/group/${departmentId}/conversations/${convo.conversationId}/messages", {
@@ -672,7 +672,7 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
           callback([...messages,...failedMesages], true);
         });
     }
-    else if(convo.conversationId == null && convo.isGroup!){
+    else if(convo.conversationId == null && convo.isGroup){
       callback([], true);
     }
     else {

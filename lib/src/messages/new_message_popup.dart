@@ -283,6 +283,7 @@ class _NewMessagePopupState extends State<NewMessagePopup> {
                     deleteConvo: null,
                     setOnMessagePosted: _setOnMessagePosted,
                     changeConvo: (SMSConversation updateConvo){
+                      if(!mounted)return;
                       setState(() {
                         displayingConvo = updateConvo;
                       },);

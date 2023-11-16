@@ -183,6 +183,7 @@ class _MessageSearchResults extends State<MessageSearchResults> {
         "",
         null,
         null,
+        null
       );
     }).toList();
   }

@@ -871,9 +871,6 @@ class _SMSConversationViewState extends State<SMSConversationView> {
     await _fusionConnection!.checkInternetConnection();
     setState(() {
       loading = false;
-    });
-    
-    setState(() {
       if (_messageInputController.value.text.trim().length > 0) {
         if(!_fusionConnection!.internetAvailable){
           if(_conversation!.message != null){
@@ -898,8 +895,9 @@ class _SMSConversationViewState extends State<SMSConversationView> {
               _selectedGroupId, 
               null,
               (){
+                if(_setOnMessagePosted != null)_setOnMessagePosted!(_conversation!.getId());
+                if(!mounted)return;
                 setState(() {
-                  if(_setOnMessagePosted != null)_setOnMessagePosted!(_conversation!.getId());
                   secheduleIsSet = null;
                 });
                 Future.delayed(Duration(seconds: 4), (){
@@ -1181,8 +1179,10 @@ class _ConvoMessagesListState extends State<ConvoMessagesList> {
             if(value!.conversationId != null){
               _lookedupNumber = value.number;
               _lookedupMyNumber = value.myNumber;
-              _changeConvo(value);
-              _lookupMessages();
+              if(mounted){
+                _changeConvo(value);
+                _lookupMessages();
+              }
             } 
           });
         }

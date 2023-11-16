@@ -487,7 +487,6 @@ class ContactsStore extends FusionStore<Contact> {
 
   searchPersisted(String query, int limit, int offset,
       Function(List<Contact>, bool, bool fromPhonebook) callback) {
-        print("MDBM query $query");
         getDatabasesPath().then((path){
           openDatabase(join(path,"fusion.db")).then((db){
             db.query('contacts',
@@ -506,11 +505,14 @@ class ContactsStore extends FusionStore<Contact> {
                   orderBy: "lastName asc, firstName asc",
                   whereArgs: ["%" + query + "%"]
                   ).then((List<Map<String, dynamic>>  res){
-                    
-                    for (Map<String, dynamic> result in res) {
-                      list.add(PhoneContact.unserialize(result['raw']).toContact());
+                    if(res.isNotEmpty){
+                      for (Map<String, dynamic> result in res) {
+                        list.add(PhoneContact.unserialize(result['raw']).toContact());
+                      }
+                      callback(list, false, true);
+                    } else {
+                       callback(list, false, false);
                     }
-                    callback(list, false, true);
                   });
               } else {
 
@@ -527,7 +529,11 @@ class ContactsStore extends FusionStore<Contact> {
   search(String query, int limit, int offset,
       Function(List<Contact>, bool, bool fromPhoneBook) callback) {
     query = query.toLowerCase();
-    searchPersisted(query, limit, offset, callback);
+    bool fromPhone = false;
+    searchPersisted(query, limit, offset, (contacts,server,phoneBook){
+      callback(contacts,server,phoneBook);
+      fromPhone = phoneBook;
+    });
 
     fusionConnection.apiV1Call("get", "/clients/filtered_contacts", {
       'length': offset + limit,
@@ -543,8 +549,8 @@ class ContactsStore extends FusionStore<Contact> {
         response.add(contact);
         storeRecord(contact);
       });
-
-      callback(response, true, false);
+      if(!fromPhone)
+        callback(response, true, false);
     });
   }
 
