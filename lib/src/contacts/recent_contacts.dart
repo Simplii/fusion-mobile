@@ -204,7 +204,7 @@ class _ContactsSearchListState extends State<ContactsSearchList> {
       if (_page == -1) return;
       if(_isV2Domain){
         _fusionConnection.contacts.searchV2(_query, 100, _page * 100, _fromDialpad,
-          (List<Contact> contacts, bool fromServer) {
+          (List<Contact> contacts, bool fromServer, bool fromPhonebook) {
           if (thisLookup != _lookedUpQuery) return;
           if (!mounted) return;
           if (_typeFilter != 'Fusion Contacts') return;
@@ -239,7 +239,7 @@ class _ContactsSearchListState extends State<ContactsSearchList> {
         });
       } else {
         _fusionConnection.contacts.search(_query, 100, _page * 100,
-          (List<Contact> contacts, bool fromServer) {
+          (List<Contact> contacts, bool fromServer, bool fromPhonebook) {
           if (thisLookup != _lookedUpQuery) return;
           if (!mounted) return;
           if (_typeFilter != 'Fusion Contacts') return;

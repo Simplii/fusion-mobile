@@ -121,6 +121,7 @@ class Contact extends FusionModel {
         if (email['email'] != null && email['email'].trim() != '') {}
       }
     }
+    return null;
   }
 
   searchString() {
@@ -135,14 +136,18 @@ class Contact extends FusionModel {
   }
 
   Contact(Map<String, dynamic> contactObject) {
-    Map<String, dynamic> createdAtDateObj =
+    Map<String, dynamic> createdAtDateObj;
+    if(contactObject['created_at'] != null)
+      createdAtDateObj =
         checkDateObj(contactObject['created_at']);
-    Map<String, dynamic> updatedAtDateObj =
+    Map<String, dynamic> updatedAtDateObj;
+    if(contactObject['updated_at'] != null)
+      updatedAtDateObj =
         checkDateObj(contactObject['updated_at']);
     this.addresses = contactObject['addresses'];
     this.company = contactObject['company'];
     this.contacts = contactObject['contacts'];
-    this.createdAt = CarbonDate(createdAtDateObj);
+    this.createdAt = createdAtDateObj != null ?  CarbonDate(createdAtDateObj) : null;;
     this.deleted = contactObject['deleted'];
     this.domain = contactObject['domain'];
     this.emails = contactObject['emails'];
@@ -170,7 +175,7 @@ class Contact extends FusionModel {
     if (contactObject['uid'].runtimeType == String) {
       this.uid = contactObject['uid'];
     }
-    this.updatedAt = CarbonDate(updatedAtDateObj);
+    this.updatedAt = updatedAtDateObj != null ? CarbonDate(updatedAtDateObj) : null;
     this.crmUrl = contactObject['crm_url'];
     this.crmName = contactObject['crm_name'];
     this.crmId = contactObject['crm_id'].runtimeType == int
@@ -481,8 +486,7 @@ class ContactsStore extends FusionStore<Contact> {
   }
 
   searchPersisted(String query, int limit, int offset,
-      Function(List<Contact>, bool) callback) {
-        print("MDBM query $query");
+      Function(List<Contact>, bool, bool fromPhonebook) callback) {
         getDatabasesPath().then((path){
           openDatabase(join(path,"fusion.db")).then((db){
             db.query('contacts',
@@ -502,10 +506,14 @@ class ContactsStore extends FusionStore<Contact> {
                   ).then((List<Map<String, dynamic>>  res){
                     
                     List<Contact> list = [];
-                    for (Map<String, dynamic> result in res) {
-                      list.add(PhoneContact.unserialize(result['raw']).toContact());
+                    if(res.isNotEmpty){
+                      for (Map<String, dynamic> result in res) {
+                        list.add(PhoneContact.unserialize(result['raw']).toContact());
+                      }
+                      callback(list, false, true);
+                    } else {
+                      callback(list, false, false);
                     }
-                    callback(list, false);
                   });
               } else {
                 List<Contact> list = [];
@@ -513,7 +521,7 @@ class ContactsStore extends FusionStore<Contact> {
                 for (Map<String, dynamic> result in results) {
                   list.add(Contact.unserialize(result['raw']));
                 }
-                callback(list, false);
+                callback(list, false, false);
               }
             });
           });
@@ -521,9 +529,13 @@ class ContactsStore extends FusionStore<Contact> {
   }
 
   search(String query, int limit, int offset,
-      Function(List<Contact>, bool) callback) {
+      Function(List<Contact>, bool, bool fromPhoneBook) callback) {
     query = query.toLowerCase();
-    searchPersisted(query, limit, offset, callback);
+    bool fromPhone = false;
+    searchPersisted(query, limit, offset, (contacts,server,phoneBook){
+      callback(contacts,server,phoneBook);
+      fromPhone = phoneBook;
+    });
 
     fusionConnection.apiV1Call("get", "/clients/filtered_contacts", {
       'length': offset + limit,
@@ -540,16 +552,19 @@ class ContactsStore extends FusionStore<Contact> {
         response.add(contact);
         storeRecord(contact);
       });
-
-      callback(response, true);
+      if(!fromPhone)
+        callback(response, true, false);
     });
   }
 
   searchV2(String query, int limit, int offset, fromDialpad,
-      Function(List<Contact>, bool) callback) {
+      Function(List<Contact>, bool, bool fromPhoneBook) callback) {
     query = query.toLowerCase();
-
-    searchPersisted(query, limit, offset, callback);
+    bool fromPhone = false;
+    searchPersisted(query, limit, offset, (contacts,server,phoneBook){
+      callback(contacts,server,phoneBook);
+      fromPhone = phoneBook;
+    });
 
     fusionConnection.apiV2Call("post", "/contacts/query", {
     "offset": offset,
@@ -574,8 +589,8 @@ class ContactsStore extends FusionStore<Contact> {
           storeRecord(contact);
         }
       });
-
-      callback(response, true);
+      if(!fromPhone)
+        callback(response, true, false);
     });
   }
 

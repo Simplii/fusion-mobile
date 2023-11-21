@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter_gravatar/flutter_gravatar.dart';
 import 'package:fusion_mobile_revamped/src/backend/fusion_connection.dart';
 import 'package:fusion_mobile_revamped/src/models/carbon_date.dart';
+import 'package:overlay_support/overlay_support.dart';
 import '../utils.dart';
 import 'contact.dart';
 import 'crm_contact.dart';
@@ -220,13 +221,16 @@ class CoworkerStore extends FusionStore<Coworker> {
     var future = new Future.delayed(const Duration(milliseconds: 10), () {
       callback(getRecords());
     });
-
+    if(!fusionConnection.isLoginFinished())return;
     bool v2User = fusionConnection.settings.isV2User();
 
     if(v2User){
       fusionConnection.apiV2Call("post","/client/coworkers",{},
         callback: (Map<String,dynamic> datas) {
           List<Coworker> response = [];
+          if(!datas.containsKey("items")){
+            return toast("Couldn't get coworkers list");
+          }
           for (Map<String, dynamic> item in datas['items']) {
             Coworker obj = Coworker.fromV2(item);
             obj.url = avatarFor(obj);

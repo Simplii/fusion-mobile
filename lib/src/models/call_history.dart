@@ -193,6 +193,9 @@ class CallHistoryStore extends FusionStore<CallHistory> {
     if(status.isGranted){
       phoneContacts = await fusionConnection.phoneContacts.getAdderssBookContacts("");
     }
+    // prevent calling recent calls endpoint if login not finished yet
+    if(!fusionConnection.isLoginFinished()) return;
+
     await fusionConnection.apiV2Call(
       "get", "/calls/recent", {'limit': limit, 'offset': offset},
       callback: (Map<String, dynamic> datas) {

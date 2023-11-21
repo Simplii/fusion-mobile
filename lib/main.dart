@@ -439,11 +439,11 @@ class _MyHomePageState extends State<MyHomePage> {
 
     else if (data.containsKey('to_number') && !isGroup) {
       fusionConnection.contacts.search(data['from_number'], 10, 0,
-          (contacts, fromServer) {
-        if (contacts.isNotEmpty) {
+          (contacts, contactsFromServer, contactsFromPhonebook) {
+        if (contactsFromServer || contactsFromPhonebook) {
           fusionConnection.integratedContacts.search(data['from_number'], 10, 0,
               (crmContacts, fromServer, hasMore) {
-            if (contacts.isNotEmpty) {
+            if (fromServer || contactsFromPhonebook) {
               contacts.addAll(crmContacts);
               showModalBottomSheet(
                   context: context,

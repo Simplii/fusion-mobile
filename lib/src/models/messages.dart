@@ -411,6 +411,7 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
             }
             SMSMessage message = SMSMessage.fromV2(data);
             conversation.message = message;
+            conversation.lastContactTime = DateTime.now().toLocal().toString();
             storeRecord(message);
             fusionConnection.conversations.storeRecord(conversation);
             if(callback != null ){
@@ -484,7 +485,7 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
     });
 
     fusionConnection.contacts.searchPersisted(query, 100, 0,
-        (List<Contact> contacts, bool fromServer) {
+        (List<Contact> contacts, bool fromServer, bool fromPhonebook) {
       matchedContacts = contacts;
       _sendFromPersisted();
     });

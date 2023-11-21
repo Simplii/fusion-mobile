@@ -36,6 +36,7 @@ class _VoicemailsState extends State<Voicemails> {
   AudioPlayer _audioPlayer = AudioPlayer();
   String _playingUrl = null;
   bool _isPlaying = false;
+  bool _loading = false;
 
   initState() {
     _audioPlayer.positionStream.listen((Duration event) {
@@ -75,6 +76,7 @@ class _VoicemailsState extends State<Voicemails> {
 
     _fusionConnection.voicemails
         .getVoicemails((List<Voicemail> vms, bool fromServer) {
+      if (!mounted) return;
       setState(() {
             _lookupState = 2;
             _voicemails = vms;
@@ -125,38 +127,59 @@ class _VoicemailsState extends State<Voicemails> {
     _softphone.makeCall(vm.phoneNumber);
   }
 
-  _openMessage(Voicemail vm) {
-    String number = _fusionConnection.smsDepartments.getDepartment(vm.phoneNumber.length > 6 
+  _openMessage(Voicemail vm) async {
+    setState(() {
+      _loading = true;
+    });
+    SMSDepartment dept = _fusionConnection.smsDepartments.getDepartment(vm.phoneNumber.length > 6 
       ? DepartmentIds.Personal
       : DepartmentIds.FusionChats
-    ).numbers[0];
+    );
 
-    if(number == null){
-      return showModalBottomSheet(
-        context: context,
-        backgroundColor: coal,
-        shape: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
-        builder: (context)=> Container(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height / 3,
-          ),
-          child: Center(
-            child: Text("No personal sms number found", style: TextStyle(color: Colors.white),),
-          ),
-        ));
+    if(dept.numbers.isEmpty){
+      _fusionConnection.smsDepartments.getDepartments((List<SMSDepartment> dep) {
+        for (SMSDepartment d in dep) {
+          if(d.numbers.isNotEmpty){
+            dept = d;
+            break;
+          }
+        }
+      });
+      if(dept.numbers.isEmpty){
+        return showModalBottomSheet(
+          context: context,
+          backgroundColor: coal,
+          shape: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
+          builder: (context)=> Container(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height / 3,
+            ),
+            child: Center(
+              child: Text("No personal/departmens SMS number found for this account", 
+                style: TextStyle(color: Colors.white),),
+            ),
+          )).whenComplete(() =>  setState(() {
+            _loading = false;
+          }));
+      }
     }
+    SMSConversation convo = await _fusionConnection.messages.checkExistingConversation(
+      DepartmentIds.Personal,
+      dept.numbers[0],
+      [vm.phoneNumber],
+      vm.contacts
+    );
+
+    setState(() {
+      _loading = false;
+    });
     showModalBottomSheet(
         context: context,
         backgroundColor: Colors.transparent,
         isScrollControlled: true,
         builder: (context) => StatefulBuilder(
           builder: (BuildContext context, StateSetter setState) {
-          SMSConversation displayingConvo = SMSConversation.build(
-            contacts: vm.contacts,
-            crmContacts: [],
-            myNumber: number,
-            number: vm.phoneNumber,
-            isGroup: false);
+          SMSConversation displayingConvo = convo;
           return SMSConversationView(
             fusionConnection: _fusionConnection, 
             softphone: _softphone, 
@@ -366,7 +389,7 @@ class _VoicemailsState extends State<Voicemails> {
                                   actionButton(
                                       "Message", "message_dark", 18, 18, () {
                                     _openMessage(vm);
-                                  })
+                                  },isLoading: _loading)
                                 ])
                               ]))))
             ])

@@ -95,7 +95,7 @@ class _NewMessagePopupState extends State<NewMessagePopup> {
     
         if(!usesV2){
           _fusionConnection.contacts.search(query, 50, 0, 
-            (List<Contact> contacts, bool fromServer) {
+            (List<Contact> contacts, bool fromServer, bool fromPhonebook) {
               _fusionConnection.integratedContacts.search( query, 50, 0, 
                 (List<Contact> crmContacts, bool fromServer, bool hasMore) {
                   if (mounted && query == _searchingFor) {
@@ -110,7 +110,7 @@ class _NewMessagePopupState extends State<NewMessagePopup> {
           );
         } else {
           _fusionConnection.contacts.searchV2(query, 50, 0, false, 
-            (List<Contact> contacts, bool fromServer){
+            (List<Contact> contacts, bool fromServer, bool fromPhonebook){
               if (mounted && query == _searchingFor) {
                 setState(() {
                   _contacts = contacts;

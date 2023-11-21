@@ -53,8 +53,8 @@ class PhoneContact extends FusionModel{
   PhoneContact(Map<String,dynamic> contactObject) {
     firstName = contactObject['firstName'];
     lastName = contactObject['lastName'];
-    company = contactObject['company'];
-    jobTitle = contactObject['jobTitle'];
+    company = contactObject['company'] ?? "";
+    jobTitle = contactObject['jobTitle'] ?? "";
     name = contactObject['name'];
     phoneNumbers = [];
     if(contactObject['phoneNumbers'] != null){
@@ -82,7 +82,7 @@ class PhoneContact extends FusionModel{
           "city": email['city'],
           "state": email['state'],
           "zip": email['zip'],
-          "zipPart2": email['zipPart2'],
+          "zipPart2": email['zipPart2'] ?? "",
           "country": email['country'],
           "name": email['name'],
           "zip-2": email['zip-2'],
