@@ -364,7 +364,9 @@ class Contact extends FusionModel {
     this.addresses = obj['addresses'];
     this.company = obj['company'];
     this.contacts = obj['contacts'];
-    this.createdAt = CarbonDate?.unserialize(obj['createdAt']);
+    this.createdAt = obj['createdAt'] != null 
+      ? CarbonDate?.unserialize(obj['createdAt'])
+      : CarbonDate.fromDate(DateTime.now().toLocal().toString());
     this.deleted = obj['deleted'];
     this.domain = obj['domain'];
     this.emails = obj['emails'];
@@ -387,7 +389,9 @@ class Contact extends FusionModel {
     this.lastCommunication = obj['lastCommunication'];
     this.type = obj['type'];
     this.uid = obj['uid'];
-    this.updatedAt = CarbonDate?.unserialize(obj['updatedAt']);
+    this.updatedAt = obj['updatedAt'] != null 
+      ? CarbonDate?.unserialize(obj['updatedAt'])
+      : CarbonDate.fromDate(DateTime.now().toLocal().toString());
     this.crmUrl = obj['crmUrl'];
     this.crmName = obj['crmName'];
     this.crmId = obj['crmId'];
