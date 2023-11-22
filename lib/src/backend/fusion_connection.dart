@@ -569,10 +569,14 @@ print(responseBody);
     return _domain;
   }
 
+  Creds getCreds() {
+    return Creds(_username,_password);
+  }
+
   _postLoginSetup(Function(bool) callback) async {
     _getCookies();
     settings.lookupSubscriber();
-    coworkers.getCoworkers((data) {});
+    // coworkers.getCoworkers((data) {});
     conversations.getConversations("-2",100,0,(convos,fromServer,departmentId){});
     dids.getDids((p0, p1) => {});
     smsDepartments.getDepartments((List<SMSDepartment> lis) {});
@@ -783,7 +787,8 @@ print(responseBody);
       final enc.Encrypter encrypter = enc.Encrypter(enc.AES(key,padding: null));
       _pass = encrypter.decrypt(enc.Encrypted.fromBase64(_pass), iv: iv);
     
-
+      _username = username;
+      _password = _pass;
       await apiV1Call(
         "get",
         "/clients/lookup_options",
@@ -794,9 +799,7 @@ print(responseBody);
         callback: (Map<String, dynamic> response) {
           if (response.containsKey("access_key")) {
             _username = username.split('@')[0] + '@' + response['domain'];
-            _username = _username;
-            _password = _pass;
-            _domain = _username.split('@')[1];
+            _domain = response['domain'];
             _extension = _username.split('@')[0];
             settings.setOptions(response);
             _postLoginSetup((bool success) {});
@@ -870,4 +873,11 @@ print(responseBody);
     await preferences.clear();
     _clearDataStores();
   }
+}
+
+class Creds {
+  String username;
+  String pass;
+
+  Creds(this.username,this.pass);
 }

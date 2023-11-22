@@ -180,6 +180,7 @@ class CallHistoryStore extends FusionStore<CallHistory> {
   getRecentHistory(int limit, int offset,bool pullToRefresh,
       Function(List<CallHistory>, bool, bool) callback) async {
     List<CallHistory> stored = getRecords();
+    Creds creds = fusionConnection.getCreds();
     if(stored.isNotEmpty && !pullToRefresh){
       callback(stored, false, false);
     } else if(stored.isEmpty && !pullToRefresh) {
@@ -193,11 +194,14 @@ class CallHistoryStore extends FusionStore<CallHistory> {
     if(status.isGranted){
       phoneContacts = await fusionConnection.phoneContacts.getAdderssBookContacts("");
     }
-    // prevent calling recent calls endpoint if login not finished yet
-    if(!fusionConnection.isLoginFinished()) return;
 
     await fusionConnection.apiV2Call(
-      "get", "/calls/recent", {'limit': limit, 'offset': offset},
+      "get", "/calls/recent", {
+        'limit': limit, 
+        'offset': offset, 
+        'username': creds.username, 
+        'password': creds.pass 
+      },
       callback: (Map<String, dynamic> datas) {
         List<CallHistory> response = [];
         if(datas.containsKey('items')){

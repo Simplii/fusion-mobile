@@ -221,11 +221,14 @@ class CoworkerStore extends FusionStore<Coworker> {
     var future = new Future.delayed(const Duration(milliseconds: 10), () {
       callback(getRecords());
     });
-    if(!fusionConnection.isLoginFinished())return;
     bool v2User = fusionConnection.settings.isV2User();
+    Creds creds = fusionConnection.getCreds();
 
     if(v2User){
-      fusionConnection.apiV2Call("post","/client/coworkers",{},
+      fusionConnection.apiV2Call("post","/client/coworkers",
+        fusionConnection.isLoginFinished() 
+          ? {"username": creds.username, "password": creds.pass}
+          : {},
         callback: (Map<String,dynamic> datas) {
           List<Coworker> response = [];
           if(!datas.containsKey("items")){
@@ -241,7 +244,10 @@ class CoworkerStore extends FusionStore<Coworker> {
         }
       );
     } else {
-      fusionConnection.apiV1Call("get","/clients/subscribers",{},
+      fusionConnection.apiV1Call("get","/clients/subscribers", 
+        fusionConnection.isLoginFinished() 
+          ? {"username": creds.username, "password": creds.pass}
+          : {},
         callback: (List<dynamic> datas) {
           List<Coworker> response = [];
           for (Map<String, dynamic> item in datas) {

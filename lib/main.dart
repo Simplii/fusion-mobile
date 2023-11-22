@@ -498,7 +498,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   _autoLogin() {
-    SharedPreferences.getInstance().then((SharedPreferences prefs) {
+    SharedPreferences.getInstance().then((SharedPreferences prefs) async {
       String username = prefs.getString("username");
       if (username != null) {
         String domain = username.split('@')[1];
@@ -507,7 +507,7 @@ class _MyHomePageState extends State<MyHomePage> {
         String auth_key = prefs.getString("auth_key");
 
         if (auth_key != null && auth_key != "") {
-          fusionConnection.autoLogin(username, domain);
+          await fusionConnection.autoLogin(username, domain);
           setState(() {
             _sub_login = sub_login;
             _auth_key = auth_key;
