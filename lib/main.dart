@@ -507,7 +507,6 @@ class _MyHomePageState extends State<MyHomePage> {
         String auth_key = prefs.getString("auth_key");
 
         if (auth_key != null && auth_key != "") {
-          await fusionConnection.autoLogin(username, domain);
           setState(() {
             _sub_login = sub_login;
             _auth_key = auth_key;
@@ -515,7 +514,7 @@ class _MyHomePageState extends State<MyHomePage> {
             _logged_in = true;
             _isRegistering = true;
           });
-
+          await fusionConnection.autoLogin(username, domain);
           softphone.register(sub_login, auth_key, aor.replaceAll('sip:', ''));
           softphone.onUnregister(() {
                  fusionConnection.nsApiCall('device', 'read', {

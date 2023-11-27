@@ -380,7 +380,12 @@ class MainActivity : FlutterFragmentActivity() {
 
         core.natPolicy?.stunServer = server
         core.remoteRingbackTone = "android.resource://net.fusioncomm.android/" + R.raw.outgoing
-        core.ring = RingtoneManager.getActualDefaultRingtoneUri(this, RingtoneManager.TYPE_RINGTONE).toString();
+        val ringtonePath:Uri? = RingtoneManager.getActualDefaultRingtoneUri(this, RingtoneManager.TYPE_RINGTONE);
+        if(ringtonePath != null){
+            core.ring = RingtoneManager.getActualDefaultRingtoneUri(this, RingtoneManager.TYPE_RINGTONE).toString();
+        } else {
+            core.isNativeRingingEnabled = true
+        }
         core.config.setBool("audio", "android_pause_calls_when_audio_focus_lost", false)
     }
 
