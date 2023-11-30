@@ -203,6 +203,9 @@ class CoworkerStore extends FusionStore<Coworker> {
     {
       List<Contact> list = [];
       List<Coworker> records = getRecords();
+      if(records.isEmpty){
+        getCoworkers((p0) => records = p0);
+      }
       records.sort((Coworker c1, Coworker c2) {
         return (c1.firstName + c1.lastName)
             .compareTo(c2.firstName + c2.lastName);
@@ -224,6 +227,7 @@ class CoworkerStore extends FusionStore<Coworker> {
     bool v2User = fusionConnection.settings.isV2User();
     Creds creds = fusionConnection.getCreds();
 
+    if(creds.pass.isEmpty)return;
     if(v2User){
       fusionConnection.apiV2Call("post","/client/coworkers",
         {"username": creds.username, "password": creds.pass},

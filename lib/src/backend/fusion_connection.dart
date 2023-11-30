@@ -576,7 +576,7 @@ print(responseBody);
   _postLoginSetup(Function(bool) callback) async {
     _getCookies();
     settings.lookupSubscriber();
-    // coworkers.getCoworkers((data) {}); this is called in call_history which loads before this line
+    coworkers.getCoworkers((data) {});
     conversations.getConversations("-2",100,0,(convos,fromServer,departmentId){});
     dids.getDids((p0, p1) => {});
     smsDepartments.getDepartments((List<SMSDepartment> lis) {});
