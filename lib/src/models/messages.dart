@@ -331,6 +331,7 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
             conversation.number = data['to'];  
             SMSMessage message = SMSMessage.fromV2(data);
             conversation.message = message;
+            conversation.lastContactTime = DateTime.now().toLocal().toString();
             storeRecord(message);
             if(conversation.conversationId != null){
               fusionConnection.conversations.storeRecord(conversation);

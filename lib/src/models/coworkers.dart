@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter_gravatar/flutter_gravatar.dart';
 import 'package:fusion_mobile_revamped/src/backend/fusion_connection.dart';
 import 'package:fusion_mobile_revamped/src/models/carbon_date.dart';
+import 'package:overlay_support/overlay_support.dart';
 import '../utils.dart';
 import 'contact.dart';
 import 'crm_contact.dart';
@@ -202,6 +203,9 @@ class CoworkerStore extends FusionStore<Coworker> {
     {
       List<Contact> list = [];
       List<Coworker> records = getRecords();
+      if(records.isEmpty){
+        getCoworkers((p0) => records = p0);
+      }
       records.sort((Coworker c1, Coworker c2) {
         return (c1.firstName! + c1.lastName!)
             .compareTo(c2.firstName! + c2.lastName!);
@@ -218,11 +222,17 @@ class CoworkerStore extends FusionStore<Coworker> {
 
   getCoworkers(Function(List<Coworker>) callback) {
     bool v2User = fusionConnection.settings.isV2User();
-    print("MDBM $v2User");
+    Creds creds = fusionConnection.getCreds();
+  
+    if(creds.pass.isEmpty)return;
     if(v2User){
-      fusionConnection.apiV2Call("post","/client/coworkers",{},
+      fusionConnection.apiV2Call("post","/client/coworkers",
+        {"username": creds.username, "password": creds.pass},
         callback: (Map<String,dynamic> datas) {
           List<Coworker> response = [];
+          if(!datas.containsKey("items")){
+            return toast("Couldn't get coworkers list");
+          }
           for (Map<String, dynamic> item in datas['items']) {
             Coworker obj = Coworker.fromV2(item);
             obj.url = avatarFor(obj);
@@ -233,7 +243,8 @@ class CoworkerStore extends FusionStore<Coworker> {
         }
       );
     } else {
-      fusionConnection.apiV1Call("get","/clients/subscribers",{},
+      fusionConnection.apiV1Call("get","/clients/subscribers",
+        {"username": creds.username, "password": creds.pass},
         callback: (List<dynamic> datas) {
           List<Coworker> response = [];
           for (Map<String, dynamic> item in datas) {

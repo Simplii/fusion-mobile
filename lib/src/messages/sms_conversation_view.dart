@@ -146,14 +146,7 @@ class _SMSConversationViewState extends State<SMSConversationView> {
       _selectedGroupId = department?.id ?? DepartmentIds.Personal;
     });
 
-    _fusionConnection!.quickResponses.getQuickResponses(
-      _selectedGroupId == DepartmentIds.AllMessages ? DepartmentIds.Personal : _selectedGroupId,
-      (List<QuickResponse> data){
-        setState(() {
-          quickResponses = data;
-        }); 
-      }
-    );
+    _updateQuickMessages(selectedDept: _selectedGroupId);
     disableDepartmentSelection = _selectedGroupId == DepartmentIds.FusionChats;
     connectivitySubscription =
       _fusionConnection!.connectivity.onConnectivityChanged.listen(_updateConnectionStatus);
@@ -172,6 +165,16 @@ class _SMSConversationViewState extends State<SMSConversationView> {
     super.dispose();
   }
 
+  _updateQuickMessages({String selectedDept = ""}){
+    _fusionConnection!.quickResponses.getQuickResponses(
+      selectedDept == DepartmentIds.AllMessages ? DepartmentIds.Personal : selectedDept,
+      (List<QuickResponse> data){
+        setState(() {
+          quickResponses = data;
+        }); 
+      }
+    );
+  }
   _openMedia(SMSMessage? message) {
     showModalBottomSheet(
         context: context,
@@ -460,6 +463,7 @@ class _SMSConversationViewState extends State<SMSConversationView> {
   }
 
   _onDepartmentChange(String newDeptId) {
+    _updateQuickMessages(selectedDept: newDeptId);
     SMSDepartment? dept =
         _fusionConnection!.smsDepartments.getDepartment(newDeptId);
     setState(() {
@@ -472,11 +476,14 @@ class _SMSConversationViewState extends State<SMSConversationView> {
   _onNumberSelect(String newNumber) {
     SMSDepartment? dept =
         _fusionConnection!.smsDepartments.getDepartmentByPhoneNumber(newNumber);
-    setState(() {
-      _conversation!.myNumber = newNumber;
-      _selectedGroupId = dept != null ? dept.id! : DepartmentIds.Personal;
-      _conversation!.conversationId = null;
-    });
+    if(dept != null) {
+      _updateQuickMessages(selectedDept: dept.id!);
+      setState(() {
+        _conversation!.myNumber = newNumber;
+        _selectedGroupId = dept != null ? dept.id! : DepartmentIds.Personal;
+        _conversation!.conversationId = null;
+      });
+    }
   }
 
   _saveImageLocally(XFile image) async {
@@ -783,7 +790,7 @@ class _SMSConversationViewState extends State<SMSConversationView> {
                     onChanged: (String changedTo) {
                       if (_messageInputController.text.length - textLength > 1 
                           && !isSavedMessage
-                          && _messageInputController.text.contains("https://fusioncomm.net/media")){
+                          && _messageInputController.text.contains("https://fusioncom.co/media")){
                         SharedPreferences.getInstance().then((SharedPreferences prefs) {
                           String imageUri = prefs.getString("copiedImagePath")!;
                           if(imageUri.length == 0){

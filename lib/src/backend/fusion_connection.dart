@@ -84,9 +84,9 @@ class FusionConnection {
   Connectivity connectivity = Connectivity();
   ConnectivityResult connectivityResult = ConnectivityResult.none;
   bool internetAvailable = true;
-  String serverRoot = "http://fusioncomm.net";
+  String serverRoot = "http://fusioncom.co";
   String mediaServer = "https://fusion-media.sfo2.digitaloceanspaces.com";
-  String defaultAvatar = "https://fusioncomm.net/img/defaultuser.png";
+  String defaultAvatar = "https://fusioncom.co/img/defaultuser.png";
   static const MethodChannel contactsChannel = MethodChannel('net.fusioncomm.ios/contacts');
 
   FusionConnection() {
@@ -146,7 +146,7 @@ class FusionConnection {
   }
 
   final channel = WebSocketChannel.connect(
-    Uri.parse('wss://fusioncomm.net:8443'),
+    Uri.parse('wss://fusioncom.co:8443'),
   );
 
   onLogOut(Function callback) {
@@ -350,7 +350,7 @@ class FusionConnection {
       data['username'] = await _getUsername();
 
       Uri url = Uri.parse(
-          'https://fusioncomm.net/api/v1/clients/api_request?username=' +
+          'https://fusioncom.co/api/v1/clients/api_request?username=' +
               data['username']);
       Map<String, String> headers = await _cookieHeaders(url);
       String body = convert.jsonEncode(data);
@@ -395,7 +395,7 @@ class FusionConnection {
           urlParams += key + "=" + Uri.encodeQueryComponent(data[key].toString().trim().replaceAll(reg, '')) + '&';
         }
       }
-      Uri url = Uri.parse('https://fusioncomm.net/api/v1' + route + urlParams);
+      Uri url = Uri.parse('https://fusioncom.co/api/v1' + route + urlParams);
       Map<String, String> headers = await _cookieHeaders(url);
       if (method.toLowerCase() != 'get') {
         args[#body] = convert.jsonEncode(data);
@@ -469,7 +469,7 @@ class FusionConnection {
           urlParams += key + "=" + Uri.encodeQueryComponent(data[key].toString()) + '&';
         }
       }
-      Uri url = Uri.parse('https://fusioncomm.net/api/v2' + route + urlParams);
+      Uri url = Uri.parse('https://fusioncom.co/api/v2' + route + urlParams);
       Map<String, String> headers = await _cookieHeaders(url);
 
       if (method.toLowerCase() != 'get') {
@@ -526,7 +526,7 @@ class FusionConnection {
     try {
       data['username'] = await _getUsername();
 
-      Uri url = Uri.parse('https://fusioncomm.net/api/v2' + route);
+      Uri url = Uri.parse('https://fusioncom.co/api/v2' + route);
       http.MultipartRequest request = new http.MultipartRequest(method, url);
       (await _cookieHeaders(url))
           .forEach(
@@ -567,6 +567,10 @@ print(responseBody);
 
   getDomain() {
     return _domain;
+  }
+
+  Creds getCreds() {
+    return Creds(_username,_password);
   }
 
   _postLoginSetup(Function(bool) callback) async {
@@ -719,7 +723,7 @@ print(responseBody);
 
   setupSocket() {
     int messageNum = 0;
-    final wsUrl = Uri.parse('wss://fusioncomm.net:8443/');
+    final wsUrl = Uri.parse('wss://fusioncom.co:8443/');
     socketChannel = WebSocketChannel.connect(wsUrl);
     socketChannel.stream.listen((messageData) async {
       Map<String, dynamic> message = convert.jsonDecode(messageData);
@@ -782,7 +786,9 @@ print(responseBody);
       final enc.IV iv = enc.IV.allZerosOfLength(16);
       final enc.Encrypter encrypter = enc.Encrypter(enc.AES(key,padding: null));
       _pass = encrypter.decrypt(enc.Encrypted.fromBase64(_pass), iv: iv);
-    
+      _username = username;
+      _password = _pass;
+
       await apiV1Call(
         "get",
         "/clients/lookup_options",
@@ -872,4 +878,10 @@ print(responseBody);
     await preferences.clear();
     _clearDataStores();
   }
+}
+
+class Creds {
+  String username;
+  String pass;
+  Creds(this.username,this.pass);
 }

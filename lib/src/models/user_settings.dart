@@ -95,7 +95,7 @@ class UserSettings {
     if (options['avatars'].containsKey(uid.toLowerCase())) {
       String serverRoot = this.isV2User() 
         ? "https://fusion-media.sfo2.digitaloceanspaces.com"
-        : "http://fusioncomm.net";
+        : "http://fusioncom.co";
       return serverRoot + options['avatars'][uid.toLowerCase()];
     }
     else {

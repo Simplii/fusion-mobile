@@ -167,17 +167,16 @@ class _MessagesListState extends State<MessagesList> {
   
   refreshView(updatedConvoId){
     setState(() {
-      if(mounted && updatedConvoId != null){
-        // SMSConversation? c = _convos.where(
-        //   (SMSConversation con) => con.getId() == updatedConvoId).isNotEmpty 
-        //     ? _convos.where((SMSConversation con) => con.getId() == updatedConvoId).first 
-        //     : null;
-        // print("MDBM send ref ${c?.conversationId} ${c?.getId()}");
-        // if(c != null){
-        //   _convos.remove(c);
-        //   _convos.insert(0, c);
-        // }
-      }
+      // if(mounted && updatedConvoId != null){
+      //   SMSConversation? c = _convos.where(
+      //     (SMSConversation con) => con.getId() == updatedConvoId).isNotEmpty 
+      //       ? _convos.where((SMSConversation con) => con.getId() == updatedConvoId).first 
+      //       : null;
+      //   if(c != null){
+      //     _convos.remove(c);
+      //     _convos.insert(0, c);
+      //   }
+      // }
     });
   }
 
@@ -410,6 +409,7 @@ class SMSConversationSummaryView extends StatefulWidget {
   Function(SMSConversation, SMSMessage?)? deleteConvo;
   Function? refreshView;
   Function({int? limit, int? offset})? lookupMessages;
+  
   SMSConversationSummaryView(
     this._fusionConnection, 
     this._softphone,

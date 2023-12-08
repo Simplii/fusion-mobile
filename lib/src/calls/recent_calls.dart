@@ -16,7 +16,6 @@ import 'package:fusion_mobile_revamped/src/models/conversations.dart';
 import 'package:fusion_mobile_revamped/src/models/coworkers.dart';
 import 'package:fusion_mobile_revamped/src/models/crm_contact.dart';
 import 'package:fusion_mobile_revamped/src/models/sms_departments.dart';
-import 'package:fusion_mobile_revamped/src/models/sms_departments.dart';
 import 'package:intl/intl.dart';
 
 import '../backend/fusion_connection.dart';
@@ -574,6 +573,7 @@ class _CallHistorySummaryViewState extends State<CallHistorySummaryView> {
         return showModalBottomSheet(
           context: context,
           backgroundColor: Colors.transparent,
+          shape: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
           builder: (context) => 
             Container(
               constraints: BoxConstraints(
@@ -628,6 +628,7 @@ class _CallHistorySummaryViewState extends State<CallHistorySummaryView> {
   }
 
   _makeCall() {
+    print("MDBM ${_historyItem.to} ${_historyItem.from} ${_historyItem.fromDid}");
     _softphone.makeCall(
         _historyItem.getOtherNumber(
             _fusionConnection.getDomain()));

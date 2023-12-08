@@ -4,6 +4,7 @@ import 'package:fusion_mobile_revamped/src/models/coworkers.dart';
 import 'package:fusion_mobile_revamped/src/models/phone_contact.dart';
 import 'package:fusion_mobile_revamped/src/models/unreads.dart';
 import 'package:fusion_mobile_revamped/src/utils.dart';
+import 'package:overlay_support/overlay_support.dart';
 import 'package:sqflite/sql.dart';
 import 'dart:convert' as convert;
 
@@ -272,6 +273,9 @@ class SMSConversationsStore extends FusionStore<SMSConversation> {
       // 'group_id': groupId
     }, callback: (Map<String, dynamic> data) async {
       List<SMSConversation> convos = [];
+      if(!data.containsKey("items")){
+        return toast("Couldn't get recent conversaions list", duration: Duration(seconds: 3));
+      }
       for (Map<String, dynamic> item in data['items']) {
         List<CrmContact> leads = [];
         List<Contact> contacts = [];

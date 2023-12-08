@@ -764,7 +764,7 @@ class Softphone implements SipUaHelperListener {
     }
   }
 
-  register(String? login, String? password, String aor) {
+  register(String login, String password, String aor) {
     registerLinphone(login, password, aor);
   }
 
@@ -806,12 +806,12 @@ class Softphone implements SipUaHelperListener {
     UaSettings settings = UaSettings();
 
     settings.webSocketSettings.allowBadCertificate = true;
-    settings.webSocketUrl = "ws://mobile-proxy.fusioncomm.net:8080";
+    settings.webSocketUrl = "ws://services.fusioncom.co:8080";
 
-    if (aor == "9812fm@Simplii1" || aor == "9811fm@Simplii1") {
-      print("using test push proxy 9811/9812 detected");
-      settings.webSocketUrl = "ws://mobile-proxy.fusioncomm.net:9002";
-    }
+    // if (aor == "9812fm@Simplii1" || aor == "9811fm@Simplii1") {
+    //   print("using test push proxy 9811/9812 detected");
+    //   settings.webSocketUrl = "ws://mobile-proxy.fusioncomm.net:9002";
+    // }
 
     settings.uri = aor;
     settings.authorizationUser = login;
@@ -827,9 +827,9 @@ class Softphone implements SipUaHelperListener {
     }
     settings.iceServers = [
 //      {"urls": "stun:stun.l.google.com:19302"},
-      {"urls": "stun:mobile-proxy.fusioncomm.net:3478"},
+      {"urls": "stun:services.fusioncom.co:3478"},
       {
-        "urls": "turn:mobile-proxy.fusioncomm.net:3478",
+        "urls": "turn:services.fusioncom.co:3478",
         "username": "fuser",
         "credential": "fpassword"
       }

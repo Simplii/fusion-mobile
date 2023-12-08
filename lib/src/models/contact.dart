@@ -364,7 +364,9 @@ class Contact extends FusionModel {
     this.addresses = obj['addresses'];
     this.company = obj['company'];
     this.contacts = obj['contacts'];
-    this.createdAt = obj['createdAt'] != null ? CarbonDate?.unserialize(obj['createdAt']) : null;
+    this.createdAt = obj['createdAt'] != null 
+      ? CarbonDate?.unserialize(obj['createdAt']) 
+      : null;
     this.deleted = obj['deleted'];
     this.domain = obj['domain'];
     this.emails = obj['emails'];
@@ -387,7 +389,9 @@ class Contact extends FusionModel {
     this.lastCommunication = obj['lastCommunication'];
     this.type = obj['type'];
     this.uid = obj['uid'];
-    this.updatedAt = obj['updatedAt'] != null ? CarbonDate.unserialize(obj['updatedAt']) : null;
+    this.updatedAt = obj['updatedAt'] != null 
+      ? CarbonDate.unserialize(obj['updatedAt']) 
+      : null;
     this.crmUrl = obj['crmUrl'];
     this.crmName = obj['crmName'];
     this.crmId = obj['crmId'];
@@ -511,7 +515,7 @@ class ContactsStore extends FusionStore<Contact> {
                       }
                       callback(list, false, true);
                     } else {
-                       callback(list, false, false);
+                      callback(list, false, false);
                     }
                   });
               } else {
@@ -558,7 +562,11 @@ class ContactsStore extends FusionStore<Contact> {
       Function(List<Contact>, bool, bool fromPhoneBook) callback) {
     query = query.toLowerCase();
 
-    searchPersisted(query, limit, offset, callback);
+    bool fromPhone = false;
+    searchPersisted(query, limit, offset, (contacts,server,phoneBook){
+      callback(contacts,server,phoneBook);
+      fromPhone = phoneBook;
+    });
 
     fusionConnection.apiV2Call("post", "/contacts/query", {
     "offset": offset,
@@ -584,7 +592,8 @@ class ContactsStore extends FusionStore<Contact> {
         }
       });
 
-      callback(response, true, false);
+      if(!fromPhone)
+        callback(response, true, false);
     });
   }
 
