@@ -787,7 +787,7 @@ class _SMSConversationViewState extends State<SMSConversationView> {
                     onChanged: (String changedTo) {
                       if (_messageInputController.text.length - textLength > 1 
                           && !isSavedMessage
-                          && _messageInputController.text.contains("https://fusioncomm.net/media")){
+                          && _messageInputController.text.contains("https://fusioncom.co/media")){
                         SharedPreferences.getInstance().then((SharedPreferences prefs) {
                           String imageUri = prefs.getString("copiedImagePath");
                           if(imageUri.length == 0){

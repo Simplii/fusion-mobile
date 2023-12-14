@@ -51,7 +51,7 @@ class MainActivity : FlutterFragmentActivity() {
     private var username: String = ""
     private var password: String = ""
     private var domain: String = ""
-    private var server: String = "mobile-proxy.fusioncomm.net"
+    private var server: String = "services.fusioncom.co"
     private var uuidCalls: MutableMap<String, Call> = mutableMapOf();
 //    lateinit var volumeReceiver : VolumeReceiver
     val versionName = BuildConfig.VERSION_NAME

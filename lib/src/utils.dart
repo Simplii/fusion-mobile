@@ -115,7 +115,7 @@ Map<String, dynamic> checkDateObj(dynamic dateToCheck) {
 }
 
 String avatarUrl(String firstName, String lastName) {
-    return "https://fusioncomm.net/api/v2/client/" +
+    return "https://fusioncom.co/api/v2/client/" +
         "nameAvatar/${firstName}/${lastName}";
 }
 

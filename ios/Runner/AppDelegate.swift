@@ -6,6 +6,7 @@ import PushKit
 import AVFoundation
 import linphonesw
 import Firebase
+import Foundation
 
 @UIApplicationMain
 @objc class AppDelegate: FlutterAppDelegate, PKPushRegistryDelegate{
@@ -13,54 +14,67 @@ import Firebase
     var providerDelegate: ProviderDelegate!
     var callkitChannel: FlutterMethodChannel!
     var contactsChannel: FlutterMethodChannel!
-    
+    var timer = Timer()
     override func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
         print("opened from url")
         print(url)
         return true
     }
     
-    override func application(_ application: UIApplication,
-                     continue userActivity: NSUserActivity,
-                     restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void) -> Bool
-    {
-     print("startintent")
-        print(userActivity.activityType)
-        if (userActivity.activityType == "INStartAudioCallIntent" && userActivity.startCallHandle != nil) {
-            print("startcallintent")
-            print(userActivity.startCallHandle)
-            var matchNonNumeric = "[^0-9]+"
-            var address = "sip:" + userActivity.startCallHandle!.replacingOccurrences(of: matchNonNumeric, with: "", options: [.regularExpression ]) + "@" + providerDelegate.domain
-            providerDelegate.outgoingCall(
-                address: address)
-        }
+    internal override func application(
+        _ application: UIApplication,
+        continue userActivity: NSUserActivity,
+        restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void) -> Bool {
         
+        guard let handle = userActivity.startCallHandle else {
+            return false
+        }
+        let matchNonNumeric = "[^0-9]+"
+        let domain: String? = UserDefaults().string(forKey: "domain")
+        var address = "sip:" + handle.replacingOccurrences(of: matchNonNumeric, with: "", options: [.regularExpression ]) + "@" + (domain ?? providerDelegate.domain)
+        if (address.count == 11 && address.starts(with: "1")){
+            address.replaceSubrange(...address.startIndex, with:"")
+        }
+        // for call intents, we need to wait until phone registration is complete before placing
+        // a call.
+        timer = Timer.scheduledTimer(
+            withTimeInterval: 0.2,
+            repeats: true,
+            block: { _ in
+                if(self.providerDelegate.regState == RegistrationState.Ok){
+                    self.providerDelegate.outgoingCall(address: address)
+                    self.timer.invalidate()
+                }
+            }
+        )
+            
         return true
     }
     
-    @available(iOS 13.0, *)
-    func handle(startWorkout intent: INStartCallIntent,
-                completion: @escaping (INStartWorkoutIntentResponse) -> Void) {
-        print("hadle instartcallintent")
-        print(intent.contacts)
-    }
-
-    func handle(startWorkout intent: INStartAudioCallIntent,
-                completion: @escaping (INStartWorkoutIntentResponse) -> Void) {
-        print("hadle instartcallaudiointent")
-        print(intent.identifier)
-        print(intent)
-    }
     
-    func application(
-        _ application: UIApplication,
-        handlerFor intent: INIntent) {
-            print("startedfromintent")
-            print(intent)
-            print(intent.identifier)
-            print(intent.classForCoder)
-            print(intent.intentDescription)
-    }
+//    @available(iOS 13.0, *)
+//    func handle(startWorkout intent: INStartCallIntent,
+//                completion: @escaping (INStartWorkoutIntentResponse) -> Void) {
+//        print("hadle instartcallintent")
+//        print(intent.contacts)
+//    }
+//
+//    func handle(startWorkout intent: INStartAudioCallIntent,
+//                completion: @escaping (INStartWorkoutIntentResponse) -> Void) {
+//        print("hadle instartcallaudiointent")
+//        print(intent.identifier)
+//        print(intent)
+//    }
+//    
+//    func application(
+//        _ application: UIApplication,
+//        handlerFor intent: INIntent) {
+//            print("startedfromintent")
+//            print(intent)
+//            print(intent.identifier)
+//            print(intent.classForCoder)
+//            print(intent.intentDescription)
+//    }
     
     override func application(
         _ application: UIApplication,
@@ -229,22 +243,24 @@ import Firebase
 }
 
 
-@available(iOS 10.0, *)
-protocol SupportedStartCallIntent {
-    var contacts: [INPerson]? { get }
-}
+//@available(iOS 10.0, *)
+//protocol SupportedStartCallIntent {
+//    var contacts: [INPerson]? { get }
+//}
+//
+//@available(iOS 10.0, *)
+//extension INStartAudioCallIntent: SupportedStartCallIntent {}
+//
+//@available(iOS 10.0, *)
+//extension NSUserActivity {
+//
+//    var startCallHandle: String? {
+//        guard let startCallIntent = interaction?.intent as? SupportedStartCallIntent else {
+//            return nil
+//        }
+//        return startCallIntent.contacts?.first?.personHandle?.value
+//    }
+//
+//}
 
-@available(iOS 10.0, *)
-extension INStartAudioCallIntent: SupportedStartCallIntent {}
 
-@available(iOS 10.0, *)
-extension NSUserActivity {
-
-    var startCallHandle: String? {
-        guard let startCallIntent = interaction?.intent as? SupportedStartCallIntent else {
-            return nil
-        }
-        return startCallIntent.contacts?.first?.personHandle?.value
-    }
-
-}
