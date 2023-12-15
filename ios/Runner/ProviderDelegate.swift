@@ -45,7 +45,7 @@ class ProviderDelegate: NSObject, CXCallObserverDelegate {
         return Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
     }
     var isBluetoothOn: Bool = false
-    
+    var regState: RegistrationState = RegistrationState.None
     @objc func handleInterruption(notification: Notification) {
         guard let userInfo = notification.userInfo,
             let typeValue = userInfo[AVAudioSessionInterruptionTypeKey] as? UInt,
@@ -250,6 +250,7 @@ print("audiointerruption")
                 self.callkitChannel.invokeMethod("lnAudioDeviceListUpdated", arguments: [])
             }
         }, onAccountRegistrationStateChanged: { (core: Core, account: Account, state: RegistrationState, message: String) in
+            self.regState = state
             NSLog("New registration state is \(state) for user id \( String(describing: account.params?.identityAddress?.asString()))\n")
             
             if (state == .Ok) {
@@ -264,7 +265,7 @@ print("audiointerruption")
         })
         sendDevices()
         mCore?.callkitEnabled = true
-        mCore?.stunServer = "turn:services.fusioncomm.net"
+        mCore?.stunServer = "turn:services.fusioncom.co"
         mCore?.natPolicy?.turnEnabled = true
         mCore?.natPolicy?.stunServerUsername = "fuser"
         do {
@@ -277,7 +278,7 @@ print("audiointerruption")
         }
         mCore?.echoLimiterEnabled = false
         mCore?.echoCancellationEnabled = false
-        mCore?.natPolicy?.stunServer = "services.fusioncomm.net"
+        mCore?.natPolicy?.stunServer = "services.fusioncom.co"
         mCore?.addDelegate(delegate: mCoreDelegate)
         mCore?.remoteRingbackTone = Bundle.main.path(forResource: "outgoing", ofType: "wav") ?? ""
         mCore?.ring = Bundle.main.path(forResource: "inbound", ofType: "mp3") ?? ""
@@ -307,7 +308,7 @@ print("audiointerruption")
             // ha1 is set to null as we are using the clear text password. Upon first register, the hash will be computed automatically.
             // The realm will be determined automatically from the first register, as well as the algorithm
             let authInfo = try Factory.Instance.createAuthInfo(username: username, userid: "", passwd: passwd, ha1: "", realm: "", domain: domain)
-
+            UserDefaults().set(domain, forKey: "domain")
             print("authinfo");
             print(authInfo);
             let accountParams = try mCore?.createAccountParams()
@@ -321,7 +322,7 @@ print("audiointerruption")
             print(passwd);
             try! accountParams!.setIdentityaddress(newValue: identity)
             
-            let address = try Factory.Instance.createAddress(addr: String("sip:mobile-proxy.fusioncomm.net:5060"))
+            let address = try Factory.Instance.createAddress(addr: String("sip:services.fusioncom.co:5060"))
             
             try address.setTransport(newValue: transport)
             try accountParams!.setServeraddress(newValue: address)
@@ -348,8 +349,8 @@ print("audiointerruption")
     func createProxyConfig(proxyConfig: ProxyConfig, aor: String, authInfo: AuthInfo) throws -> ProxyConfig {
         let address = try mCore?.createAddress(address: aor)
         try proxyConfig.setIdentityaddress(newValue: address!)
-        try proxyConfig.setServeraddr(newValue: "<sip:mobile-proxy.fusioncomm.net:5060;transport=tcp>")
-        try proxyConfig.setRoute(newValue: "<sip:mobile-proxy.fusioncomm.net:5060;transport=tcp>")
+        try proxyConfig.setServeraddr(newValue: "<sip:services.fusioncom.co:5060;transport=tcp>")
+        try proxyConfig.setRoute(newValue: "<sip:services.fusioncom.co:5060;transport=tcp>")
         proxyConfig.realm = authInfo.realm
         proxyConfig.registerEnabled = true
         proxyConfig.avpfMode = .Disabled
@@ -573,7 +574,12 @@ print("audiointerruption")
                 let uuid = args[0] as! String
                 let name = args[2] as! String
                 let uuidObj = UUID(uuidString: uuid)!
-                let handle = CXHandle(type: CXHandle.HandleType.phoneNumber, value: phoneNumber)
+                let handle = CXHandle(
+                    type: .phoneNumber,
+                    value: phoneNumber.applyPatternOnNumbers(
+                        pattern: "+# (###) ###-####", replacementCharacter: "#"
+                    )
+                )
 
                 let startCallAction = CXStartCallAction(call: uuidObj,
                                                         handle: handle)
@@ -1046,7 +1052,7 @@ print("audiointerruption")
         let update = CXCallUpdate()
         update.localizedCallerName = callerName
         print("thehandle", handle)
-        update.remoteHandle = CXHandle(type: .generic, value:  handle)
+        update.remoteHandle = CXHandle(type: .phoneNumber, value: handle)
         update.hasVideo = hasVideo
         update.supportsHolding = true
         update.supportsDTMF = true

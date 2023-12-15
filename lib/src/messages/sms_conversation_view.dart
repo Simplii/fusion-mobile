@@ -146,14 +146,7 @@ class _SMSConversationViewState extends State<SMSConversationView> {
       _selectedGroupId = department?.id ?? DepartmentIds.Personal;
     });
 
-    _fusionConnection.quickResponses.getQuickResponses(
-      _selectedGroupId == DepartmentIds.AllMessages ? DepartmentIds.Personal : _selectedGroupId,
-      (List<QuickResponse> data){
-        setState(() {
-          quickResponses = data;
-        }); 
-      }
-    );
+    _updateQuickMessages(selectedDept: _selectedGroupId);
     disableDepartmentSelection = _selectedGroupId == DepartmentIds.FusionChats;
     connectivitySubscription =
       _fusionConnection.connectivity.onConnectivityChanged.listen(_updateConnectionStatus);
@@ -168,9 +161,20 @@ class _SMSConversationViewState extends State<SMSConversationView> {
   @override
   void dispose() {
     _debounceMessageInput?.cancel();
+    connectivitySubscription?.cancel();
     super.dispose();
   }
 
+  _updateQuickMessages({String selectedDept = ""}){
+    _fusionConnection.quickResponses.getQuickResponses(
+      selectedDept == DepartmentIds.AllMessages ? DepartmentIds.Personal : selectedDept,
+      (List<QuickResponse> data){
+        setState(() {
+          quickResponses = data;
+        }); 
+      }
+    );
+  }
   _openMedia(SMSMessage message) {
     showModalBottomSheet(
         context: context,
@@ -283,6 +287,7 @@ class _SMSConversationViewState extends State<SMSConversationView> {
               ImageProvider image = _conversation.contacts[index].profileImage != null
                 ? MemoryImage(_conversation.contacts[index].profileImage)
                 : NetworkImage(imageUrl);
+
               return Align(
                 widthFactor: 0.6,
                 child: ClipRRect(
@@ -342,6 +347,7 @@ class _SMSConversationViewState extends State<SMSConversationView> {
               widget.softphone.makeCall(_conversation.number);
             }),
         FusionDropdown(
+            selectedNumber: "",
             onChange: (String chosen) {
               if (chosen == "contactprofile") {
                 Future.delayed(Duration(milliseconds: 10), () {
@@ -365,6 +371,7 @@ class _SMSConversationViewState extends State<SMSConversationView> {
               } else if (chosen.contains("addContact")) {
                 int chosenUnknownContactIndex = int.parse(chosen.split('-').last);
                 Future.delayed(Duration(milliseconds: 10), () {
+                  if(unknowContacts[chosenUnknownContactIndex] == null)return;
                   showModalBottomSheet(
                     constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height - 50),
                     context: context,
@@ -404,13 +411,7 @@ class _SMSConversationViewState extends State<SMSConversationView> {
                     ["Mark Unread", "markunread"],
                   ],
             label: _conversation.contactName(),
-            button: IconButton(
-                iconSize: 32,
-                icon: Image.asset(
-                  "assets/icons/three_dots.png",
-                  width: 4,
-                  height: 16,
-                )))
+            button: Icon(Icons.more_vert, size: 32,color: smoke,))
       ]),
       Row(children: [horizontalLine(16)]),
       Row(children: [
@@ -461,6 +462,7 @@ class _SMSConversationViewState extends State<SMSConversationView> {
   }
 
   _onDepartmentChange(String newDeptId) {
+    _updateQuickMessages(selectedDept: newDeptId);
     SMSDepartment dept =
         _fusionConnection.smsDepartments.getDepartment(newDeptId);
     setState(() {
@@ -473,6 +475,7 @@ class _SMSConversationViewState extends State<SMSConversationView> {
   _onNumberSelect(String newNumber) {
     SMSDepartment dept =
         _fusionConnection.smsDepartments.getDepartmentByPhoneNumber(newNumber);
+    _updateQuickMessages(selectedDept: dept.id);
     setState(() {
       _conversation.myNumber = newNumber;
       _selectedGroupId = dept.id;
@@ -726,6 +729,7 @@ class _SMSConversationViewState extends State<SMSConversationView> {
             Row(
             children: [
               FusionDropdown(
+                selectedNumber: "",
                 onChange: (String value) {
                   if(value == "schedule"){
                     _openMessageScheduling();
@@ -783,7 +787,7 @@ class _SMSConversationViewState extends State<SMSConversationView> {
                     onChanged: (String changedTo) {
                       if (_messageInputController.text.length - textLength > 1 
                           && !isSavedMessage
-                          && _messageInputController.text.contains("https://fusioncomm.net/media")){
+                          && _messageInputController.text.contains("https://fusioncom.co/media")){
                         SharedPreferences.getInstance().then((SharedPreferences prefs) {
                           String imageUri = prefs.getString("copiedImagePath");
                           if(imageUri.length == 0){
@@ -871,9 +875,6 @@ class _SMSConversationViewState extends State<SMSConversationView> {
     await _fusionConnection.checkInternetConnection();
     setState(() {
       loading = false;
-    });
-    
-    setState(() {
       if (_messageInputController.value.text.trim().length > 0) {
         if(!_fusionConnection.internetAvailable){
           if(_conversation.message != null){
@@ -898,8 +899,9 @@ class _SMSConversationViewState extends State<SMSConversationView> {
               _selectedGroupId, 
               null,
               (){
+                if(_setOnMessagePosted != null)_setOnMessagePosted(_conversation.getId());
+                if(!mounted)return;
                 setState(() {
-                  if(_setOnMessagePosted != null)_setOnMessagePosted(_conversation.getId());
                   secheduleIsSet = null;
                 });
                 Future.delayed(Duration(seconds: 4), (){
@@ -1163,8 +1165,10 @@ class _ConvoMessagesListState extends State<ConvoMessagesList> {
             if(value.conversationId != null){
               _lookedupNumber = value.number;
               _lookedupMyNumber = value.myNumber;
-              _changeConvo(value);
-              _lookupMessages();
+              if(mounted){
+                _changeConvo(value);
+                _lookupMessages();
+              }
             } 
           });
         }

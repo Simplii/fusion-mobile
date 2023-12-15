@@ -137,7 +137,7 @@ class _MessagesListState extends State<MessagesList> {
   Softphone get _softphone => widget._softphone;
   int lookupState = 0; // 0 - not looking up; 1 - looking up; 2 - got results
   List<SMSConversation> _convos = [];
-  String _selectedGroupId = DepartmentIds.AllMessages;
+  String _selectedGroupId;
   int _page = 0;
 
 
@@ -167,16 +167,16 @@ class _MessagesListState extends State<MessagesList> {
   
   refreshView(updatedConvoId){
     setState(() {
-      if(mounted && updatedConvoId != null){
-        SMSConversation c = _convos.where(
-          (SMSConversation con) => con.getId() == updatedConvoId).isNotEmpty 
-            ? _convos.where((SMSConversation con) => con.getId() == updatedConvoId).first 
-            : null;
-        if(c != null){
-          _convos.remove(c);
-          _convos.insert(0, c);
-        }
-      }
+      // if(mounted && updatedConvoId != null){
+      //   SMSConversation c = _convos.where(
+      //     (SMSConversation con) => con.getId() == updatedConvoId).isNotEmpty 
+      //       ? _convos.where((SMSConversation con) => con.getId() == updatedConvoId).first 
+      //       : null;
+      //   if(c != null){
+      //     _convos.remove(c);
+      //     _convos.insert(0, c);
+      //   }
+      // }
     });
   }
 
@@ -209,11 +209,11 @@ class _MessagesListState extends State<MessagesList> {
     }
   }
 
-  _lookupMessages() {
+  _lookupMessages({int limit, int offset}) {
     if(_selectedGroupId == null) return;
     lookupState = 1;
     _fusionConnection.conversations
-        .getConversations(_selectedGroupId, 100, _page * 100,
+        .getConversations(_selectedGroupId, limit ?? 100, offset ?? _page * 100,
             (List<SMSConversation> convos, bool fromServer, String departmentId) {
       if (!mounted) return;
 
@@ -280,7 +280,13 @@ class _MessagesListState extends State<MessagesList> {
        : 1
     );
     for (SMSDepartment d in departments) {
-      options.add([d.groupName, d.id, d.unreadCount.toString(), d.id, d.protocol]);
+      options.add([
+        d.groupName, 
+        d.id, 
+        d.unreadCount.toString(), 
+        d.id, 
+        d.protocol
+      ]);
     }
     return options;
   }
@@ -332,7 +338,8 @@ class _MessagesListState extends State<MessagesList> {
                                     _getDepartmentName(_convos[index - 1]),
                                     _selectedGroupId,
                                     deleteConvo,
-                                    refreshView);
+                                    refreshView,
+                                    _lookupMessages);
                               } else {
                                 return Container(
                                   child: Text(
@@ -368,6 +375,7 @@ class _MessagesListState extends State<MessagesList> {
                               overflow: TextOverflow.ellipsis,
                             ))),
                     FusionDropdown(
+                        selectedNumber: "",
                         onChange: _changeGroup,
                         value: _selectedGroupId,
                         options: _groupOptions(),
@@ -400,6 +408,8 @@ class SMSConversationSummaryView extends StatefulWidget {
   final String _selectedGroupId;
   Function(SMSConversation, SMSMessage) deleteConvo;
   Function refreshView;
+  Function({int limit, int offset}) lookupMessages;
+
   SMSConversationSummaryView(
     this._fusionConnection, 
     this._softphone,
@@ -408,6 +418,7 @@ class SMSConversationSummaryView extends StatefulWidget {
     this._selectedGroupId, 
     this.deleteConvo, 
     this.refreshView,
+    this.lookupMessages,
     {Key key}
   ): super(key: key);
 
@@ -429,6 +440,7 @@ class _SMSConversationSummaryViewState
   String get _departmentId => widget._selectedGroupId;
   Function(SMSConversation, SMSMessage) get _deleteConvo => widget.deleteConvo;
   Function get _refreshView => widget.refreshView;
+  Function({int limit, int offset}) get _lookupMessages => widget.lookupMessages;
 
   _openConversation() {
     _fusionConnection.conversations.markRead(_convo);
@@ -456,7 +468,7 @@ class _SMSConversationSummaryViewState
               );
             }
           )
-        );
+        ).whenComplete(()=>_lookupMessages != null ? _lookupMessages(limit: 25, offset: 0) : null);
   }
 
   Widget _departmentTag (){
@@ -552,7 +564,7 @@ class _SMSConversationSummaryViewState
             ),
           ),
           onDismissed: (DismissDirection direction) {
-            if(_deleteConvo != null){
+            if(_deleteConvo != null && _departmentId != null){
               _fusionConnection.conversations.deleteConversation(_convo, _departmentId);
               _deleteConvo(_convo,null);
             }

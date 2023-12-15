@@ -51,7 +51,7 @@ class MainActivity : FlutterFragmentActivity() {
     private var username: String = ""
     private var password: String = ""
     private var domain: String = ""
-    private var server: String = "mobile-proxy.fusioncomm.net"
+    private var server: String = "services.fusioncom.co"
     private var uuidCalls: MutableMap<String, Call> = mutableMapOf();
 //    lateinit var volumeReceiver : VolumeReceiver
     val versionName = BuildConfig.VERSION_NAME
@@ -380,7 +380,12 @@ class MainActivity : FlutterFragmentActivity() {
 
         core.natPolicy?.stunServer = server
         core.remoteRingbackTone = "android.resource://net.fusioncomm.android/" + R.raw.outgoing
-        core.ring = RingtoneManager.getActualDefaultRingtoneUri(this, RingtoneManager.TYPE_RINGTONE).toString();
+        val ringtonePath:Uri? = RingtoneManager.getActualDefaultRingtoneUri(this, RingtoneManager.TYPE_RINGTONE);
+        if(ringtonePath != null){
+            core.ring = RingtoneManager.getActualDefaultRingtoneUri(this, RingtoneManager.TYPE_RINGTONE).toString();
+        } else {
+            core.isNativeRingingEnabled = true
+        }
         core.config.setBool("audio", "android_pause_calls_when_audio_focus_lost", false)
     }
 

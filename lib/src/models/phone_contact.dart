@@ -8,7 +8,9 @@ import 'package:fusion_mobile_revamped/src/backend/fusion_connection.dart';
 import 'package:fusion_mobile_revamped/src/models/fusion_model.dart';
 import 'package:fusion_mobile_revamped/src/utils.dart';
 import 'package:overlay_support/overlay_support.dart';
+import 'package:path/path.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:sqflite/sqflite.dart';
 import 'package:sqflite/sql.dart';
 
 import 'contact.dart';
@@ -53,8 +55,8 @@ class PhoneContact extends FusionModel{
   PhoneContact(Map<String,dynamic> contactObject) {
     firstName = contactObject['firstName'];
     lastName = contactObject['lastName'];
-    company = contactObject['company'];
-    jobTitle = contactObject['jobTitle'];
+    company = contactObject['company'] ?? "";
+    jobTitle = contactObject['jobTitle'] ?? "";
     name = contactObject['name'];
     phoneNumbers = [];
     if(contactObject['phoneNumbers'] != null){
@@ -82,7 +84,7 @@ class PhoneContact extends FusionModel{
           "city": email['city'],
           "state": email['state'],
           "zip": email['zip'],
-          "zipPart2": email['zipPart2'],
+          "zipPart2": email['zipPart2'] ?? "",
           "country": email['country'],
           "name": email['name'],
           "zip-2": email['zip-2'],
@@ -235,7 +237,6 @@ class PhoneContactsStore extends FusionStore<PhoneContact> {
 
   persist(PhoneContact record, ) {
     List<String> numbers = record.phoneNumbers.map((phoneNumber) => phoneNumber['number']).toList().cast<String>();
-    print("MDBM numbers = ${numbers.toString()}");
     fusionConnection.db.insert('phone_contacts', {
       'id': record.id,
       'company': record.company,
@@ -335,31 +336,35 @@ class PhoneContactsStore extends FusionStore<PhoneContact> {
   }
 
 
-  Future<List<PhoneContact>> getAdderssBookContacts(String query) async{
+  Future<List<PhoneContact>> getAdderssBookContacts(String query) async {
     List<PhoneContact> contacts = getRecords();  
     if(contacts.isNotEmpty && query.isEmpty){
       return contacts;
     } else {
-        await fusionConnection.db.query('phone_contacts',
-            where: 'searchString Like ?',
-            whereArgs: ["%" + query + "%"],
-            orderBy: "lastName asc, firstName asc",
-        ).then((List<Map<String, dynamic>> results) async {
-          List<PhoneContact> list = [];
+      getDatabasesPath().then((path){
+        openDatabase(join(path,"fusion.db")).then((db) async {
+          await db.query('phone_contacts',
+              where: 'searchString Like ?',
+              whereArgs: ["%" + query + "%"],
+              orderBy: "lastName asc, firstName asc",
+          ).then((List<Map<String, dynamic>> results) async {
+            List<PhoneContact> list = [];
 
-          for (Map<String, dynamic> result in results) {
-            PhoneContact phoneContact = PhoneContact.unserialize(result['raw']);
-            phoneContact.profileImage = result['profileImage'];
-            storeRecord(phoneContact);
-            list.add(phoneContact);
-          }
-          contacts = list;
+            for (Map<String, dynamic> result in results) {
+              PhoneContact phoneContact = PhoneContact.unserialize(result['raw']);
+              phoneContact.profileImage = result['profileImage'];
+              storeRecord(phoneContact);
+              list.add(phoneContact);
+            }
+            contacts = list;
 
-          if(list.isEmpty && query.isEmpty && !syncing){
-            initSync = true;
-            syncPhoneContacts();
-          }
+            if(list.isEmpty && query.isEmpty && !syncing){
+              initSync = true;
+              syncPhoneContacts();
+            }
+          });
         });
+      });
     }
     return contacts;
   }

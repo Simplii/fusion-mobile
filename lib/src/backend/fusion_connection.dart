@@ -84,9 +84,9 @@ class FusionConnection {
   Connectivity connectivity = Connectivity();
   ConnectivityResult connectivityResult = ConnectivityResult.none;
   bool internetAvailable = true;
-  String serverRoot = "http://fusioncomm.net";
+  String serverRoot = "http://fusioncom.co";
   String mediaServer = "https://fusion-media.sfo2.digitaloceanspaces.com";
-  String defaultAvatar = "https://fusioncomm.net/img/defaultuser.png";
+  String defaultAvatar = "https://fusioncom.co/img/defaultuser.png";
   static const MethodChannel contactsChannel = MethodChannel('net.fusioncomm.ios/contacts');
 
   FusionConnection() {
@@ -146,7 +146,7 @@ class FusionConnection {
   }
 
   final channel = WebSocketChannel.connect(
-    Uri.parse('wss://fusioncomm.net:8443'),
+    Uri.parse('wss://fusioncom.co:8443'),
   );
 
   onLogOut(Function callback) {
@@ -350,7 +350,7 @@ class FusionConnection {
       data['username'] = await _getUsername();
 
       Uri url = Uri.parse(
-          'https://fusioncomm.net/api/v1/clients/api_request?username=' +
+          'https://fusioncom.co/api/v1/clients/api_request?username=' +
               data['username']);
       Map<String, String> headers = await _cookieHeaders(url);
       String body = convert.jsonEncode(data);
@@ -395,7 +395,7 @@ class FusionConnection {
           urlParams += key + "=" + Uri.encodeQueryComponent(data[key].toString().trim().replaceAll(reg, '')) + '&';
         }
       }
-      Uri url = Uri.parse('https://fusioncomm.net/api/v1' + route + urlParams);
+      Uri url = Uri.parse('https://fusioncom.co/api/v1' + route + urlParams);
       Map<String, String> headers = await _cookieHeaders(url);
       if (method.toLowerCase() != 'get') {
         args[#body] = convert.jsonEncode(data);
@@ -469,7 +469,7 @@ class FusionConnection {
           urlParams += key + "=" + Uri.encodeQueryComponent(data[key].toString()) + '&';
         }
       }
-      Uri url = Uri.parse('https://fusioncomm.net/api/v2' + route + urlParams);
+      Uri url = Uri.parse('https://fusioncom.co/api/v2' + route + urlParams);
       Map<String, String> headers = await _cookieHeaders(url);
 
       if (method.toLowerCase() != 'get') {
@@ -526,7 +526,7 @@ class FusionConnection {
     try {
       data['username'] = await _getUsername();
 
-      Uri url = Uri.parse('https://fusioncomm.net/api/v2' + route);
+      Uri url = Uri.parse('https://fusioncom.co/api/v2' + route);
       http.MultipartRequest request = new http.MultipartRequest(method, url);
       (await _cookieHeaders(url))
           .forEach(
@@ -719,7 +719,7 @@ print(responseBody);
 
   setupSocket() {
     int messageNum = 0;
-    final wsUrl = Uri.parse('wss://fusioncomm.net:8443/');
+    final wsUrl = Uri.parse('wss://fusioncom.co:8443/');
     socketChannel = WebSocketChannel.connect(wsUrl);
     socketChannel.stream.listen((messageData) async {
       Map<String, dynamic> message = convert.jsonDecode(messageData);
@@ -769,48 +769,65 @@ print(responseBody);
     _connector = connector;
   }
 
-  Future<void> autoLogin(String username, String domain) async {
-    String _pass;
 
-    final prefs = await SharedPreferences.getInstance();
-    _pass = await prefs.getString('fusion-data1');
-    
+  Future<void> auth() async {
+    final prefs  = await SharedPreferences.getInstance();
+    String user  = await prefs.getString("username");
+    String _pass = await prefs.getString('fusion-data1');
+
     if(_pass != null && _pass.isNotEmpty){
       final String deviceToken = await FirebaseMessaging.instance.getToken();
-      final String hash = generateMd5(username.trim().toLowerCase() + deviceToken + fusionDataHelper);
+      final String hash = generateMd5(user.trim().toLowerCase() + deviceToken + fusionDataHelper);
       final enc.Key key = enc.Key.fromUtf8(hash);
       final enc.IV iv = enc.IV.fromLength(16);
       final enc.Encrypter encrypter = enc.Encrypter(enc.AES(key,padding: null));
       _pass = encrypter.decrypt(enc.Encrypted.fromBase64(_pass), iv: iv);
     
+      _username = user.trim();
+      _password = _pass;
+      try{
+        Response res = await http.post(
+          Uri.parse('https://fusioncom.co/api/v2/user/auth'),
+          body: {"username": _username, "password" : _password}
+        );
+        // print('url https://fusioncom.co/api/v2/user/auth');
+        // print(res.headers['set-cookie']);
+        Map<String,dynamic> body = jsonDecode(res.body);
+        if(body.containsKey("success")){
+          _saveCookie(res);
+        }
+      } catch (e) {
 
-      await apiV1Call(
-        "get",
-        "/clients/lookup_options",
-        {"username": username, "password": _pass},
-        onError: () {
-          toast("Sorry we weren't able to get your login credentials, try logging in again");
-        },
-        callback: (Map<String, dynamic> response) {
-          if (response.containsKey("access_key")) {
-            _username = username.split('@')[0] + '@' + response['domain'];
-            _username = _username;
-            _password = _pass;
-            _domain = _username.split('@')[1];
-            _extension = _username.split('@')[0];
-            settings.setOptions(response);
-            _postLoginSetup((bool success) {});
-          }
-          else {
-            if(kDebugMode){
-              print("MyDebugMessage lookup_options resp ${response}");
-            }
-            logOut();
-          }
-        });
-    } else {
-      toast("Sorry we weren't able to get your login credentials, try logging in again");
+      }
     }
+  }
+
+  Future<void> autoLogin(String username, String domain) async {
+    await auth();
+
+    await apiV1Call(
+      "get",
+      "/clients/lookup_options",
+      {},
+      onError: () {
+        toast("Sorry we weren't able to get your login credentials, try logging in again");
+      },
+      callback: (Map<String, dynamic> response) {
+        if (response.containsKey("access_key")) {
+          _username = username.split('@')[0] + '@' + response['domain'];
+          _domain = response['domain'];
+          _extension = _username.split('@')[0];
+          settings.setOptions(response);
+          _postLoginSetup((bool success) {});
+        }
+        else {
+          if(kDebugMode){
+            print("MyDebugMessage lookup_options resp ${response}");
+          }
+          logOut();
+        }
+      }
+    );
 
   }
 

@@ -54,7 +54,10 @@ class _RecentCallsTabState extends State<RecentCallsTab> {
       }, () {
       }),
       Container(height: 4),
-      Expanded(child:RecentCallsList(_fusionConnection, _softphone, "Recent Calls", _selectedTab,
+      Expanded(child:RecentCallsList(
+          _fusionConnection, 
+          _softphone, "Recent Calls", 
+          _selectedTab,
           query: _query))
     ];
     return Container(child: Column(children: children));
@@ -203,6 +206,10 @@ class _RecentCallsListState extends State<RecentCallsList> {
       if (item.coworker != null)
         searchQuery += item.coworker.firstName + ':' + item.coworker.lastName;
 
+      if(item.callerId != null && item.callerId.isNotEmpty){
+        searchQuery += item.callerId.toLowerCase();
+      }
+      
       if (widget.query != "" && !searchQuery.contains(widget.query)) {
         return false;
       } else if (_selectedTab == 'all') {
@@ -434,6 +441,7 @@ class _CallHistorySummaryViewState extends State<CallHistorySummaryView> {
   CallHistory get _historyItem => widget._historyItem;
   bool get _expanded => widget.expanded;
   Function get _refreshHistoryList => widget.refreshHistoryList;
+  bool _loading = false;
 
   initState() {
     super.initState();
@@ -542,42 +550,65 @@ class _CallHistorySummaryViewState extends State<CallHistorySummaryView> {
     return contacts;
   }
 
-  _openMessage() {
+  _openMessage() async {
     bool isExt = _historyItem.fromDid.length < 6 || _historyItem.toDid.length < 6;
-    String number = _fusionConnection.smsDepartments.getDepartment(isExt 
+    setState(() {
+      _loading = true;
+    });
+    SMSDepartment dept = _fusionConnection.smsDepartments.getDepartment(isExt 
       ? DepartmentIds.FusionChats 
       : DepartmentIds.Personal
-    ).numbers[0];
-    if(number == null){
-      return showModalBottomSheet(
-        context: context,
-        backgroundColor: coal,
-        shape: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
-        builder: (context)=> Container(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height / 3,
-          ),
-          child: Center(
-            child: Text("No personal sms number found", style: TextStyle(color: Colors.white),),
-          ),
-        ));
+    );
+    if(dept.numbers.isEmpty){
+      _fusionConnection.smsDepartments.getDepartments((List<SMSDepartment> dep) {
+        for (SMSDepartment d in dep) {
+          if(d.numbers.isNotEmpty){
+            dept = d;
+            break;
+          }
+        }
+      });
+
+      if(dept.numbers.isEmpty){
+        return showModalBottomSheet(
+          context: context,
+          backgroundColor: coal,
+          shape: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
+          builder: (context)=> 
+            Container(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height / 3,
+              ),
+              color: coal,
+              child: Center(
+                child: Text("No personal/departmens SMS number found for this account", 
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            )
+        ).whenComplete(() =>  setState(() {
+          _loading = false;
+        }));
+      }
     }
+    SMSConversation convo = await _fusionConnection.messages.checkExistingConversation(
+      DepartmentIds.Personal,
+      dept.numbers[0],
+      [_historyItem.getOtherNumber(_fusionConnection.getDomain())],
+      _messageContacts(_historyItem)
+    );
+
+    setState(() {
+      _loading = false;
+    });
+    
     showModalBottomSheet(
         context: context,
         backgroundColor: Colors.transparent,
         isScrollControlled: true,
         builder: (context) => StatefulBuilder(
           builder: (BuildContext context, StateSetter setState) {
-              SMSConversation displayingConvo = SMSConversation.build(
-                isGroup: false,
-                contacts: _messageContacts(_historyItem),
-                crmContacts: _historyItem.crmContact != null
-                    ? [_historyItem.crmContact]
-                    : [],
-                myNumber: number,
-                hash: number + ":" + _historyItem.getOtherNumber(_fusionConnection.getDomain()),
-                number: _historyItem.getOtherNumber(_fusionConnection.getDomain())
-              );
+              SMSConversation displayingConvo = convo;
               return SMSConversationView(
                   fusionConnection: _fusionConnection, 
                   softphone: _softphone, 
@@ -656,7 +687,7 @@ class _CallHistorySummaryViewState extends State<CallHistorySummaryView> {
           child: Row(children: [
             actionButton(haveProfile ? "Profile" : "Add Contact", "user_dark", 18, 18, _openProfile),
             actionButton("Call", "phone_dark", 18, 18, _makeCall),
-            actionButton("Message", "message_dark", 18, 18, _openMessage)
+            actionButton("Message", "message_dark", 18, 18, _openMessage, isLoading: _loading)
             // _actionButton("Video", "video_dark", 18, 18, () {}),
           ])));
     }
@@ -771,7 +802,6 @@ class SearchCallsBar extends StatefulWidget {
 }
 
 class _SearchCallsBarState extends State<SearchCallsBar> {
-  FusionConnection get _fusionConnection => widget._fusionConnection;
   final _searchInputController = TextEditingController();
   String _selectedTab;
 
