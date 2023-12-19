@@ -264,7 +264,7 @@ print("audiointerruption")
         })
         sendDevices()
         mCore?.callkitEnabled = true
-        mCore?.stunServer = "turn:services.fusioncomm.net"
+        mCore?.stunServer = "turn:services.fusioncom.co"
         mCore?.natPolicy?.turnEnabled = true
         mCore?.natPolicy?.stunServerUsername = "fuser"
         do {
@@ -277,7 +277,7 @@ print("audiointerruption")
         }
         mCore?.echoLimiterEnabled = false
         mCore?.echoCancellationEnabled = false
-        mCore?.natPolicy?.stunServer = "services.fusioncomm.net"
+        mCore?.natPolicy?.stunServer = "services.fusioncom.co"
         mCore?.addDelegate(delegate: mCoreDelegate)
         mCore?.remoteRingbackTone = Bundle.main.path(forResource: "outgoing", ofType: "wav") ?? ""
         mCore?.ring = Bundle.main.path(forResource: "inbound", ofType: "mp3") ?? ""
@@ -321,7 +321,7 @@ print("audiointerruption")
             print(passwd);
             try! accountParams!.setIdentityaddress(newValue: identity)
             
-            let address = try Factory.Instance.createAddress(addr: String("sip:mobile-proxy.fusioncomm.net:5060"))
+            let address = try Factory.Instance.createAddress(addr: String("sip:services.fusioncom.co:5060"))
             
             try address.setTransport(newValue: transport)
             try accountParams!.setServeraddress(newValue: address)
@@ -348,8 +348,8 @@ print("audiointerruption")
     func createProxyConfig(proxyConfig: ProxyConfig, aor: String, authInfo: AuthInfo) throws -> ProxyConfig {
         let address = try mCore?.createAddress(address: aor)
         try proxyConfig.setIdentityaddress(newValue: address!)
-        try proxyConfig.setServeraddr(newValue: "<sip:mobile-proxy.fusioncomm.net:5060;transport=tcp>")
-        try proxyConfig.setRoute(newValue: "<sip:mobile-proxy.fusioncomm.net:5060;transport=tcp>")
+        try proxyConfig.setServeraddr(newValue: "<sip:services.fusioncom.co:5060;transport=tcp>")
+        try proxyConfig.setRoute(newValue: "<sip:services.fusioncom.co:5060;transport=tcp>")
         proxyConfig.realm = authInfo.realm
         proxyConfig.registerEnabled = true
         proxyConfig.avpfMode = .Disabled

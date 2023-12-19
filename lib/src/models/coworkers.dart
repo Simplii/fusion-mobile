@@ -222,12 +222,10 @@ class CoworkerStore extends FusionStore<Coworker> {
 
   getCoworkers(Function(List<Coworker>) callback) {
     bool v2User = fusionConnection.settings.isV2User();
-    Creds creds = fusionConnection.getCreds();
-  
-    if(creds.pass.isEmpty)return;
+
     if(v2User){
       fusionConnection.apiV2Call("post","/client/coworkers",
-        {"username": creds.username, "password": creds.pass},
+        {},
         callback: (Map<String,dynamic> datas) {
           List<Coworker> response = [];
           if(!datas.containsKey("items")){
@@ -244,7 +242,7 @@ class CoworkerStore extends FusionStore<Coworker> {
       );
     } else {
       fusionConnection.apiV1Call("get","/clients/subscribers",
-        {"username": creds.username, "password": creds.pass},
+        {},
         callback: (List<dynamic> datas) {
           List<Coworker> response = [];
           for (Map<String, dynamic> item in datas) {

@@ -26,11 +26,12 @@ class FusionService: Service() {
     }
     override fun onTaskRemoved(rootIntent: Intent?) {
         super.onTaskRemoved(rootIntent)
-        Factory.instance()
-        val calls : Array<Call> = CoreManager.instance().core.calls
-        if(calls.isNotEmpty()){
-            for(call in calls){
-                call.terminate()
+        if(CoreManager.isReady()){
+            val calls : Array<Call> = CoreManager.instance().core.calls
+            if(calls.isNotEmpty()){
+                for(call in calls){
+                    call.terminate()
+                }
             }
         }
         //stop service

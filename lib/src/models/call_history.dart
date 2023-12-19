@@ -180,21 +180,20 @@ class CallHistoryStore extends FusionStore<CallHistory> {
   getRecentHistory(int limit, int offset,bool pullToRefresh,
       Function(List<CallHistory>, bool, bool) callback) async {
     List<CallHistory> stored = getRecords();
-    if(stored.isNotEmpty && !pullToRefresh){
-      callback(stored, false, false);
-    } else if(stored.isEmpty && !pullToRefresh) {
+    if(stored.isEmpty && !pullToRefresh) {
       // app just oppened
-      // load coworkers store since recent call screen loads first before coworkers in postLogin 
+      // load coworkers store since recent call screen loads first before coworkers in postLogin
+      await fusionConnection.auth(); 
       fusionConnection.coworkers.getCoworkers((c) {});
       getPersisted(limit,offset,callback);
+    } else if(stored.isNotEmpty && !pullToRefresh){
+      callback(stored, false, false);
     }
     final PermissionStatus status = await Permission.contacts.status;
     List<PhoneContact> phoneContacts = [];
     if(status.isGranted){
       phoneContacts = await fusionConnection.phoneContacts.getAdderssBookContacts("");
     }
-    // prevent calling recent calls endpoint if login not finished yet
-    if(!fusionConnection.isLoginFinished()) return;
 
     await fusionConnection.apiV2Call(
       "get", "/calls/recent", {'limit': limit, 'offset': offset},

@@ -175,7 +175,7 @@ class MyApp extends StatelessWidget {
       title: 'Fusion Revamped',
       navigatorKey: navigatorKey,
       theme: ThemeData(
-        // useMaterial3: true,
+        useMaterial3: false,
         primarySwatch: Colors.grey,
       ),
       home: MyHomePage(

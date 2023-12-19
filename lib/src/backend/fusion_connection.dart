@@ -773,49 +773,64 @@ print(responseBody);
   //   _connector = connector;
   // }
 
-  Future<void> autoLogin(String username, String domain) async {
-    String? _pass;
-    final prefs = await SharedPreferences.getInstance();
-    final String? deviceToken = await FirebaseMessaging.instance.getToken();
-    _pass = await prefs.getString('fusion-data1');
-    
-    if(_pass != null && _pass.isNotEmpty && deviceToken != null){
-      final String hash = generateMd5(username.trim().toLowerCase() + deviceToken + fusionDataHelper);
+
+  Future<void> auth() async {
+    final prefs  = await SharedPreferences.getInstance();
+    String? user  = await prefs.getString("username");
+    String? _pass = await prefs.getString('fusion-data1');
+    if(_pass != null && _pass.isNotEmpty && user != null){
+      final String deviceToken = await FirebaseMessaging.instance.getToken() ?? "";
+      final String hash = generateMd5(user.trim().toLowerCase() + deviceToken + fusionDataHelper);
       final enc.Key key = enc.Key.fromUtf8(hash);
       // final enc.IV iv = enc.IV.fromLength(16); (ok in 5.0.1 not in 5.0.3)
       final enc.IV iv = enc.IV.allZerosOfLength(16);
       final enc.Encrypter encrypter = enc.Encrypter(enc.AES(key,padding: null));
       _pass = encrypter.decrypt(enc.Encrypted.fromBase64(_pass), iv: iv);
-      _username = username;
+    
+      _username = user.trim();
       _password = _pass;
-
-      await apiV1Call(
-        "get",
-        "/clients/lookup_options",
-        {"username": username, "password": _pass},
-        onError: () {
-          toast("Sorry we weren't able to get your login credentials, try logging in again");
-        },
-        callback: (Map<String, dynamic> response) {
-          if (response.containsKey("access_key")) {
-            _username = username.split('@')[0] + '@' + response['domain'];
-            _username = _username;
-            _password = _pass!;
-            _domain = _username.split('@')[1];
-            _extension = _username.split('@')[0];
-            settings.setOptions(response);
-            _postLoginSetup((bool success) {});
-          }
-          else {
-            if(kDebugMode){
-              print("MyDebugMessage lookup_options resp ${response}");
-            }
-            logOut();
-          }
-        });
-    } else {
-      toast("Sorry we weren't able to get your login credentials, try logging in again");
+      try{
+        Response res = await http.post(
+          Uri.parse('https://fusioncom.co/api/v2/user/auth'),
+          body: {"username": _username, "password" : _password}
+        );
+        // print('url https://fusioncom.co/api/v2/user/auth');
+        // print(res.headers['set-cookie']);
+        Map<String,dynamic> body = jsonDecode(res.body);
+        if(body.containsKey("success")){
+          _saveCookie(res);
+        }
+      } catch (e) {
+      }
     }
+  }
+
+  Future<void> autoLogin(String username, String domain) async {
+    await auth();
+
+    await apiV1Call(
+      "get",
+      "/clients/lookup_options",
+      {},
+      onError: () {
+        toast("Sorry we weren't able to get your login credentials, try logging in again");
+      },
+      callback: (Map<String, dynamic> response) {
+        if (response.containsKey("access_key")) {
+          _username = username.split('@')[0] + '@' + response['domain'];
+          _username = _username;
+          _domain = _username.split('@')[1];
+          _extension = _username.split('@')[0];
+          settings.setOptions(response);
+          _postLoginSetup((bool success) {});
+        }
+        else {
+          if(kDebugMode){
+            print("MyDebugMessage lookup_options resp ${response}");
+          }
+          logOut();
+        }
+      });
 
   }
 
