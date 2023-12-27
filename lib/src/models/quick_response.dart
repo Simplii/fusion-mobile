@@ -52,7 +52,9 @@ class QuickResponsesStore extends FusionStore<QuickResponse> {
 
   void getQuickResponses(String departmentId, Function(List<QuickResponse>) quickResponses){
     fusionConnection.apiV2Call("get", 
-    "/messaging/group/$departmentId/quickMessages", 
+    departmentId == "-1" 
+      ? "/messaging/user/${fusionConnection.getUid()}/quickMessages"
+      : "/messaging/group/$departmentId/quickMessages", 
     {}, 
     callback: (Map<String,dynamic>data){
       List<QuickResponse> quickResps = [];
