@@ -83,4 +83,20 @@ class VoicemailStore extends FusionStore<Voicemail> {
       callback(response, true);
     });
   }
+
+  Future<bool> deleteVoicemail(Voicemail vm) async {
+    bool deleteRes = false;
+    try {
+      await fusionConnection.apiV2Call("post", "/user/voicemails/delete", {
+        "index" : "${vm.id}.wav",
+        "owner" : fusionConnection.getUid(),
+        "type"  : "vmail/new"
+      }, callback: (res){
+        deleteRes = res;
+      });
+    } catch (e) {
+      print("MDBM error deleting vm ${e}");
+    }
+    return deleteRes;
+  }
 }
