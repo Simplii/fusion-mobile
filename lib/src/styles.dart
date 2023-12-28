@@ -106,8 +106,9 @@ bottomRedBar(bool clear) {
 }
 
 actionButton(
-    String label, String icon, double width, double height, Function onTap, {double opacity, bool isLoading}) {
+    String label, String icon, double width, double height, Function onTap, {double opacity, bool isLoading, int flex = 1}) {
   return Expanded(
+      flex: flex,
       child: GestureDetector(
           onTap: onTap,
           child: Opacity(

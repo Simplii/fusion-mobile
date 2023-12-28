@@ -37,6 +37,7 @@ class _VoicemailsState extends State<Voicemails> {
   String _playingUrl = null;
   bool _isPlaying = false;
   bool _loading = false;
+  bool _deletingVm = false;
 
   initState() {
     _audioPlayer.positionStream.listen((Duration event) {
@@ -125,6 +126,20 @@ class _VoicemailsState extends State<Voicemails> {
 
   _makeCall(Voicemail vm) {
     _softphone.makeCall(vm.phoneNumber);
+  }
+
+  void _deleteVoicemail(Voicemail vm) async {
+    setState(() {
+      _deletingVm = true;
+    });
+    bool res = await _fusionConnection.voicemails.deleteVoicemail(vm);
+    // ns always returns false for deleting vm even if it was succesful
+    if(!res){
+      setState(() {
+        _deletingVm = false;
+        _voicemails.removeWhere((element) => vm.id == element.id);
+      });
+    }
   }
 
   _openMessage(Voicemail vm) async {
@@ -375,21 +390,28 @@ class _VoicemailsState extends State<Voicemails> {
                                       ]))
                                     ]),
                                 Container(height: 12),
-                                Row(children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
                                   actionButton("Profile", "user_dark", 18, 18,
                                       () {
                                     _openProfile(vm);
                                   },
+                                      flex: 0,
                                       opacity:
                                           vm.contacts.length > 0 ? 1.0 : 0.35),
                                   actionButton("Call", "phone_dark", 18, 18,
                                       () {
                                     _makeCall(vm);
-                                  }),
+                                  }, flex: 0),
                                   actionButton(
                                       "Message", "message_dark", 18, 18, () {
                                     _openMessage(vm);
-                                  },isLoading: _loading)
+                                  },isLoading: _loading,flex: 0),
+                                  actionButton(
+                                      "Delete", "trashcan_red", 18, 18, () {
+                                    _deleteVoicemail(vm);
+                                  },isLoading: _deletingVm, flex: 0),
                                 ])
                               ]))))
             ])

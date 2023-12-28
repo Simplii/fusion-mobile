@@ -577,7 +577,10 @@ print("audiointerruption")
                 let handle = CXHandle(
                     type: .phoneNumber,
                     value: phoneNumber.applyPatternOnNumbers(
-                        pattern: "+# (###) ###-####", replacementCharacter: "#"
+                        pattern: phoneNumber.count > 10
+                            ? "+# (###) ###-####"
+                            : "(###) ###-####",
+                        replacementCharacter: "#"
                     )
                 )
 
