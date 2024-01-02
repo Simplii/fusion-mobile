@@ -530,7 +530,6 @@ class _CallHistorySummaryViewState extends State<CallHistorySummaryView> {
 
   _icon() {
     if (_isMissed()) {
-      print("MDBM ${_historyItem.serialize()}");
       if(_historyItem.queue == "true"){
         return "assets/icons/queue-call-missed.png";
       } else {

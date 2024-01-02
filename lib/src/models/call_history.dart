@@ -94,7 +94,6 @@ class CallHistory extends FusionModel {
     if(obj.containsKey("queue")){
       queue = obj["queue"].toString();
     }
-    // queue = "true";
   } 
   
   serialize(){
