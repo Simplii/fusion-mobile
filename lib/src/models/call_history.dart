@@ -29,6 +29,7 @@ class CallHistory extends FusionModel {
   String callerId;
   String cdrIdHash;
   PhoneContact phoneContact;
+  String queue = "false";
 
   isInternal(String domain) {
     if (to.length < 10) return false;
@@ -90,6 +91,10 @@ class CallHistory extends FusionModel {
        Map<String,dynamic> data = jsonDecode(obj['phoneContact']);
       phoneContact = PhoneContact(data);
     }
+    if(obj.containsKey("queue")){
+      queue = obj["queue"].toString();
+    }
+    // queue = "true";
   } 
   
   serialize(){
@@ -108,7 +113,8 @@ class CallHistory extends FusionModel {
       "contact": contact,
       "missed": missed,
       "coworker": coworker,
-      "phoneContact": phoneContact
+      "phoneContact": phoneContact,
+      "queue": queue
     };
   }
   isInbound() {
@@ -144,10 +150,11 @@ class CallHistoryStore extends FusionStore<CallHistory> {
         'direction': record.direction,
         'callerId': record.callerId,
         // 'crmContact': record?.crmContact?.serialize() ?? null,
-        'contacts': record?.contact?.serialize() ?? null,
-        'coworker': record?.coworker?.serialize() ?? null,
+        'contacts': record.contact?.serialize() ?? null,
+        'coworker': record.coworker?.serialize() ?? null,
         'missed' : record.missed.toString(),
-        'phoneContact': record?.phoneContact?.serialize() ?? null
+        'phoneContact': record.phoneContact?.serialize() ?? null,
+        'queue': record.queue ?? "false"
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
     );

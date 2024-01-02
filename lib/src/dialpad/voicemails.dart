@@ -393,23 +393,23 @@ class _VoicemailsState extends State<Voicemails> {
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                  actionButton("Profile", "user_dark", 18, 18,
+                                  actionButton("", "user_dark", 18, 18,
                                       () {
                                     _openProfile(vm);
                                   },
                                       flex: 0,
                                       opacity:
                                           vm.contacts.length > 0 ? 1.0 : 0.35),
-                                  actionButton("Call", "phone_dark", 18, 18,
+                                  actionButton("", "phone_dark", 18, 18,
                                       () {
                                     _makeCall(vm);
                                   }, flex: 0),
                                   actionButton(
-                                      "Message", "message_dark", 18, 18, () {
+                                      "", "message_dark", 18, 18, () {
                                     _openMessage(vm);
                                   },isLoading: _loading,flex: 0),
                                   actionButton(
-                                      "Delete", "trashcan_red", 18, 18, () {
+                                      "", "trashcan_red", 18, 18, () {
                                     _deleteVoicemail(vm);
                                   },isLoading: _deletingVm, flex: 0),
                                 ])
