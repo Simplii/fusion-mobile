@@ -670,6 +670,9 @@ print(responseBody);
 
         SharedPreferences.getInstance().then((SharedPreferences prefs) {
           prefs.setString("username", _username);
+          if(response.containsKey("uses_v2")){
+            prefs.setBool("v2User", response["uses_v2"]);
+          }
         });
         this.encryptFusionData(username,password);
         _username = _username;
