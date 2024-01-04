@@ -670,6 +670,9 @@ print(responseBody);
 
         SharedPreferences.getInstance().then((SharedPreferences prefs) {
           prefs.setString("username", _username);
+          if(response.containsKey("uses_v2")){
+            prefs.setBool("v2User", response["uses_v2"]);
+          }
         });
         this.encryptFusionData(username,password);
         _username = _username;
@@ -774,7 +777,7 @@ print(responseBody);
     final prefs  = await SharedPreferences.getInstance();
     String user  = await prefs.getString("username");
     String _pass = await prefs.getString('fusion-data1');
-
+    settings.usesV2 = prefs.getBool("v2User") ?? false;
     if(_pass != null && _pass.isNotEmpty){
       final String deviceToken = await FirebaseMessaging.instance.getToken();
       final String hash = generateMd5(user.trim().toLowerCase() + deviceToken + fusionDataHelper);
@@ -803,6 +806,7 @@ print(responseBody);
   }
 
   Future<void> autoLogin(String username, String domain) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
     await auth();
 
     await apiV1Call(
@@ -817,6 +821,9 @@ print(responseBody);
           _username = username.split('@')[0] + '@' + response['domain'];
           _domain = response['domain'];
           _extension = _username.split('@')[0];
+          if(response.containsKey("uses_v2")){
+            prefs.setBool("v2User", response["uses_v2"]);
+          }
           settings.setOptions(response);
           _postLoginSetup((bool success) {});
         }
