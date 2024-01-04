@@ -16,6 +16,7 @@ class UserSettings {
   String devices = "";
   bool dnd = false;
   bool forceDispositionEnabled = false;
+  bool usesV2 = false;
   
   myContact() {
     if (subscriber['first_name'] == null) subscriber['first_name'] = "";
@@ -163,7 +164,7 @@ class UserSettings {
   }
 
   bool isV2User(){
-    return options['uses_v2'] != null && options['uses_v2'] == true;
+    return usesV2;
   }
 
   void setMyUserInfo({
