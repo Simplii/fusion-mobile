@@ -530,9 +530,17 @@ class _CallHistorySummaryViewState extends State<CallHistorySummaryView> {
 
   _icon() {
     if (_isMissed()) {
-      return "assets/icons/phone_missed_red.png";
+      if(_historyItem.queue == "true"){
+        return "assets/icons/queue-call-missed.png";
+      } else {
+        return "assets/icons/phone_missed_red.png";
+      }
     } else if (_historyItem.direction == 'inbound') {
-      return "assets/icons/phone_incoming.png";
+      if (_historyItem.queue == "true") {
+        return "assets/icons/queue-call.png";
+      } else {
+        return "assets/icons/phone_incoming.png";
+      }
     } else {
       return "assets/icons/phone_outgoing.png";
     }
@@ -684,10 +692,12 @@ class _CallHistorySummaryViewState extends State<CallHistorySummaryView> {
       children.add(Container(
           height: 28,
           margin: EdgeInsets.only(top: 12, bottom: 12),
-          child: Row(children: [
-            actionButton(haveProfile ? "Profile" : "Add Contact", "user_dark", 18, 18, _openProfile),
-            actionButton("Call", "phone_dark", 18, 18, _makeCall),
-            actionButton("Message", "message_dark", 18, 18, _openMessage, isLoading: _loading)
+          child: Row(
+           mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+            actionButton(haveProfile ? "" : "", "user_dark", 18, 18, _openProfile, flex: 0),
+            actionButton("", "phone_dark", 18, 18, _makeCall,flex: 0),
+            actionButton("", "message_dark", 18, 18, _openMessage, isLoading: _loading,flex: 0)
             // _actionButton("Video", "video_dark", 18, 18, () {}),
           ])));
     }

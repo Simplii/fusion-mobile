@@ -296,7 +296,14 @@ class FusionConnection {
           .catchError((error)=>{
             db.rawQuery('ALTER TABLE call_history ADD COLUMN phoneContact')
               .then((value) => null)
-              .catchError((onError)=> print("MyDebugMessage db couldn't create conversationId col"))
+              .catchError((onError)=> print("MyDebugMessage db couldn't create phoneContact col"))
+          });
+        db.rawQuery('SELECT queue FROM call_history')
+          .then((value) => null)
+          .catchError((error)=>{
+            db.rawQuery('ALTER TABLE call_history ADD COLUMN queue')
+              .then((value) => null)
+              .catchError((onError)=> print("MyDebugMessage db couldn't create queue col"))
           });
         this.db = db;
       }).catchError((error) {
