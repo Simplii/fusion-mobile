@@ -316,11 +316,18 @@ class FusionConnection {
     return prefs.getString("username");
   }
 
-  _saveCookie(Response response) {
+  _saveCookie(Response response) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
     if (response.headers.containsKey('set-cookie')) {
       List<String> cookieStrings = response.headers['set-cookie'].split("HttpOnly,");
       for (String cookieString in cookieStrings) {
         Cookie cookie = Cookie.fromSetCookieValue(cookieString);
+        if (cookie.name == "fusionsession") {
+          prefs.setString("fusionCookie", cookie.value.toString());
+        } else if (cookie.name == "sec_session_id") {
+          prefs.setString("secSessionId", cookie.value.toString());
+        }
+
         _cookies.saveFromResponse(response.request.url, [cookie]);
       }
     }
@@ -329,9 +336,18 @@ class FusionConnection {
   Future<Map<String, String>> _cookieHeaders(url) async {
     Completer<Map<String, String>> c = new Completer<Map<String, String>>();
     var runIt = () async {
-      List<Cookie> cookies = await _cookies.loadForRequest(url);
-      String cookiesHeader = "";
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String fusionCookie     = prefs.getString("fusionCookie") ?? "";
+      String secSessionId     = prefs.getString("secSessionId") ?? "";
+      String cookiesHeader    = "";
       Map<String, String> headers = {};
+      if (fusionCookie.isNotEmpty) {
+        cookiesHeader = "fusionsession=$fusionCookie; sec_session_id=$secSessionId;";
+        headers['cookie'] = cookiesHeader;
+        return c.complete(headers);
+      }
+
+      List<Cookie> cookies = await _cookies.loadForRequest(url);
 
       for (Cookie c in cookies) {
         cookiesHeader += c.name + "=" + c.value + "; ";
@@ -663,7 +679,7 @@ print(responseBody);
   login(String username, String password, Function(bool) callback) {
     if(password == null )return;
     apiV1Call(
-        "get",
+        "post",
         "/clients/lookup_options",
         password != null
             ? {"username": username, "password": password}
