@@ -315,10 +315,11 @@ class _SMSConversationViewState extends State<SMSConversationView> {
     );
     List<Contact> unknowContacts = 
       _conversation.contacts.where((contact) => contact.id == '').toList();
-    List<List<String>> contactsToAdd = List.generate(unknowContacts.length, 
-      (index) => ["Add ${unknowContacts[index].name} as a new contact", 
-      "addContact-${index} "], 
-         growable: false);
+    List<List<String>> contactsToAdd = _conversation.isBroadcast 
+      ? [] 
+      : List.generate(unknowContacts.length, 
+        (index) => ["Add ${unknowContacts[index].name} as a new contact", 
+        "addContact-${index} "], growable: false);
 
     return Column(children: [
       Center(
@@ -390,6 +391,65 @@ class _SMSConversationViewState extends State<SMSConversationView> {
                 _fusionConnection.conversations.markUnread(_conversation.message.id,_conversation, 
                   () => Navigator.pop(this.context)
                 );
+              } else if (chosen == "rename") {
+                () => Navigator.pop(this.context);
+                String conversationName = "";
+                bool renaming = false;
+                bool showError = false;
+                showDialog(
+                  context: context, 
+                  builder: (context) => StatefulBuilder(
+                    builder: (context, StateSetter setDialogState) {
+                      return AlertDialog(
+                        title: const Text('Rename Conversation'),
+                        content: TextFormField(
+                          onChanged: (value) {
+                            setDialogState((){
+                              conversationName = value;
+                            });
+                          },
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(),
+                            hintText: convoLabel(),
+                            errorText: showError ? "Unable to rename" : null, 
+                          ),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: conversationName.isEmpty 
+                              ? null 
+                              : () async {
+                                setDialogState((){
+                                  renaming = true;
+                                });
+                                bool nameUpdated = await _fusionConnection.conversations.renameConvo(
+                                  _conversation.conversationId, conversationName
+                                );
+                                setState(() {
+                                  _conversation.groupName = conversationName;
+                                });
+                                setDialogState((){
+                                  renaming = false;
+                                  if (!nameUpdated) {
+                                    showError = true;
+                                  } else {
+                                    Navigator.of(context).pop();
+                                  }
+                                });
+                              }, 
+                            child: renaming 
+                            ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator()) 
+                            : Text(
+                              "Rename", 
+                              style: conversationName.isEmpty 
+                                ? null
+                                : TextStyle(color: crimsonDark))
+                          )
+                        ],
+                      );
+                    }
+                  )
+                );
               } else {
                 Future.delayed(Duration(milliseconds: 10), () {
                   _openMedia(null);
@@ -398,19 +458,26 @@ class _SMSConversationViewState extends State<SMSConversationView> {
             },
             value: "",
             options: _conversation.contacts.length > 0
-                ? [
-                    ["Open Contact Profile", "contactprofile"],
-                    ["Shared Media", "sharedmedia"],
-                    ["Delete Conversation", "deleteconversation"],
-                    ["Mark Unread", "markunread"],
-                    ...contactsToAdd
-                  ]
+                ? _conversation.contacts.length > 1 
+                  ? [
+                      ["Shared Media", "sharedmedia"],
+                      ["Delete Conversation", "deleteconversation"],
+                      ["Rename Conversation", "rename"],
+                      ...contactsToAdd
+                    ]
+                  : [
+                      ["Open Contact Profile", "contactprofile"],
+                      ["Shared Media", "sharedmedia"],
+                      ["Delete Conversation", "deleteconversation"],
+                      ["Mark Unread", "markunread"],
+                      ...contactsToAdd
+                    ]
                 : [
                     ["Shared Media", "sharedmedia"],
                     ["Delete Conversation", "deleteconversation"],
                     ["Mark Unread", "markunread"],
                   ],
-            label: _conversation.contactName(),
+            label: convoLabel(),
             button: Icon(Icons.more_vert, size: 32,color: smoke,))
       ]),
       Row(children: [horizontalLine(16)]),
@@ -421,17 +488,15 @@ class _SMSConversationViewState extends State<SMSConversationView> {
     ]);
   }
 
-  // _departmentNumbers() {
-  //   SMSDepartment dept =
-  //       _fusionConnection.smsDepartments.lookupRecord(_selectedGroupId);
-  //   List<List<String>> opts = [];
-
-  //   for (String number in dept.numbers) {
-  //     opts.add([number.formatPhone(), number.onlyNumbers()]);
-  //   }
-
-  //   return opts;
-  // }
+  String convoLabel (){
+    return _conversation.groupName != null && _conversation.groupName.isNotEmpty
+      ? _conversation.groupName
+      : _conversation.filters != null 
+        ? "Broadcast - Query"
+        : _conversation.isBroadcast 
+          ? "Broadcast - Batch"
+          : "Group Conversation";
+  }
 
   _departmentName() {
     List departments = _fusionConnection.smsDepartments.allDepartments();

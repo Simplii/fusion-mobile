@@ -44,6 +44,7 @@ class SMSMessage extends FusionModel {
   String type;
   int unixtime;
   String user;
+  int broadcastConvoId = 0;
 
   SMSMessage(Map<String, dynamic> map) {
     Map<String, dynamic> timeDateObj = checkDateObj(map['time']);
@@ -69,6 +70,7 @@ class SMSMessage extends FusionModel {
     this.type = map['type'];
     this.unixtime = map['unixtime'];
     this.user = map['user'].runtimeType == String ? map['user'] : null;
+    this.broadcastConvoId = map['broadcastConversationId'] ?? 0;
   }
 
   SMSMessage.fromV2(Map<String, dynamic> map) {
@@ -99,6 +101,7 @@ class SMSMessage extends FusionModel {
     this.user = map['user'].runtimeType == String ? map['user']
         .toString()
         .replaceFirst(RegExp("@.*"), "") : null;
+    this.broadcastConvoId = map['broadcastConversationId'] ?? 0;
   }
 
   serialize() {
@@ -121,6 +124,7 @@ class SMSMessage extends FusionModel {
       'type': type,
       'unixtime': unixtime,
       'user': user,
+      'broadcastConvoId': broadcastConvoId,
     });
   }
 
@@ -145,6 +149,7 @@ class SMSMessage extends FusionModel {
     this.type = obj['type'];
     this.unixtime = obj['unixtime'];
     this.user = obj['user'];
+    this.broadcastConvoId = obj['broadcastConvoId'] ?? 0;
   }
 
   SMSMessage.offline({ 
@@ -174,6 +179,7 @@ class SMSMessage extends FusionModel {
     this.type = "sms";
     this.unixtime = DateTime.parse(date).millisecondsSinceEpoch ~/ 1000;
     this.user = user;
+    this.broadcastConvoId = 0;
   }
 
   @override
@@ -187,10 +193,14 @@ class SMSMessageSubscription {
   SMSMessageSubscription(this._conversation, this._callback);
 
   testMatches(SMSMessage message) {
-    return ((message.from == _conversation.number &&
-            message.to == _conversation.myNumber) ||
-        (message.to == _conversation.number &&
-            message.from == _conversation.myNumber));
+    if (_conversation.isBroadcast) {
+      return message.broadcastConvoId == _conversation.conversationId;
+    } else {
+      return ((message.from == _conversation.number &&
+              message.to == _conversation.myNumber) ||
+          (message.to == _conversation.number &&
+              message.from == _conversation.myNumber));
+    }
   }
 
   sendMatching(List<SMSMessage> items) {
@@ -277,7 +287,8 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
       'time': record.unixtime,
       'to': record.to.toLowerCase(),
       'user': record.user,
-      'raw': record.serialize()
+      'raw': record.serialize(),
+      'broadcastConvoId': record.broadcastConvoId
     }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
@@ -624,7 +635,11 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
     await fusionConnection.db.query('sms_message',
       limit: limit,
       offset: offset,
-      where: convo.conversationId != null && convo.isGroup ? '`to` = ?' : '(`to` = ? and `from` = ?) or (`from` = ? and `to` = ?)',
+      where: convo.conversationId != null && convo.isGroup && convo.isBroadcast 
+      ? '`broadcastConvoId` = ?'
+      : convo.conversationId != null && convo.isGroup && !convo.isBroadcast 
+        ? '`to` = ?' 
+        : '(`to` = ? and `from` = ?) or (`from` = ? and `to` = ?)',
       orderBy: "id desc",
       whereArgs: convo.conversationId != null &&  convo.isGroup 
         ? [ convo.conversationId ] 

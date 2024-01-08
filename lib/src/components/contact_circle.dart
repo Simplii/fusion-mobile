@@ -15,6 +15,7 @@ class ContactCircle extends StatefulWidget {
   double _diameter = 60;
   double _margin = null;
   bool _isGroupSms;
+  bool isBroadcastSms = false;
   ContactCircle(this._contacts, this._crmContacts, {Key key}) : super(key: key);
   ContactCircle.withCoworker(this._contacts, this._crmContacts, this._coworker,
       {Key key}) : super(key: key);
@@ -31,7 +32,7 @@ class ContactCircle extends StatefulWidget {
       {Key key})
       : super(key: key);
   ContactCircle.forSMS(
-    this._contacts,this._crmContacts, this._isGroupSms, {Key key,}
+    this._contacts,this._crmContacts, this._isGroupSms, this.isBroadcastSms, {Key key,}
   ) : super(key:key);
 
   @override
@@ -45,6 +46,7 @@ class _ContactCircleState extends State<ContactCircle> {
   double get _diameter => widget._diameter;
   double get _margin => widget._margin;
   bool get _isGroupSms => widget._isGroupSms;
+  bool get _isBroadcastSms => widget.isBroadcastSms;
 
   _gravatarUrl(String email, String firstName, String lastName) {
     firstName = firstName.replaceAll(r"/[^a-zA-Z]/", '');
@@ -239,20 +241,27 @@ class _ContactCircleState extends State<ContactCircle> {
         child: Container(
             width: _diameter - 4,
             height: _diameter - 4,
-            child: imageUrl != null  
-              ? CircleAvatar(
-                  //backgroundImage here will be a fallback incase the image we're getting
-                  //from imageUrl was deleted from the server
-                  backgroundImage: NetworkImage(avatarUrl(_firstName(), _lastName())),
-                  foregroundImage:profileImage != null 
-                    ? profileImage 
-                    : NetworkImage(imageUrl),
+            child: _isBroadcastSms
+              ? Container(
+                  color: Colors.black,
+                  child: Center(
+                    child: Image.asset("assets/icons/broadcast-message.png"),
+                  ),
                 )
-              : CircleAvatar(
-                  backgroundImage: profileImage != null 
-                    ? profileImage 
-                    : AssetImage("assets/blank_avatar.png"),
-                ),
+              : imageUrl != null
+                ? CircleAvatar(
+                    //backgroundImage here will be a fallback incase the image we're getting
+                    //from imageUrl was deleted from the server
+                    backgroundImage: NetworkImage(avatarUrl(_firstName(), _lastName())),
+                    foregroundImage:profileImage != null 
+                      ? profileImage 
+                      : NetworkImage(imageUrl),
+                  )
+                : CircleAvatar(
+                    backgroundImage: profileImage != null
+                      ? profileImage 
+                      : AssetImage("assets/blank_avatar.png"),
+                  ),
             )
         );
 
@@ -264,8 +273,7 @@ class _ContactCircleState extends State<ContactCircle> {
         || presence == 'progressing') borderColor = informationBlue;
     else if (presence == 'inuse'
         || presence == 'held') borderColor = crimsonLight;
-    
-    if(_isGroupSms!=null && _isGroupSms)
+    if(_isGroupSms != null && _isGroupSms && !_isBroadcastSms)
       return Container(
         margin: EdgeInsets.only(right: _diameter / 3),
         width: _diameter,
