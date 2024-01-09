@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/material.dart';
 import 'package:fusion_mobile_revamped/src/backend/fusion_connection.dart';
 
 import 'carbon_date.dart';
@@ -16,6 +17,7 @@ class SMSDepartment extends FusionModel {
   int unreadCount;
   bool usesDynamicOutbound;
   String protocol;
+  List<DepartmentUser> users = []; 
 
   SMSDepartment(Map<String, dynamic> obj) {
     if (obj['id'].toString() == DepartmentIds.Personal) {
@@ -39,6 +41,11 @@ class SMSDepartment extends FusionModel {
       unreadCount = obj['unread'];
       usesDynamicOutbound = obj['uses_dynamic_outbound'];
       protocol = obj['protocol'] ?? "sms";
+      for (Map<String,dynamic> user in obj['users']) {
+        users.add(
+          DepartmentUser(id: user['id'], smsGroupId: user['sms_group_id'], uid: user['uid'])
+        ); 
+      }
     }
   }
 
@@ -51,7 +58,8 @@ class SMSDepartment extends FusionModel {
       'primaryUser': this.primaryUser,
       'unreadCount': this.unreadCount,
       'usesDynamicOutbound': this.usesDynamicOutbound,
-      'protocol': this.protocol
+      'protocol': this.protocol,
+      'users': this.users
     });
   }
 
@@ -103,6 +111,7 @@ class SMSDepartmentsStore extends FusionStore<SMSDepartment> {
             'unread': allUnread,
             'uses_dynamic_outbound': false,
             'primary_user': null,
+            'users': []
           }));
 
           storeRecord(SMSDepartment({
@@ -113,7 +122,8 @@ class SMSDepartmentsStore extends FusionStore<SMSDepartment> {
             'unread': 0,
             'uses_dynamic_outbound': false,
             'primary_user': fusionConnection.getUid(),
-            'protocol': DepartmentProtocols.FusionChats
+            'protocol': DepartmentProtocols.FusionChats,
+            'users': []
           }));
 
           callback(allDepartments());
@@ -149,4 +159,23 @@ abstract class DepartmentProtocols {
   static const String telegram = "telegram";
   static const String whatsapp = "whatsapp";
   static const String facebook = "facebook";
+}
+
+class DepartmentUser {
+  final int id;
+  final int smsGroupId;
+  final String uid;
+  DepartmentUser({
+    @required this.id,
+    @required this.smsGroupId,
+    @required this.uid
+  });
+  
+  toJson () {
+    return {
+      'id': this.id,
+      'sms_group_id': this.smsGroupId,
+      'uid': this.uid 
+    };
+  }
 }

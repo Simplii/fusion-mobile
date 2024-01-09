@@ -12,6 +12,7 @@ import 'package:fusion_mobile_revamped/src/backend/softphone.dart';
 import 'package:fusion_mobile_revamped/src/components/contact_circle.dart';
 import 'package:fusion_mobile_revamped/src/components/date_time_picker.dart';
 import 'package:fusion_mobile_revamped/src/components/fusion_dropdown.dart';
+import 'package:fusion_mobile_revamped/src/components/list_view_bottom_sheet.dart';
 import 'package:fusion_mobile_revamped/src/components/popup_menu.dart';
 import 'package:fusion_mobile_revamped/src/contacts/contact_profile_view.dart';
 import 'package:fusion_mobile_revamped/src/models/contact.dart';
@@ -391,8 +392,93 @@ class _SMSConversationViewState extends State<SMSConversationView> {
                 _fusionConnection.conversations.markUnread(_conversation.message.id,_conversation, 
                   () => Navigator.pop(this.context)
                 );
+              } 
+              else if (chosen == "assignConvo") {
+                print("MDBM assign");
+                Coworker emptyCoworker = Coworker.empty();
+                emptyCoworker.uid = "Unassigned";
+                emptyCoworker.firstName = "Unassigned"; 
+                List<Coworker> coworkers = [
+                  emptyCoworker
+                ];
+                SMSDepartment department = _fusionConnection.smsDepartments.getDepartment(_selectedGroupId);
+                for (DepartmentUser departmentUser in department.users) {
+                  if(_fusionConnection.coworkers.getCowworker(departmentUser.uid) != null) {
+                    coworkers.add(_fusionConnection.coworkers.getCowworker(departmentUser.uid));
+                  }
+                }
+                Future.delayed(Duration(milliseconds: 10), (){
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Color.fromRGBO(0, 0, 0, 0),
+                    builder: (context) => ListViewBottomsheet(
+                      itemCount: coworkers.length,
+                      itemBuilder: (context, index) {
+                        return GestureDetector(
+                          onTap: () {
+                            _assignCoworker(coworkers[index]); 
+                            Navigator.of(context).pop();
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              border: Border(
+                                bottom: BorderSide(
+                                  color: lightDivider,
+                                  width: 1
+                                )
+                              )
+                            ),
+                            padding: EdgeInsets.all(16),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                CircleAvatar(
+                                  foregroundImage: coworkers[index].uid == 'Unassigned' 
+                                    ? AssetImage("assets/blank_avatar.png")
+                                    : NetworkImage(coworkers[index].url),
+                                ),
+                                SizedBox(width: 12,),
+                                Wrap(
+                                  direction: Axis.vertical,
+                                  spacing: 4,
+                                  children: [
+                                    LimitedBox(
+                                      maxWidth: MediaQuery.of(context).size.width - 150,
+                                      child: Text(
+                                        "${coworkers[index].firstName} ${coworkers[index].lastName}",
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold
+                                        ),
+                                      ),
+                                    ),
+                                    if(coworkers[index].uid != "Unassigned")
+                                    Text(
+                                      "Ext: ${coworkers[index].extension}",
+                                      style: TextStyle(
+                                        color: ash,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold
+                                      ),
+                                    )
+                                  ],
+                                ),
+                                Spacer(),
+                                if(coworkers[index].uid.toLowerCase() == _conversation.assigneeUid.toLowerCase())
+                                  Icon(Icons.check, color: Colors.white,)
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                      label: "Select Coworker",
+                    )
+                  );
+                  
+                });
               } else if (chosen == "rename") {
-                () => Navigator.pop(this.context);
                 String conversationName = "";
                 bool renaming = false;
                 bool showError = false;
@@ -403,6 +489,7 @@ class _SMSConversationViewState extends State<SMSConversationView> {
                       return AlertDialog(
                         title: const Text('Rename Conversation'),
                         content: TextFormField(
+                          initialValue: convoLabel(),
                           onChanged: (value) {
                             setDialogState((){
                               conversationName = value;
@@ -410,11 +497,17 @@ class _SMSConversationViewState extends State<SMSConversationView> {
                           },
                           decoration: InputDecoration(
                             border: OutlineInputBorder(),
-                            hintText: convoLabel(),
                             errorText: showError ? "Unable to rename" : null, 
                           ),
                         ),
                         actions: [
+                          TextButton(
+                            style: TextButton.styleFrom(
+                              foregroundColor: char
+                            ),
+                            onPressed: ()=> Navigator.of(context).pop(), 
+                            child: Text("Cancel")
+                          ),
                           TextButton(
                             onPressed: conversationName.isEmpty 
                               ? null 
@@ -457,26 +550,7 @@ class _SMSConversationViewState extends State<SMSConversationView> {
               }
             },
             value: "",
-            options: _conversation.contacts.length > 0
-                ? _conversation.contacts.length > 1 
-                  ? [
-                      ["Shared Media", "sharedmedia"],
-                      ["Delete Conversation", "deleteconversation"],
-                      ["Rename Conversation", "rename"],
-                      ...contactsToAdd
-                    ]
-                  : [
-                      ["Open Contact Profile", "contactprofile"],
-                      ["Shared Media", "sharedmedia"],
-                      ["Delete Conversation", "deleteconversation"],
-                      ["Mark Unread", "markunread"],
-                      ...contactsToAdd
-                    ]
-                : [
-                    ["Shared Media", "sharedmedia"],
-                    ["Delete Conversation", "deleteconversation"],
-                    ["Mark Unread", "markunread"],
-                  ],
+            options: bottomsheetOptions(unknownContact: contactsToAdd),
             label: convoLabel(),
             button: Icon(Icons.more_vert, size: 32,color: smoke,))
       ]),
@@ -488,14 +562,68 @@ class _SMSConversationViewState extends State<SMSConversationView> {
     ]);
   }
 
-  String convoLabel (){
-    return _conversation.groupName != null && _conversation.groupName.isNotEmpty
-      ? _conversation.groupName
-      : _conversation.filters != null 
-        ? "Broadcast - Query"
-        : _conversation.isBroadcast 
-          ? "Broadcast - Batch"
-          : "Group Conversation";
+  void _assignCoworker(Coworker selectedCoworker) {
+    setState(() {
+      _conversation.assigneeUid = selectedCoworker.uid;
+    });
+    _fusionConnection.conversations.editConvoAssignment(
+      coworkerUid: selectedCoworker.uid, convo: _conversation
+    );
+  }
+
+  List<List<String>> bottomsheetOptions ({@required List<List<String>> unknownContact}) {
+    List<List<String>> options = [
+      ["Shared Media", "sharedmedia"],
+      ["Delete Conversation", "deleteconversation"],
+    ];
+
+    if (_conversation.isGroup) {
+      options.add(["Rename Conversation", "rename"]);
+    }
+    if (_conversation.isGroup && !_conversation.isBroadcast) {
+      options.add(["Open Members List", "convoMembers"]);
+      options.add(["Mark Unread", "markunread"]);
+      if(_selectedGroupId != DepartmentIds.FusionChats &&
+        _selectedGroupId != DepartmentIds.Personal){
+          options.add(["Assign Conversation", "assignConvo"]);
+      }
+      if (unknownContact.isNotEmpty) {
+        options = [...options, ...unknownContact];
+      }
+    }
+    if (!_conversation.isGroup) {
+      options.add(["Open Contact Profile", "contactprofile"]);
+      if(_selectedGroupId != DepartmentIds.FusionChats &&
+        _selectedGroupId != DepartmentIds.Personal){
+          options.add(["Assign Conversation", "assignConvo"]);
+      }
+      if (unknownContact.isNotEmpty) {
+        options = [...options, ...unknownContact];
+      }
+    }
+    return options;
+  }
+
+  String convoLabel () {
+    String label = _conversation.number.formatPhone();
+    if (_conversation.groupName != null && _conversation.groupName.isNotEmpty) {
+      label = _conversation.groupName;
+    } 
+    else if (_conversation.filters != null) {
+      label = "Broadcast - Query";
+    }
+    else if (_conversation.isBroadcast) {
+      label = "Broadcast - Batch";
+    }
+    else if (_conversation.isGroup) {
+      label = "Group Conversation";
+    }
+    else if (!_conversation.isGroup && 
+      _conversation.contacts.isNotEmpty && 
+      _conversation.contacts[0].id.isNotEmpty) {
+        label = "${_conversation.contacts[0].firstName} ${_conversation.contacts[0].lastName}";
+    }
+    return label;
   }
 
   _departmentName() {
@@ -745,6 +873,9 @@ class _SMSConversationViewState extends State<SMSConversationView> {
 
   _sendMessageInput() {
     DateFormat dateFormatter = DateFormat('MMM d,');
+    Coworker assignedTo = _conversation.assigneeUid != null 
+      ? _fusionConnection.coworkers.getCowworker(_conversation.assigneeUid.toLowerCase())
+      : null;
     return Container(
         decoration: BoxDecoration(color: particle),
         padding: EdgeInsets.only(
@@ -757,6 +888,23 @@ class _SMSConversationViewState extends State<SMSConversationView> {
             right: 8),
         child: Column(
           children: [
+            if(assignedTo != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  children: [
+                    Text(
+                      "Assigned to: ${assignedTo.firstName} ${assignedTo.lastName}",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: assignedTo.uid.toLowerCase() != _fusionConnection.getUid().toString().toLowerCase() 
+                          ? crimsonDark
+                          : coal
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             if(secheduleIsSet != null)
             Container(
               decoration: BoxDecoration(
