@@ -466,8 +466,9 @@ class _SMSConversationViewState extends State<SMSConversationView> {
                                   ],
                                 ),
                                 Spacer(),
-                                if(coworkers[index].uid.toLowerCase() == _conversation.assigneeUid.toLowerCase())
-                                  Icon(Icons.check, color: Colors.white,)
+                                if(_conversation.assigneeUid != null && 
+                                  coworkers[index].uid.toLowerCase() == _conversation.assigneeUid.toLowerCase())
+                                    Icon(Icons.check, color: Colors.white,)
                               ],
                             ),
                           ),
