@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'package:fusion_mobile_revamped/src/models/sms_departments.dart';
 import 'package:fusion_mobile_revamped/src/models/user_settings.dart';
 import 'package:fusion_mobile_revamped/src/styles.dart';
+import 'package:fusion_mobile_revamped/src/viewModels/changeNotifier.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:overlay_support/overlay_support.dart';
 import 'package:path/path.dart';
@@ -223,6 +224,7 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
 
   SMSMessagesStore(FusionConnection _fusionConnection)
       : super(_fusionConnection);
+  final notification = VMChangeNotifier(null);
 
   @override
   removeRecord(id){
@@ -252,10 +254,11 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
           convos.where((element) =>  element.conversationId == lastMessage.conversationId).toList();
         SMSConversation convoToUpdate = convoToUpdateList.isEmpty ? null : convoToUpdateList.first;
         if(convoToUpdate != null){
-          convoToUpdate.message.message = message.message;
+          convoToUpdate.message = message;
           convoToUpdate.unread = convoToUpdate.unread + 1;
-          convoToUpdate.lastContactTime = DateTime.parse(message.time.date).toIso8601String();
+          convoToUpdate.lastContactTime = DateTime.parse(message.time.date).toLocal().toIso8601String();
           fusionConnection.conversations.storeRecord(convoToUpdate);
+          notification.update(convoToUpdate);
         } else {
           print("MDBM add new convo ");
         }
@@ -266,6 +269,8 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
       });
     }
   }
+
+  void viewUpdated () => notification.reset();
 
   subscribe(SMSConversation conversation, Function(List<SMSMessage>) callback) {
     String name = randomString(20);
