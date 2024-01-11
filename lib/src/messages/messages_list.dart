@@ -527,6 +527,14 @@ class _SMSConversationSummaryViewState
     );
   }
 
+  String makeConvoGroupName (){
+    return _convo.filters != null 
+      ? "Broadcast - Query"
+      : _convo.isBroadcast 
+        ? "Broadcast - Batch"
+        : "Group Conversation";
+  }
+
   @override
   Widget build(BuildContext context) {
     String convoLabel = '';
@@ -535,7 +543,7 @@ class _SMSConversationSummaryViewState
     Coworker _coworker;
 
     if(_convo.isGroup){
-      convoLabel = _convo.groupName ?? 'group conversation'.toTitleCase();
+      convoLabel = _convo.groupName ?? makeConvoGroupName();
     } else {
       if(_convo.number.contains("@")){
         _fusionConnection.coworkers.getRecord(_convo.number, (p0) => _coworker = p0);
@@ -605,7 +613,8 @@ class _SMSConversationSummaryViewState
                   : ContactCircle.forSMS(
                       _convo.contacts, 
                       _convo.crmContacts,
-                      _convo.isGroup
+                      _convo.isGroup,
+                      _convo.isBroadcast
                     ),
                 Expanded(
                     child: Container(

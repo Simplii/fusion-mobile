@@ -30,6 +30,8 @@ class SMSConversation extends FusionModel {
   int unread;
   int conversationId;
   String selectedDepartmentId;
+  bool isBroadcast = false;
+  Map<String,dynamic> filters;
 
   String contactName({Coworker coworker}) {
     String name = "Unknown";
@@ -87,6 +89,8 @@ class SMSConversation extends FusionModel {
     this.crmContacts = c.crmContacts;
     this.contacts = c.contacts;
     this.hash = c.hash;
+    this.isBroadcast = c.isBroadcast;
+    this.filters = c.filters;
   }
 
   SMSConversation(Map<String, dynamic> map) {
@@ -105,6 +109,8 @@ class SMSConversation extends FusionModel {
     this.crmContacts = map['crm_contacts'] ?? [];
     this.contacts = map['contacts'];
     this.hash = map['hash'];
+    this.isBroadcast = map['isBroadcast'] ?? false;
+    this.filters = map['filters'];
   }
 
   serialize() {
@@ -119,6 +125,8 @@ class SMSConversation extends FusionModel {
       'members': members,
       'message': message?.serialize(),
       'unread': unread,
+      'isBroadcast' : this.isBroadcast,
+      'filters': this.filters,
       'crmContacts': crmContacts.map((CrmContact c) {
             return c.serialize();
           })
@@ -161,6 +169,8 @@ class SMSConversation extends FusionModel {
         .toList()
         .cast<Contact>();
     this.hash = data['hash'];
+    this.isBroadcast = data['isBroadcast'] ?? false;
+    this.filters = data['filters'];
   }
 
   String searchString() {
@@ -207,7 +217,9 @@ class SMSConversationsStore extends FusionStore<SMSConversation> {
       'myNumber': record.myNumber,
       'unread': record.unread,
       'raw': record.serialize(),
-      'conversationId': record.conversationId
+      'conversationId': record.conversationId,
+      'isBroadcast' : record.isBroadcast.toString(),
+      'filters' : record.filters,
     }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
@@ -370,5 +382,19 @@ class SMSConversationsStore extends FusionStore<SMSConversation> {
       {},
       callback: closeConvo()
     );
+  }
+  Future<bool> renameConvo (int convoId, String newName) async {
+    bool success = false;
+    await fusionConnection.apiV2Call(
+      "put", 
+      "/messaging/group/-2/conversations/${convoId}/rename", 
+      {"name": newName},
+      callback: (Map<String, dynamic> data){
+        if (data.containsKey('groupName') && data['groupName'] == newName) {
+          success = false;
+        }
+      }
+    );
+    return success;
   }
 }
