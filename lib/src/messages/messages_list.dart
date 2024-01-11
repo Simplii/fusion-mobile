@@ -230,7 +230,7 @@ class _MessagesListState extends State<MessagesList> {
           for (SMSConversation s in convos) allconvos[s.getId()] = s;
           _convos = allconvos.values.toList().cast<SMSConversation>();
         }
-
+    print("MDBM resort");
         _convos.sort((SMSConversation a, SMSConversation b) {
           return DateTime.parse(a.lastContactTime)
                   .isAfter(DateTime.parse(b.lastContactTime))
@@ -307,96 +307,108 @@ class _MessagesListState extends State<MessagesList> {
     if (lookupState == 0) {
       _lookupMessages();
     }
-    return Expanded(
-        child: Container(
-            decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.all(Radius.circular(16))),
-            padding: EdgeInsets.all(0),
-            //EdgeInsets.only(top: 16, left: 16, right: 16, bottom: 0),
-            child: Stack(children: [
-              Column(children: [
-                Expanded(
-                    child: this._isSpinning()
-                        ? this._spinner()
-                        : ListView.builder(
-                            itemCount: _page == -1
-                                ? _convos.length + 2
-                                : _convos.length + 2,
-                            itemBuilder: (BuildContext context, int index) {
-                              if (index == 0) {
-                                return Container(height: 60);
-                              } else if (index - 1 > _convos.length &&
-                                  lookupState != 1) {
-                                _loadMore();
-                                return Container(height: 30);
-                              } else if (_convos.length > index - 1) {
-                                return SMSConversationSummaryView(
-                                    _fusionConnection,
-                                    _softphone,
-                                    _convos[index - 1],
-                                    _getDepartmentName(_convos[index - 1]),
-                                    _selectedGroupId,
-                                    deleteConvo,
-                                    refreshView,
-                                    _lookupMessages);
-                              } else {
-                                return Container(
-                                  child: Text(
-                                    _convos.isEmpty ?'No conversations' : '',
-                                    textAlign: TextAlign.center,),
-                                );
-                              }
-                            }))
-              ]),
-              Container(
-                  height: 80,
-                  padding:
-                      EdgeInsets.only(top: 16, left: 16, right: 16, bottom: 32),
-                  decoration: BoxDecoration(
-                      boxShadow: [],
-                      borderRadius: BorderRadius.all(Radius.circular(16)),
-                      gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          stops: [0.5, 1.0],
-                          colors: [Colors.white, translucentWhite(0.0)])),
-                  margin: EdgeInsets.only(bottom: 24),
-                  child: Row(children: [
-                    Container(
-                        constraints: BoxConstraints(
+    print("MDBM run");
+    return ValueListenableBuilder<SMSConversation>(
+      valueListenable: _fusionConnection.messages.notification,
+      builder: (context, updatedConvo, child) {
+        print("MDBM $updatedConvo");
+        if(updatedConvo != null){
+          _convos.removeWhere((element) => element.conversationId == updatedConvo.conversationId);
+          _convos.insert(0,updatedConvo);
+          _fusionConnection.messages.viewUpdated();
+        }
+        return Expanded(
+            child: Container(
+                decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.all(Radius.circular(16))),
+                padding: EdgeInsets.all(0),
+                //EdgeInsets.only(top: 16, left: 16, right: 16, bottom: 0),
+                child: Stack(children: [
+                  Column(children: [
+                    Expanded(
+                        child: this._isSpinning()
+                            ? this._spinner()
+                            : ListView.builder(
+                                itemCount: _page == -1
+                                    ? _convos.length + 2
+                                    : _convos.length + 2,
+                                itemBuilder: (BuildContext context, int index) {
+                                  if (index == 0) {
+                                    return Container(height: 60);
+                                  } else if (index - 1 > _convos.length &&
+                                      lookupState != 1) {
+                                    _loadMore();
+                                    return Container(height: 30);
+                                  } else if (_convos.length > index - 1) {
+                                    return SMSConversationSummaryView(
+                                        _fusionConnection,
+                                        _softphone,
+                                        _convos[index - 1],
+                                        _getDepartmentName(_convos[index - 1]),
+                                        _selectedGroupId,
+                                        deleteConvo,
+                                        refreshView,
+                                        _lookupMessages);
+                                  } else {
+                                    return Container(
+                                      child: Text(
+                                        _convos.isEmpty ?'No conversations' : '',
+                                        textAlign: TextAlign.center,),
+                                    );
+                                  }
+                                }))
+                  ]),
+                  Container(
+                      height: 80,
+                      padding:
+                          EdgeInsets.only(top: 16, left: 16, right: 16, bottom: 32),
+                      decoration: BoxDecoration(
+                          boxShadow: [],
+                          borderRadius: BorderRadius.all(Radius.circular(16)),
+                          gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              stops: [0.5, 1.0],
+                              colors: [Colors.white, translucentWhite(0.0)])),
+                      margin: EdgeInsets.only(bottom: 24),
+                      child: Row(children: [
+                        Container(
+                            constraints: BoxConstraints(
 
-                            maxWidth: MediaQuery.of(context).size.width - 70),
-                        child: Align(
-                            alignment: Alignment.topLeft,
-                            child: Text(
-                              _selectedDepartmentName().toString(),
-                              style: headerTextStyle,
-                              overflow: TextOverflow.ellipsis,
-                            ))),
-                    FusionDropdown(
-                        selectedNumber: "",
-                        onChange: _changeGroup,
-                        value: _selectedGroupId,
-                        options: _groupOptions(),
-                        label: "Select a Department",
-                        button: Container(
-                          decoration: BoxDecoration(
-                              color: translucentSmoke,
-                              borderRadius:
-                                  BorderRadius.all(Radius.circular(16))),
-                          padding: EdgeInsets.only(
-                              top: 10, bottom: 8, right: 9, left: 9),
-                          width: 32,
-                          height: 32,
-                          child: Image.asset(
-                            "assets/icons/down_chevron.png",
-                            width: 12,
-                            height: 6,
-                          ),
-                        ))
-                  ])),
-            ])));
+                                maxWidth: MediaQuery.of(context).size.width - 70),
+                            child: Align(
+                                alignment: Alignment.topLeft,
+                                child: Text(
+                                  _selectedDepartmentName().toString(),
+                                  style: headerTextStyle,
+                                  overflow: TextOverflow.ellipsis,
+                                ))),
+                        FusionDropdown(
+                            selectedNumber: "",
+                            onChange: _changeGroup,
+                            value: _selectedGroupId,
+                            options: _groupOptions(),
+                            label: "Select a Department",
+                            button: Container(
+                              decoration: BoxDecoration(
+                                  color: translucentSmoke,
+                                  borderRadius:
+                                      BorderRadius.all(Radius.circular(16))),
+                              padding: EdgeInsets.only(
+                                  top: 10, bottom: 8, right: 9, left: 9),
+                              width: 32,
+                              height: 32,
+                              child: Image.asset(
+                                "assets/icons/down_chevron.png",
+                                width: 12,
+                                height: 6,
+                              ),
+                            ))
+                      ])),
+                ])));
+      }
+    );
   }
 }
 

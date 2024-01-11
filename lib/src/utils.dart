@@ -198,39 +198,54 @@ String getDateTime (DateTime dateTime) {
     int differenceInHours = localDateTime.difference(now).inHours.abs();
     int differenceInMins = localDateTime.difference(now).inMinutes.abs();
 
+    // if (differenceInHours > 0) {
+    //   return '$differenceInHours ${differenceInHours > 1 ? 'hours' : 'hour'} ';
+    // } else if (differenceInMins > 0) { 
+    //   return '$differenceInMins ${differenceInMins > 1 ? 'mins' : 'min'} ';
+    // } else {
+    //   return "just now";
+    // }
     if (differenceInHours > 0) {
-      return '$differenceInHours hours ago';
-    } else { 
-      return '$differenceInMins mins ago';
+      // return '$differenceInHours ${differenceInHours > 1 ? 'hours' : 'hour'} ';
+      return DateFormat('h:mm a',).format(localDateTime);
+    } else if (differenceInMins > 0) { 
+      return '$differenceInMins min ';
+    } else {
+      return "just now";
     }
   }
 
-  String timeString = DateFormat('jm').format(dateTime);
+  // String timeString = DateFormat('jm').format(dateTime);
 
-  if (localDateTime.day == now.day &&
-      localDateTime.month == now.month &&
-      localDateTime.year == now.year) {
-    return timeString;
-  }
+  // if (localDateTime.day == now.day &&
+  //     localDateTime.month == now.month &&
+  //     localDateTime.year == now.year) {
+  //   return timeString;
+  // }
 
-  DateTime yesterday = now.subtract(const Duration(days: 1));
+  // DateTime yesterday = now.subtract(const Duration(days: 1));
 
-  if (localDateTime.day == yesterday.day &&
-      localDateTime.month == now.month &&
-      localDateTime.year == now.year) {
-    return 'Yesterday';
-  }
+  // if (localDateTime.day == yesterday.day &&
+  //     localDateTime.month == now.month &&
+  //     localDateTime.year == now.year) {
+  //   return 'Yesterday';
+  // }
 
   if (now.difference(localDateTime).inDays < 4) {
     String weekday = DateFormat(
       'EEE',
     ).format(localDateTime);
 
-    return '$weekday, $timeString';
+    // return '$weekday, $timeString';
+    return '$weekday';
   }
 
+  if (now.difference(localDateTime).inDays > 365) {
+    return DateFormat('MM/dd/yyyy').format(localDateTime);
+  }
   String month = DateFormat('MMM d').format(localDateTime);
-  return "$month, $timeString";
+  // return "$month, $timeString";
+  return "$month";
 }
 
 Uint8List getImageBinary(dynamicList) {
