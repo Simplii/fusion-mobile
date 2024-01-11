@@ -224,7 +224,8 @@ class FusionConnection {
           unread int,
           raw BLOB,
           isBroadcast TEXT,
-          filters BLOB
+          filters BLOB,
+          assigneeUid TEXT
           );'''));
 
         print(db.execute('''
@@ -328,7 +329,14 @@ class FusionConnection {
             db.rawQuery('ALTER TABLE sms_message ADD COLUMN broadcastConvoId')
               .then((value) => null)
               .catchError((onError)=> print("MyDebugMessage db couldn't create broadcastConvoId col"))
-          }); 
+          });
+        db.rawQuery('SELECT assigneeUid FROM sms_conversation')
+          .then((value) => null)
+          .catchError((error)=>{
+            db.rawQuery('ALTER TABLE sms_conversation ADD COLUMN assigneeUid')
+              .then((value) => null)
+              .catchError((onError)=> print("MyDebugMessage db couldn't create assigneeUid col"))
+          });  
         this.db = db;
       }).catchError((error) {
       });

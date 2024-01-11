@@ -1,4 +1,5 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/material.dart';
 import 'package:fusion_mobile_revamped/src/backend/fusion_connection.dart';
 import 'package:fusion_mobile_revamped/src/models/coworkers.dart';
 import 'package:fusion_mobile_revamped/src/models/phone_contact.dart';
@@ -32,6 +33,7 @@ class SMSConversation extends FusionModel {
   String selectedDepartmentId;
   bool isBroadcast = false;
   Map<String,dynamic> filters;
+  String assigneeUid;
 
   String contactName({Coworker coworker}) {
     String name = "Unknown";
@@ -91,6 +93,7 @@ class SMSConversation extends FusionModel {
     this.hash = c.hash;
     this.isBroadcast = c.isBroadcast;
     this.filters = c.filters;
+    this.assigneeUid = c.assigneeUid;
   }
 
   SMSConversation(Map<String, dynamic> map) {
@@ -111,6 +114,7 @@ class SMSConversation extends FusionModel {
     this.hash = map['hash'];
     this.isBroadcast = map['isBroadcast'] ?? false;
     this.filters = map['filters'];
+    this.assigneeUid = map['assigneeUid'];
   }
 
   serialize() {
@@ -127,6 +131,7 @@ class SMSConversation extends FusionModel {
       'unread': unread,
       'isBroadcast' : this.isBroadcast,
       'filters': this.filters,
+      'assigneeUid': this.assigneeUid,
       'crmContacts': crmContacts.map((CrmContact c) {
             return c.serialize();
           })
@@ -171,6 +176,7 @@ class SMSConversation extends FusionModel {
     this.hash = data['hash'];
     this.isBroadcast = data['isBroadcast'] ?? false;
     this.filters = data['filters'];
+    this.assigneeUid = data['assigneeUid'];
   }
 
   String searchString() {
@@ -220,6 +226,7 @@ class SMSConversationsStore extends FusionStore<SMSConversation> {
       'conversationId': record.conversationId,
       'isBroadcast' : record.isBroadcast.toString(),
       'filters' : record.filters,
+      'assigneeUid': record.assigneeUid
     }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
@@ -391,10 +398,31 @@ class SMSConversationsStore extends FusionStore<SMSConversation> {
       {"name": newName},
       callback: (Map<String, dynamic> data){
         if (data.containsKey('groupName') && data['groupName'] == newName) {
-          success = false;
+          success = true;
         }
       }
     );
     return success;
+  }
+
+  void editConvoAssignment ({
+    @required String coworkerUid,
+    @required SMSConversation convo
+  }) {
+    fusionConnection.apiV2Call(
+      "post", 
+      "/messaging/editAssignment", 
+      {
+        "assignee": coworkerUid,
+        "from": convo.myNumber,
+        "to": convo.number,
+        "isGroup": convo.isGroup
+      },
+      callback: (Map<String, dynamic> data) {
+        if(data.containsKey('assignee') && data['assignee'] != ""){
+          convo.assigneeUid = data['assignee'];
+        }
+      }
+    );
   }
 }

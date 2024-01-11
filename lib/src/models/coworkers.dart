@@ -104,6 +104,19 @@ class Coworker extends FusionModel {
     return c;
   }
 
+  Coworker.empty() {
+    this.email = "";
+    this.extension = "";
+    this.uid = "";
+    this.firstName = "";
+    this.lastName = "";
+    this.statusMessage = "";
+    this.group = "";
+    this.presence = "";
+    this.url = "";
+    this.emails = [];
+  }
+
   @override
   String getId() => this.uid.toLowerCase();
 }
@@ -257,5 +270,9 @@ class CoworkerStore extends FusionStore<Coworker> {
         }
       );
     }
+  }
+  
+  Coworker getCowworker(String id) {
+    return lookupRecord(id.toLowerCase());
   }
 }
