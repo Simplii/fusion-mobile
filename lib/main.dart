@@ -119,8 +119,8 @@ Future<dynamic> backgroundMessageHandler(RemoteMessage message) async {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  FirebaseMessaging.onBackgroundMessage(backgroundMessageHandler); // }
   await Firebase.initializeApp();
+  FirebaseMessaging.onBackgroundMessage(backgroundMessageHandler); // }
 
   registerNotifications();
 
@@ -486,20 +486,20 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> _setupFirebase() async {
     // Get any messages which caused the application to open from
     // a terminated state.
-    RemoteMessage? initialMessage =
-        await FirebaseMessaging.instance.getInitialMessage();
+    FirebaseMessaging.instance
+        .getInitialMessage()
+        .then((RemoteMessage? message) {
+      if (message != null) {
+        checkForIMNotification(message.data);
+      }
+    });
 
-    // If the message also contains a data property with a "type" of "chat",
-    // navigate to a chat screen
-    // if (initialMessage != null) {
-    //   checkForIMNotification(initialMessage.data);
-    // }
-
-    // Also handle any interaction when the app is in the background via a
-    // Stream listener
+    // handle any interaction when the app is in the background as stream
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       checkForIMNotification(message.data);
     });
+
+    // handle any interaction when the app is in the forground as stream
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       RemoteNotification? notification = message.notification;
       AndroidNotification? android = message.notification?.android;
