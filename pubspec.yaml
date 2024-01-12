@@ -1,6 +1,6 @@
 name: fusion_mobile_revamped
 description: Fusion Mobile
-version: 1.2.21+243
+version: 1.2.21+244
 # The following line prevents the package from being accidentally published to
 # pub.dev using `pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -18,57 +18,57 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # followed by an
 
 environment:
-  sdk: ">=2.11.0 <3.0.0"
+  sdk: '>=2.12.0 <3.0.0'
 
 dependencies:
   flutter:
     sdk: flutter
-  flutter_apns:
-  encrypt: ^5.0.1
+  # flutter_apns: ^1.6.0
+  encrypt: ^5.0.3
   crypto: ^3.0.2
-  firebase_core: ^1.24.0
-  firebase_messaging: ^11.2.6
-  firebase_core_platform_interface: 4.5.1
-  flutter_dtmf:
-  android_intent_plus:
-  websocket_manager:
-  flutter_gravatar: any
-  ringtone_player:
-  awesome_notifications:
+  firebase_core: ^2.17.0
+  firebase_messaging: ^14.6.9
+  firebase_core_platform_interface: ^4.8.0
+  flutter_dtmf: ^2.0.2
+  # android_intent_plus: ^5.0.0
+  # websocket_manager:
+  flutter_gravatar: ^2.0.2
+  ringtone_player: ^0.1.1
+  awesome_notifications: ^0.7.4+1
   sip_ua:
     path: "./dart-sip-ua"
-  http: ^0.13.3
-  keyboard_attachable:
-  web_socket_channel: ^2.1.0
-  flutter_local_notifications: ^9.9.1
-  cupertino_icons: ^1.0.2
-  url_launcher:
-  modal_bottom_sheet: ^2.0.0
-  video_player:
-  sqflite:
-  path:
-  flutter_spinkit: ^5.1.0
-  image_picker:
-  photo_view:
-  permission_handler: ^10.0.0
-  mime:
-  just_audio:
-  dotted_border:
-  audioplayers: ^0.20.0
-  cookie_jar:
-  shared_preferences:
-  all_sensors:
+  http: ^1.1.0
+  keyboard_attachable: ^2.1.0
+  web_socket_channel: ^2.4.0
+  flutter_local_notifications: ^16.1.0
+  cupertino_icons: ^1.0.6
+  url_launcher: ^6.1.11
+  modal_bottom_sheet: ^2.1.2
+  video_player: ^2.7.2
+  sqflite: ^2.2.8+4
+  path: ^1.8.2
+  flutter_spinkit: ^5.2.0
+  image_picker: ^1.0.4
+  photo_view: ^0.14.0
+  permission_handler: ^11.0.1
+  mime: ^1.0.4
+  just_audio: ^0.9.35
+  dotted_border: ^2.1.0
+  audioplayers: ^5.2.0
+  cookie_jar: ^4.0.8
+  shared_preferences: ^2.2.1
+  all_sensors: ^0.4.2
   callkeep:
     path: "./callkeap"
-  flutter_incall_manager:
-    path: "./flutter-incall-manager"
+  # flutter_incall_manager:
+  #   path: "./flutter-incall-manager"
  #   git:
     #  url: https://github.com/davidkarn/callkeep.git
-  flutter_background:
-  overlay_support:
-  path_provider:
-  flutter_audio_manager:
-  connectivity_plus: ^3.0.4
+  flutter_background: ^1.2.0
+  overlay_support: ^2.1.0
+  path_provider: ^2.1.1
+  # flutter_audio_manager:
+  connectivity_plus: ^5.0.0
   internet_connection_checker: ^1.0.0+1
   flutter_exif_rotation: ^0.5.1
 dev_dependencies:

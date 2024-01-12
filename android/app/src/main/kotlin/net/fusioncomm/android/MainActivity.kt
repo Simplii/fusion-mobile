@@ -63,6 +63,7 @@ class MainActivity : FlutterFragmentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState);
+        telephonyManager = getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
         setupCore();
 //        setupBroadcastReciver()
         val incomingCallId : String? = getIntent().getStringExtra("payload")
@@ -85,7 +86,7 @@ class MainActivity : FlutterFragmentActivity() {
     override fun onResume() {
         super.onResume()
         val incomingCallId: String? = intent.getStringExtra("payload")
-        if(incomingCallId != null){
+        if(incomingCallId != null && incomingCallId.isNotEmpty()){
             appOpenedFromBackground = true
             getIntent().removeExtra("payload");
         }
@@ -201,6 +202,8 @@ class MainActivity : FlutterFragmentActivity() {
                     )
                 }
                 Call.State.IncomingReceived -> {
+                    audioManager.mode = AudioManager.MODE_NORMAL;
+                    audioManager.isSpeakerphoneOn = true;
                     channel.invokeMethod(
                         "lnIncomingReceived",
                         mapOf(
@@ -213,6 +216,8 @@ class MainActivity : FlutterFragmentActivity() {
                     )
                 }
                 Call.State.PushIncomingReceived -> {
+                    audioManager.mode = AudioManager.MODE_NORMAL;
+                    audioManager.isSpeakerphoneOn = true;
                     channel.invokeMethod(
                         "lnPushIncomingReceived",
                         mapOf(Pair("uuid", uuid))
@@ -224,6 +229,7 @@ class MainActivity : FlutterFragmentActivity() {
                 }
                 Call.State.OutgoingProgress -> {
                     audioManager.mode = AudioManager.MODE_IN_COMMUNICATION
+                    audioManager.isSpeakerphoneOn = false;
                     uuidCalls[uuid] = call
                     channel.invokeMethod(
                         "lnOutgoingInit",
@@ -294,6 +300,8 @@ class MainActivity : FlutterFragmentActivity() {
                     )
                 }
                 Call.State.End -> {
+                    audioManager.mode = AudioManager.MODE_NORMAL;
+                    audioManager.isSpeakerphoneOn = false;
                     channel.invokeMethod(
                         "lnEnd",
                         mapOf(Pair("uuid", uuid))
@@ -347,6 +355,8 @@ class MainActivity : FlutterFragmentActivity() {
                         mapOf(Pair("uuid", uuid))
                     )
                 }
+
+                else -> {}
             }
         }
 
@@ -479,6 +489,7 @@ class MainActivity : FlutterFragmentActivity() {
                         packageManager.hasSystemFeature(FEATURE_TELEPHONY_SUBSCRIPTION)){
                     val subscriptionManager: SubscriptionManager =
                             getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE) as SubscriptionManager
+                    Log.d("MBDM", "${subscriptionManager.getPhoneNumber(DEFAULT_SUBSCRIPTION_ID)}")
                     myPhoneNumber = subscriptionManager.getPhoneNumber(DEFAULT_SUBSCRIPTION_ID)
                 } else {
                     myPhoneNumber = telephonyManager.line1Number ?: "";

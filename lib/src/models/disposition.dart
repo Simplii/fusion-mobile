@@ -3,15 +3,15 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 
 class Disposition {
-  String id;
-  int order;
-  String domain;
-  String label;
-  List triggers = [];
-  int groupId;
-  String customDispositionsCrmId;
-  String createdAt;
-  String updatedAt;
+  String? id;
+  int? order;
+  String? domain;
+  String? label;
+  List? triggers = [];
+  int? groupId;
+  String? customDispositionsCrmId;
+  String? createdAt;
+  String? updatedAt;
   Disposition({
     this.id,
     this.label,
@@ -52,14 +52,14 @@ class Disposition {
 }
 
 class DispositionCustomField {
-  int id;
-  String createdAt;
-  String updatedAt;
-  String name;
-  String label;
-  int groupId;
-  String type;
-  DispositionCustomFieldOption options;
+  int? id;
+  String? createdAt;
+  String? updatedAt;
+  String? name;
+  String? label;
+  int? groupId;
+  String? type;
+  DispositionCustomFieldOption? options;
   DispositionCustomField({
     this.id,
     this.createdAt,
@@ -85,10 +85,10 @@ class DispositionCustomField {
 }
 
 class DispositionCustomFieldOption {
-  List displayFor;
-  List requireFor;
+  List? displayFor;
+  List? requireFor;
   dynamic validationWebhook;
-  List<String> dropdownChoices;
+  List<String>? dropdownChoices;
   DispositionCustomFieldOption({
     this.displayFor,
     this.requireFor,
@@ -113,12 +113,12 @@ abstract class DispositionCustomFieldTypes {
 }
 
 class CallType {
-  int id;
-  String label;
-  int groupId;
-  String createdAt;
-  String updatedAt;
-  List crmAssociations = [];
+  int? id;
+  String? label;
+  int? groupId;
+  String? createdAt;
+  String? updatedAt;
+  List? crmAssociations = [];
   CallType({
     this.id,
     this.groupId,
@@ -148,17 +148,17 @@ class CallType {
 }
 
 class SetDispositionPayload {
-  String phoneNumber;
-  String dispositionId;
-  String notes;
-  CallType callType;
-  Map<String,dynamic> fieldValues;
+  String? phoneNumber;
+  String? dispositionId;
+  String? notes;
+  CallType? callType;
+  Map<String,dynamic>? fieldValues;
   SetDispositionPayload({
-    @required this.phoneNumber,
+    required this.phoneNumber,
     this.callType,
     this.dispositionId,
-    @required this.fieldValues,
-    @required this.notes
+    required this.fieldValues,
+    required this.notes
   });
   toJson(){
     Map<String,dynamic> data = {
@@ -166,14 +166,14 @@ class SetDispositionPayload {
       "fieldValues": fieldValues,
       "notes": notes
     };
-    if(callType != null) data["callType"] = callType.toJson();
+    if(callType != null) data["callType"] = callType!.toJson();
     if(dispositionId != null) data["dispositionId"] = dispositionId;
     return data;
   }
 }
 class DispositionGroup {
-  String id;
-  String name;
+  String? id;
+  String? name;
   List<Disposition> dispositions = [];
   DispositionGroup({
     this.id,

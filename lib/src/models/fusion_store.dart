@@ -5,8 +5,8 @@ import 'fusion_model.dart';
 
 class FusionStore<T extends FusionModel> {
   FusionConnection _fusionConnection;
-  MethodChannel methodChannel;
-  Map<String, T> _records = {};
+  MethodChannel? methodChannel;
+  Map<String?, T> _records = {};
   String _id_field = 'id';
 
   FusionStore(this._fusionConnection,{this.methodChannel});
@@ -20,7 +20,7 @@ class FusionStore<T extends FusionModel> {
     _records[record.getId()] = record;
   }
 
-  hasRecord(String id) {
+  hasRecord(String? id) {
     return _records.containsKey(id);
   }
 
@@ -32,13 +32,13 @@ class FusionStore<T extends FusionModel> {
     _records.clear();
   }
 
-  getRecord(String id, Function(T) callback) {
+  getRecord(String? id, Function(T?) callback) {
     if (_records.containsKey(id)) {
       callback(_records[id]);
     }
   }
 
-  lookupRecord(String id) {
+  lookupRecord(String? id) {
     return _records[id];
   }
 

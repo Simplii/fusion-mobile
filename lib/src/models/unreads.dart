@@ -6,11 +6,11 @@ import 'fusion_model.dart';
 import 'fusion_store.dart';
 
 class DepartmentUnreadRecord extends FusionModel {
-  int departmentId;
-  int unread;
-  String inq;
-  String to;
-  List<String> numbers;
+  int? departmentId;
+  int? unread;
+  String? inq;
+  String? to;
+  List<String>? numbers;
 
   DepartmentUnreadRecord(Map<String, dynamic> obj) {
     this.departmentId = obj['id'];
@@ -72,7 +72,7 @@ class UnreadsStore extends FusionStore<DepartmentUnreadRecord> {
     List<DepartmentUnreadRecord> records = this.getRecords();
     int count = 0;
     for (DepartmentUnreadRecord record in records) {
-      count += record.unread;
+      count += record.unread!;
     }
     return count > 0;
   }

@@ -3,13 +3,13 @@ import 'package:fusion_mobile_revamped/src/styles.dart';
 
 class CallActionButton extends StatefulWidget {
   CallActionButton(
-      {Key key, this.onPressed, this.title, this.icon, this.disabled})
+      {Key? key, this.onPressed, this.title, this.icon, this.disabled})
       : super(key: key);
 
-  final VoidCallback onPressed;
-  final String title;
-  final Widget icon;
-  final bool disabled;
+  final VoidCallback? onPressed;
+  final String? title;
+  final Widget? icon;
+  final bool? disabled;
 
   @override
   State<StatefulWidget> createState() => _CallActionButtonState();
@@ -22,7 +22,7 @@ class _CallActionButtonState extends State<CallActionButton> {
         child: GestureDetector(
       onTap: () {
         if (widget.disabled != true) {
-          widget.onPressed();
+          widget.onPressed!();
         }
       },
       child: Container(
@@ -36,7 +36,7 @@ class _CallActionButtonState extends State<CallActionButton> {
                 child: widget.icon),
             Container(
                 margin: EdgeInsets.only(top: 6, bottom: 10),
-                child: Text(widget.title.toUpperCase(),
+                child: Text(widget.title!.toUpperCase(),
                     style: TextStyle(
                         fontSize: 10,
                         height: 1.4,

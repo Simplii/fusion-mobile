@@ -4,26 +4,26 @@ import 'package:flutter/material.dart';
 import '../styles.dart';
 
 class PopupMenu extends StatefulWidget {
-  final String label;
-  final Widget topChild;
-  final Widget bottomChild;
-  Widget customLabel;
+  final String? label;
+  final Widget? topChild;
+  final Widget? bottomChild;
+  Widget? customLabel;
   double bottomChildSymmetricPadding;
   PopupMenu({this.label, this.topChild, this.bottomChild, this.customLabel = null, 
-    this.bottomChildSymmetricPadding = 47.5 , Key key}): super(key: key);
+    this.bottomChildSymmetricPadding = 47.5 , Key? key}): super(key: key);
 
   @override
   State<StatefulWidget> createState() => _PopupMenuState();
 }
 
 class _PopupMenuState extends State<PopupMenu> {
-  String get _label => widget.label;
+  String? get _label => widget.label;
 
-  Widget get _topChild => widget.topChild;
+  Widget? get _topChild => widget.topChild;
 
-  Widget get _bottomChild => widget.bottomChild;
+  Widget? get _bottomChild => widget.bottomChild;
 
-  Widget get _customLabel => widget.customLabel;
+  Widget? get _customLabel => widget.customLabel;
 
   double get _bottomChildSymmetricPadding => widget.bottomChildSymmetricPadding;
 
@@ -34,7 +34,7 @@ class _PopupMenuState extends State<PopupMenu> {
     ];
 
     if (_topChild != null) {
-      children.add(_topChild);
+      children.add(_topChild!);
     }
 
     children.add(Container(
@@ -55,7 +55,7 @@ class _PopupMenuState extends State<PopupMenu> {
               decoration: BoxDecoration(
                   border: Border(
                       bottom: BorderSide(color: lightDivider, width: 1.0))),
-              child: _customLabel ?? Text(this._label.toUpperCase(),
+              child: _customLabel ?? Text(this._label!.toUpperCase(),
                   style: TextStyle(
                       color: smoke,
                       fontSize: 12,

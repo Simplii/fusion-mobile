@@ -19,12 +19,12 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_exif_rotation/flutter_exif_rotation.dart';
 
 class ContactCrmReference {
-  String crmName;
-  String module;
-  String contactName;
-  String url;
-  String crmContactId;
-  String icon;
+  String? crmName;
+  String? module;
+  String? contactName;
+  String? url;
+  String? crmContactId;
+  String? icon;
 
   ContactCrmReference(
       {this.crmName,
@@ -36,43 +36,43 @@ class ContactCrmReference {
 }
 
 class Contact extends FusionModel {
-  List<dynamic> addresses;
-  String company;
-  List<dynamic> contacts;
-  CarbonDate createdAt;
-  bool deleted;
-  String domain;
-  List<dynamic> emails;
-  String firstContactDate;
-  Coworker coworker;
-  String firstName = "";
-  List<String> groups;
-  String id;
-  String jobTitle;
-  String lastName = "";
-  String leadCreationDate;
-  String name;
-  String owner;
-  String parentId;
-  List<dynamic> phoneNumbers;
-  List<dynamic> pictures;
-  List<dynamic> socials;
+  List<dynamic>? addresses;
+  String? company;
+  List<dynamic>? contacts;
+  CarbonDate? createdAt;
+  bool? deleted;
+  String? domain;
+  List<dynamic> emails = [];
+  String? firstContactDate;
+  Coworker? coworker;
+  String? firstName = "";
+  List<String>? groups;
+  String id = "";
+  String? jobTitle;
+  String? lastName = "";
+  String? leadCreationDate;
+  String? name;
+  String? owner;
+  String? parentId;
+  List<dynamic> phoneNumbers = [];
+  List<dynamic> pictures = [];
+  List<dynamic> socials = [];
   List<dynamic> externalReferences = [];
-  Map<String, dynamic> lastCommunication;
-  String type;
-  String uid;
-  CarbonDate updatedAt;
-  String crmUrl;
-  String crmName;
-  String crmId;
-  int unread = 0;
-  List<dynamic> fieldValues = [];
-  Uint8List profileImage;
+  Map<String, dynamic>? lastCommunication;
+  String? type;
+  String? uid;
+  CarbonDate? updatedAt;
+  String? crmUrl;
+  String? crmName;
+  String? crmId;
+  int? unread = 0;
+  List<dynamic>? fieldValues = [];
+  Uint8List? profileImage;
   @override
-  String getId() => this.id;
+  String? getId() => this.id;
 
-  List<String> numbersAsStrings() {
-    List<String> numbers = [];
+  List<String?> numbersAsStrings() {
+    List<String?> numbers = [];
     for (Map<String, dynamic> number in phoneNumbers) {
       if (number['number'] != null && number['number'].trim().length > 2) {
         numbers.add(number['number']);
@@ -81,8 +81,8 @@ class Contact extends FusionModel {
     return numbers;
   }
 
-  String firstNumber() {
-    List<String> numbers = numbersAsStrings();
+  String? firstNumber() {
+    List<String?> numbers = numbersAsStrings();
     if (numbers.length > 0)
       return numbers[0];
     else
@@ -90,7 +90,7 @@ class Contact extends FusionModel {
   }
 
   String fullName() {
-    String name = (firstName + " " + lastName).trim();
+    String name = (firstName! + " " + lastName!).trim();
     return name == "" ? "Unknown" : name;
   }
 
@@ -98,7 +98,7 @@ class Contact extends FusionModel {
     List<ContactCrmReference> matches = [];
 
     if (contacts != null) {
-      for (Map<String, dynamic> obj in contacts) {
+      for (Map<String, dynamic> obj in contacts!) {
         matches.add(ContactCrmReference(
             url: obj['url'],
             crmContactId: obj['network_id'].toString(),
@@ -112,11 +112,11 @@ class Contact extends FusionModel {
     return matches;
   }
 
-  String pictureUrl() {
-    if (pictures != null && pictures.length > 0) {
+  String? pictureUrl() {
+    if (pictures.isNotEmpty) {
       return pictures.last['url'];
     }
-    if (emails != null) {
+    if (emails.isNotEmpty) {
       for (Map<String, dynamic> email in emails) {
         if (email['email'] != null && email['email'].trim() != '') {}
       }
@@ -125,7 +125,7 @@ class Contact extends FusionModel {
   }
 
   searchString() {
-    List<String> list = [company, firstName, lastName];
+    List<String?> list = [company, firstName, lastName];
     for (Map<String, dynamic> number in phoneNumbers) {
       list.add(number['number'].toString());
     }
@@ -136,18 +136,17 @@ class Contact extends FusionModel {
   }
 
   Contact(Map<String, dynamic> contactObject) {
-    Map<String, dynamic> createdAtDateObj;
-    if(contactObject['created_at'] != null)
-      createdAtDateObj =
-        checkDateObj(contactObject['created_at']);
-    Map<String, dynamic> updatedAtDateObj;
-    if(contactObject['updated_at'] != null)
-      updatedAtDateObj =
-        checkDateObj(contactObject['updated_at']);
+    Map<String, dynamic>? createdAtDateObj;
+    if (contactObject['created_at'] != null)
+      createdAtDateObj = checkDateObj(contactObject['created_at'])!;
+    Map<String, dynamic>? updatedAtDateObj;
+    if (contactObject['updated_at'] != null)
+      updatedAtDateObj = checkDateObj(contactObject['updated_at'])!;
     this.addresses = contactObject['addresses'];
     this.company = contactObject['company'];
     this.contacts = contactObject['contacts'];
-    this.createdAt = createdAtDateObj != null ?  CarbonDate(createdAtDateObj) : null;;
+    this.createdAt =
+        createdAtDateObj != null ? CarbonDate(createdAtDateObj) : null;
     this.deleted = contactObject['deleted'];
     this.domain = contactObject['domain'];
     this.emails = contactObject['emails'];
@@ -163,7 +162,7 @@ class Contact extends FusionModel {
     this.parentId = contactObject['parent_id'].toString();
     this.phoneNumbers = [];
     for (var number in contactObject['phone_numbers']) {
-          this.phoneNumbers.add({
+      this.phoneNumbers.add({
         "number": number['number'].toString(),
         "sms_capable": number['sms_capable'],
         "type": number['type']
@@ -175,7 +174,8 @@ class Contact extends FusionModel {
     if (contactObject['uid'].runtimeType == String) {
       this.uid = contactObject['uid'];
     }
-    this.updatedAt = updatedAtDateObj != null ? CarbonDate(updatedAtDateObj) : null;
+    this.updatedAt =
+        updatedAtDateObj != null ? CarbonDate(updatedAtDateObj) : null;
     this.crmUrl = contactObject['crm_url'];
     this.crmName = contactObject['crm_name'];
     this.crmId = contactObject['crm_id'].runtimeType == int
@@ -184,7 +184,7 @@ class Contact extends FusionModel {
     this.profileImage = contactObject["profileImage"] ?? null;
   }
 
-  Contact.fake(dynamic number){
+  Contact.fake(dynamic number) {
     String date = DateTime.now().toString();
     this.addresses = [];
     this.company = '';
@@ -199,11 +199,9 @@ class Contact extends FusionModel {
     this.lastName = '';
     this.name = number.toString().formatPhone();
     this.owner = '';
-    this.phoneNumbers = [{
-        "number": number,
-        "smsCapable": true,
-        "type": 'Mobile'
-      }];
+    this.phoneNumbers = [
+      {"number": number, "smsCapable": true, "type": 'Mobile'}
+    ];
     this.pictures = [];
     this.socials = [];
     this.type = '';
@@ -213,48 +211,50 @@ class Contact extends FusionModel {
   Contact.fromV2(Map<String, dynamic> contactObject) {
     addresses = [];
     var address;
-    if(contactObject['addresses']!= null){
-       for (address in contactObject['addresses']) {
-      address['zip-2'] = address['zipPart2'];
-      addresses.add([
-        address
-      ]);
-    }
+    if (contactObject['addresses'] != null) {
+      for (address in contactObject['addresses']) {
+        address['zip-2'] = address['zipPart2'];
+        addresses!.add([address]);
+      }
     }
     this.addresses = contactObject['addresses'];
     this.company = contactObject['company'];
-    this.externalReferences = contactObject['externalReferences'];
+    this.externalReferences = contactObject['externalReferences'] ?? [];
     this.createdAt = CarbonDate.fromDate(contactObject['createdAt']);
     this.deleted = false;
     this.emails = contactObject['emails'];
     this.firstName = contactObject['firstName'];
-    this.groups = contactObject['tags'] != null ? contactObject['tags'].cast<String>() : [];
+    this.groups = contactObject['tags'] != null
+        ? contactObject['tags'].cast<String>()
+        : [];
     this.id = contactObject['id'];
     this.jobTitle = contactObject['jobTitle'];
     this.lastName = contactObject['lastName'];
     this.name = "${contactObject['firstName']} ${contactObject['lastName']}";
     this.owner = contactObject['owner'];
     this.phoneNumbers = [];
-    if(contactObject['phoneNumbers'] != null){
+    if (contactObject['phoneNumbers'] != null) {
       for (var number in contactObject['phoneNumbers']) {
-      this.phoneNumbers.add({
-        "number": number['number'].toString(),
-        "smsCapable": number['smsCapable'],
-        "type": number['type']
-      });
-    }
+        this.phoneNumbers.add({
+          "number": number['number'].toString(),
+          "smsCapable": number['smsCapable'],
+          "type": number['type']
+        });
+      }
     }
     this.pictures = contactObject['pictures'];
     this.socials = contactObject['socials'];
     this.type = contactObject['type'];
     this.updatedAt = CarbonDate.fromDate(contactObject['updatedAt']);
 
-    if (this.externalReferences != null && this.externalReferences.length > 0) {
+    if (this.externalReferences.isNotEmpty) {
       this.crmUrl = externalReferences[0]['url'];
       this.crmName = externalReferences[0]['network'];
       this.crmId = externalReferences[0]['externalId'];
     }
-    this.fieldValues = contactObject['fieldValues'] != null ? contactObject['fieldValues'] : [];
+    this.fieldValues = contactObject['fieldValues'] != null
+        ? contactObject['fieldValues']
+        : [];
   }
 
   Map<String, dynamic> serverPayload() {
@@ -277,41 +277,23 @@ class Contact extends FusionModel {
       "uid": uid
     };
   }
-  
+
   Map<String, dynamic> serverPayloadV2() {
     return {
       "addresses": addresses,
       "company": company,
       "emails": emails,
       "externalReferences": [],
-      "fieldValues": fieldValues.isNotEmpty 
-      ? fieldValues
-      : [
-          {
-              "fieldName": "first_name",
-              "value": firstName
-          },
-          {
-              "fieldName": "last_name",
-              "value": lastName
-          },
-          {
-              "fieldName": "company",
-              "value": company
-          },
-          {
-              "fieldName": "job_title",
-              "value": jobTitle
-          },
-          {
-              "fieldName": "owner",
-              "value": owner
-          },
-          {
-              "fieldName": "name",
-              "value": "${firstName} ${lastName}"
-          }
-      ],
+      "fieldValues": fieldValues!.isNotEmpty
+          ? fieldValues
+          : [
+              {"fieldName": "first_name", "value": firstName},
+              {"fieldName": "last_name", "value": lastName},
+              {"fieldName": "company", "value": company},
+              {"fieldName": "job_title", "value": jobTitle},
+              {"fieldName": "owner", "value": owner},
+              {"fieldName": "name", "value": "${firstName} ${lastName}"}
+            ],
       "firstName": firstName,
       "jobTitle": jobTitle,
       "lastName": lastName,
@@ -364,16 +346,16 @@ class Contact extends FusionModel {
     this.addresses = obj['addresses'];
     this.company = obj['company'];
     this.contacts = obj['contacts'];
-    this.createdAt = obj['createdAt'] != null 
-      ? CarbonDate?.unserialize(obj['createdAt'])
-      : CarbonDate.fromDate(DateTime.now().toLocal().toString());
+    this.createdAt = obj['createdAt'] != null
+        ? CarbonDate?.unserialize(obj['createdAt'])
+        : CarbonDate.fromDate(DateTime.now().toLocal().toString());
     this.deleted = obj['deleted'];
     this.domain = obj['domain'];
     this.emails = obj['emails'];
     this.firstContactDate = obj['firstContactDate'];
-    this.coworker = obj['coworker'] != '' && obj['coworker'] != null 
-      ? Coworker(convert.jsonDecode(obj['coworker']))
-      : obj['coworker'];
+    this.coworker = obj['coworker'] != '' && obj['coworker'] != null
+        ? Coworker(convert.jsonDecode(obj['coworker']))
+        : obj['coworker'];
     this.firstName = obj['firstName'];
     this.groups = obj['groups'].cast<String>();
     this.id = obj['id'];
@@ -389,9 +371,9 @@ class Contact extends FusionModel {
     this.lastCommunication = obj['lastCommunication'];
     this.type = obj['type'];
     this.uid = obj['uid'];
-    this.updatedAt = obj['updatedAt'] != null 
-      ? CarbonDate?.unserialize(obj['updatedAt'])
-      : CarbonDate.fromDate(DateTime.now().toLocal().toString());
+    this.updatedAt = obj['updatedAt'] != null
+        ? CarbonDate?.unserialize(obj['updatedAt'])
+        : CarbonDate.fromDate(DateTime.now().toLocal().toString());
     this.crmUrl = obj['crmUrl'];
     this.crmName = obj['crmName'];
     this.crmId = obj['crmId'];
@@ -481,7 +463,7 @@ class ContactsStore extends FusionStore<Contact> {
     fusionConnection.db.insert('contacts', {
       'id': record.id,
       'company': record.company,
-      'deleted': record.deleted ? 1 : 0,
+      'deleted': record.deleted! ? 1 : 0,
       'searchString': record.searchString(),
       'firstName': record.firstName,
       'lastName': record.lastName,
@@ -491,53 +473,52 @@ class ContactsStore extends FusionStore<Contact> {
 
   searchPersisted(String query, int limit, int offset,
       Function(List<Contact>, bool, bool fromPhonebook) callback) {
-        getDatabasesPath().then((path){
-          openDatabase(join(path,"fusion.db")).then((db){
-            db.query('contacts',
-              limit: limit,
-              offset: offset,
-              where: 'searchString Like ?',
-              orderBy: "lastName asc, firstName asc",
-              whereArgs: [
-                "%" + query + "%"
-              ]).then((List<Map<String, dynamic>> results) {
-              if(results.isEmpty){
-                db.query('phone_contacts',limit: limit,
-                  offset: offset,
-                  where: 'searchString Like ?',
-                  orderBy: "lastName asc, firstName asc",
-                  whereArgs: ["%" + query + "%"]
-                  ).then((List<Map<String, dynamic>>  res){
-                    
-                    List<Contact> list = [];
-                    if(res.isNotEmpty){
-                      for (Map<String, dynamic> result in res) {
-                        list.add(PhoneContact.unserialize(result['raw']).toContact());
-                      }
-                      callback(list, false, true);
-                    } else {
-                      callback(list, false, false);
-                    }
-                  });
-              } else {
-                List<Contact> list = [];
-
-                for (Map<String, dynamic> result in results) {
-                  list.add(Contact.unserialize(result['raw']));
+    getDatabasesPath().then((path) {
+      openDatabase(join(path, "fusion.db")).then((db) {
+        db.query('contacts',
+            limit: limit,
+            offset: offset,
+            where: 'searchString Like ?',
+            orderBy: "lastName asc, firstName asc",
+            whereArgs: [
+              "%" + query + "%"
+            ]).then((List<Map<String, dynamic>> results) {
+          List<Contact> list = [];
+          if (results.isEmpty) {
+            db.query('phone_contacts',
+                limit: limit,
+                offset: offset,
+                where: 'searchString Like ?',
+                orderBy: "lastName asc, firstName asc",
+                whereArgs: [
+                  "%" + query + "%"
+                ]).then((List<Map<String, dynamic>> res) {
+              if (res.isNotEmpty) {
+                for (Map<String, dynamic> result in res) {
+                  list.add(PhoneContact.unserialize(result['raw']).toContact());
                 }
+                callback(list, false, true);
+              } else {
                 callback(list, false, false);
               }
             });
-          });
+          } else {
+            for (Map<String, dynamic> result in results) {
+              list.add(Contact.unserialize(result['raw']));
+            }
+            callback(list, false, false);
+          }
         });
+      });
+    });
   }
 
   search(String query, int limit, int offset,
       Function(List<Contact>, bool, bool fromPhoneBook) callback) {
     query = query.toLowerCase();
     bool fromPhone = false;
-    searchPersisted(query, limit, offset, (contacts,server,phoneBook){
-      callback(contacts,server,phoneBook);
+    searchPersisted(query, limit, offset, (contacts, server, phoneBook) {
+      callback(contacts, server, phoneBook);
       fromPhone = phoneBook;
     });
 
@@ -547,7 +528,6 @@ class ContactsStore extends FusionStore<Contact> {
       'sort_by': 'last_name',
       'group_type_filter': 'any',
       'enterprise': false,
-      'enterprise': false,
     }, callback: (List<dynamic> datas) {
       List<Contact> response = [];
 
@@ -556,8 +536,7 @@ class ContactsStore extends FusionStore<Contact> {
         response.add(contact);
         storeRecord(contact);
       });
-      if(!fromPhone)
-        callback(response, true, false);
+      if (!fromPhone) callback(response, true, false);
     });
   }
 
@@ -565,113 +544,102 @@ class ContactsStore extends FusionStore<Contact> {
       Function(List<Contact>, bool, bool fromPhoneBook) callback) {
     query = query.toLowerCase();
     bool fromPhone = false;
-    searchPersisted(query, limit, offset, (contacts,server,phoneBook){
-      callback(contacts,server,phoneBook);
+    searchPersisted(query, limit, offset, (contacts, server, phoneBook) {
+      callback(contacts, server, phoneBook);
       fromPhone = phoneBook;
     });
 
     fusionConnection.apiV2Call("post", "/contacts/query", {
-    "offset": offset,
-    "limit": limit,
-    "contactFilters": {
-        "queries": [
-            query
-        ],
+      "offset": offset,
+      "limit": limit,
+      "contactFilters": {
+        "queries": [query],
         "sorts": [],
         "filters": [],
         "tagFilters": []
-    },
-  }, callback: (Map<String,dynamic> datas) {
+      },
+    }, callback: (Map<String, dynamic> datas) {
       List<Contact> contacts = getRecords();
       List<Contact> response = [];
 
       datas['items'].forEach((dynamic c) {
         Contact contact = Contact.fromV2(c as Map<String, dynamic>);
         response.add(contact);
-        if(contacts.isEmpty || !fromDialpad){ 
+        if (contacts.isEmpty || !fromDialpad) {
           // prevent recurring searching from overwriting current db
           storeRecord(contact);
         }
       });
-      if(!fromPhone)
-        callback(response, true, false);
+      if (!fromPhone) callback(response, true, false);
     });
   }
 
-  void save(Contact edited, Function updateUi) {
+  void save(Contact? edited, Function updateUi) {
     bool usesV2 = fusionConnection.settings.isV2User();
-    if(usesV2){
-      fusionConnection.apiV2Call(
-        "put",
-        "/contacts/${edited.id}",
-        edited.serverPayloadV2(),
-        callback: (Map<String,dynamic> updatedContact){
-          storeRecord(Contact.fromV2(updatedContact));
-          updateUi();
-        }
-      );
+    if (usesV2) {
+      fusionConnection
+          .apiV2Call("put", "/contacts/${edited!.id}", edited.serverPayloadV2(),
+              callback: (Map<String, dynamic> updatedContact) {
+        storeRecord(Contact.fromV2(updatedContact));
+        updateUi();
+      });
     } else {
-      fusionConnection.apiV1Call("post", "/clients/filtered_contacts",
-        {'contact': edited.serverPayload()},
-        callback: (List<dynamic> datas) {
-          storeRecord(edited);
-          updateUi();
-        });
+      fusionConnection.apiV1Call("post", "/clients/filtered_contacts", {
+        'contact': edited!.serverPayload()
+      }, callback: (List<dynamic> datas) {
+        storeRecord(edited);
+        updateUi();
+      });
     }
   }
 
-  void createContact(Contact contact,Function(Contact) callback) {
-    fusionConnection.apiV2Call("post", "/contacts/create",
-      contact.serverPayloadV2(),
-      callback: (Map<String,dynamic> datas) {
-        contact = Contact.fromV2(datas);
-        storeRecord(contact);
-        callback(contact);
-        List<CallHistory> history = fusionConnection.callHistory.getRecords();
-        CallHistory historyItem = 
-          history.where((element) => element.fromDid == contact.phoneNumbers[0]['number'] 
-            || element.toDid == contact.phoneNumbers[0]['number']).isNotEmpty 
-          ? history.where((element) => element.fromDid == contact.phoneNumbers[0]['number']
-            || element.toDid == contact.phoneNumbers[0]['number']).first
+  void createContact(Contact contact, Function(Contact) callback) {
+    fusionConnection
+        .apiV2Call("post", "/contacts/create", contact.serverPayloadV2(),
+            callback: (Map<String, dynamic> datas) {
+      contact = Contact.fromV2(datas);
+      storeRecord(contact);
+      callback(contact);
+      List<CallHistory> history = fusionConnection.callHistory.getRecords();
+      CallHistory? historyItem = history
+              .where((element) =>
+                  element.fromDid == contact.phoneNumbers[0]['number'] ||
+                  element.toDid == contact.phoneNumbers[0]['number'])
+              .isNotEmpty
+          ? history
+              .where((element) =>
+                  element.fromDid == contact.phoneNumbers[0]['number'] ||
+                  element.toDid == contact.phoneNumbers[0]['number'])
+              .first
           : null;
-        if(historyItem != null){
-          historyItem.contact = contact;
-          fusionConnection.callHistory.storeRecord(historyItem);
-        }
-      });
+      if (historyItem != null) {
+        historyItem.contact = contact;
+        fusionConnection.callHistory.storeRecord(historyItem);
+      }
+    });
   }
 
-  void uploadProfilePic (
-    String type, 
-    XFile file, 
-    Contact contact,
-    Function(Contact) updateUi) async {
-    File rotatedImage =
-          await FlutterExifRotation.rotateImage(path: file.path);
-      fusionConnection.apiV2Multipart(
-        "post", 
-        "/client/upload_avatar/$type/${contact.id}", 
-        {},
-        [
-          http.MultipartFile.fromBytes(
-            "avatar",
-            await rotatedImage.readAsBytes(),
-            filename: basename(file.path),
-            contentType: MediaType.parse(lookupMimeType(file.path))
-          )
-        ], 
-        callback: (Map<String,dynamic> data) {
-          if(type == "profile"){
-            Coworker coworker = fusionConnection.coworkers.lookupCoworker(fusionConnection.getUid());
-            coworker.url = fusionConnection.mediaServer + data['path'];
-            fusionConnection.coworkers.storeRecord(coworker);
-          } else {
-              contact.pictures.add({"url": data['url'],'fromSourceName': data['from'] });
-              storeRecord(contact);
-          }
-          updateUi(contact);
-        }
-      );
+  void uploadProfilePic(String type, XFile file, Contact contact,
+      Function(Contact) updateUi) async {
+    File rotatedImage = await FlutterExifRotation.rotateImage(path: file.path);
+    fusionConnection.apiV2Multipart(
+        "post", "/client/upload_avatar/$type/${contact.id}", {}, [
+      http.MultipartFile.fromBytes("avatar", await rotatedImage.readAsBytes(),
+          filename: basename(file.path),
+          contentType: MediaType.parse(lookupMimeType(file.path)!))
+    ], callback: (Map<String, dynamic> data) {
+      if (type == "profile") {
+        Coworker coworker = fusionConnection.coworkers
+            .lookupCoworker(fusionConnection.getUid())!;
+        coworker.url = fusionConnection.mediaServer + data['path'];
+        fusionConnection.coworkers.storeRecord(coworker);
+      } else {
+        contact.pictures
+            .add({"url": data['url'], 'fromSourceName': data['from']});
+        storeRecord(contact);
+      }
+      updateUi(contact);
+    });
   }
 }
 

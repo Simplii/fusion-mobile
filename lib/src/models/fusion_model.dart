@@ -1,3 +1,3 @@
 class FusionModel {
-  String getId() {}
+  String? getId() {}
 }

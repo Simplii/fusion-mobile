@@ -17,56 +17,56 @@ import 'contact.dart';
 import 'coworkers.dart';
 import 'fusion_store.dart';
 
-class PhoneContact extends FusionModel{
-  List<dynamic> addresses;
-  String company;
-  List<dynamic> contacts;
-  bool deleted;
-  String domain;
-  List<dynamic> emails;
-  String firstContactDate;
-  Coworker coworker;
+class PhoneContact extends FusionModel {
+  List<dynamic> addresses = [];
+  String company = "";
+  List<dynamic> contacts = [];
+  bool deleted = false;
+  String domain = "";
+  List<dynamic> emails = [];
+  String firstContactDate = "";
+  Coworker? coworker = null;
   String firstName = "";
-  List<String> groups;
-  String id;
-  String jobTitle;
+  List<String> groups = [];
+  String id = "";
+  String jobTitle = "";
   String lastName = "";
-  String leadCreationDate;
-  String name;
-  String owner;
-  String parentId;
-  List<dynamic> phoneNumbers;
-  List<dynamic> pictures;
-  List<dynamic> socials;
+  String leadCreationDate = "";
+  String name = "";
+  String owner = "";
+  String parentId = "";
+  List<dynamic> phoneNumbers = [];
+  List<dynamic> pictures = [];
+  List<dynamic> socials = [];
   List<dynamic> externalReferences = [];
-  Map<String, dynamic> lastCommunication;
-  String type;
-  String uid;
-  String crmUrl;
-  String crmName;
-  String crmId;
+  Map<String, dynamic> lastCommunication = {};
+  String type = "";
+  String uid = "";
+  String crmUrl = "";
+  String crmName = "";
+  String crmId = "";
   int unread = 0;
   List<dynamic> fieldValues = [];
-  Uint8List profileImage;
-  
+  Uint8List? profileImage;
+
   @override
   String getId() => this.id;
 
-  PhoneContact(Map<String,dynamic> contactObject) {
+  PhoneContact(Map<String, dynamic> contactObject) {
     firstName = contactObject['firstName'];
     lastName = contactObject['lastName'];
     company = contactObject['company'] ?? "";
     jobTitle = contactObject['jobTitle'] ?? "";
     name = contactObject['name'];
     phoneNumbers = [];
-    if(contactObject['phoneNumbers'] != null){
+    if (contactObject['phoneNumbers'] != null) {
       for (var number in contactObject['phoneNumbers']) {
         this.phoneNumbers.add({
           "number": number['number'].toString(),
           "smsCapable": number['smsCapable'],
           "type": number['type']
         });
-      } 
+      }
     }
     externalReferences = [];
     deleted = false;
@@ -76,7 +76,7 @@ class PhoneContact extends FusionModel{
     fieldValues = [];
 
     addresses = [];
-    if(contactObject['addresses'] != null){
+    if (contactObject['addresses'] != null) {
       for (var email in contactObject['addresses']) {
         addresses.add({
           "address1": email['address'],
@@ -91,25 +91,25 @@ class PhoneContact extends FusionModel{
           "id": email['id'],
           "type": email['type']
         });
-      } 
+      }
     }
     emails = [];
-    if(contactObject['emails'] != null){
+    if (contactObject['emails'] != null) {
       for (var email in contactObject['emails']) {
         this.emails.add({
           "email": email['email'],
           "id": email['id'],
           "type": email['type']
         });
-      } 
+      }
     }
     pictures = [];
     socials = [];
-    owner = null;
-    if(contactObject.containsKey('profileImage')){
+    owner = "";
+    if (contactObject.containsKey('profileImage')) {
       profileImage = getImageBinary(contactObject['profileImage']);
     }
-    if(name.trim().isEmpty){
+    if (name.trim().isEmpty) {
       firstName = "Unknown";
       lastName = "Unknown";
       name = "Unknown Contact";
@@ -119,7 +119,7 @@ class PhoneContact extends FusionModel{
   toContact() {
     Contact c = Contact({
       'addresses': addresses,
-      'company':  company,
+      'company': company,
       'deleted': false,
       'domain': null,
       'emails': emails,
@@ -140,9 +140,10 @@ class PhoneContact extends FusionModel{
       'crm_name': '',
       'crm_id': '',
       'coworker': null,
-      'profileImage': this.profileImage
-      }
-    );
+      'profileImage': this.profileImage,
+      'created_at': null,
+      'updated_at': null
+    });
     return c;
   }
 
@@ -188,9 +189,9 @@ class PhoneContact extends FusionModel{
     this.domain = obj['domain'];
     this.emails = obj['emails'];
     this.firstContactDate = obj['firstContactDate'];
-    this.coworker = obj['coworker'] != '' && obj['coworker'] != null 
-      ? Coworker(jsonDecode(obj['coworker']))
-      : obj['coworker'];
+    this.coworker = obj['coworker'] != '' && obj['coworker'] != null
+        ? Coworker(jsonDecode(obj['coworker']))
+        : obj['coworker'];
     this.firstName = obj['firstName'];
     this.groups = obj['groups'].cast<String>();
     this.id = obj['id'];
@@ -213,7 +214,7 @@ class PhoneContact extends FusionModel{
     this.profileImage = getImageBinary(obj['profileImage']);
   }
 
-   searchString() {
+  searchString() {
     List<String> list = [company, firstName, lastName];
     for (Map<String, dynamic> number in phoneNumbers) {
       list.add(number['number'].toString());
@@ -223,50 +224,59 @@ class PhoneContact extends FusionModel{
     }
     return list.join(' ');
   }
-
 }
 
 class PhoneContactsStore extends FusionStore<PhoneContact> {
-  PhoneContactsStore({
-    @required FusionConnection fusionConnection, 
-    @required MethodChannel contactsChannel
-  }) : super(fusionConnection, methodChannel: contactsChannel);
+  PhoneContactsStore(
+      {required FusionConnection fusionConnection,
+      required MethodChannel contactsChannel})
+      : super(fusionConnection, methodChannel: contactsChannel);
   bool syncing = false;
   bool initSync = false;
-  Function updateView;
+  Function? updateView;
 
-  persist(PhoneContact record, ) {
-    List<String> numbers = record.phoneNumbers.map((phoneNumber) => phoneNumber['number']).toList().cast<String>();
-    fusionConnection.db.insert('phone_contacts', {
-      'id': record.id,
-      'company': record.company,
-      'searchString': record.searchString(),
-      'firstName': record.firstName,
-      'lastName': record.lastName,
-      'phoneNumbers': numbers.toString(),
-      'raw': record.serialize(),
-      'profileImage': record.profileImage
-    }, conflictAlgorithm: ConflictAlgorithm.replace).then((value) => value);
+  persist(
+    PhoneContact record,
+  ) {
+    List<String> numbers = record.phoneNumbers
+        .map((phoneNumber) => phoneNumber['number'])
+        .toList()
+        .cast<String>();
+    fusionConnection.db
+        .insert(
+            'phone_contacts',
+            {
+              'id': record.id,
+              'company': record.company,
+              'searchString': record.searchString(),
+              'firstName': record.firstName,
+              'lastName': record.lastName,
+              'phoneNumbers': numbers.toString(),
+              'raw': record.serialize(),
+              'profileImage': record.profileImage
+            },
+            conflictAlgorithm: ConflictAlgorithm.replace)
+        .then((value) => value);
   }
 
-  void toUpdateView (Function setStateFunc){
+  void toUpdateView(Function setStateFunc) {
     updateView = setStateFunc;
   }
 
+  Future<PhoneContact?> searchDb(String phoneNumber) async {
+    PhoneContact? contact;
 
-  Future<PhoneContact> searchDb(String phoneNumber) async {
-    PhoneContact contact;
-       
-    List<Map<String,dynamic>>results = await fusionConnection.db.query('phone_contacts',                
+    List<Map<String, dynamic>> results = await fusionConnection.db.query(
+      'phone_contacts',
       // where: 'phoneNumbers LIKE (${List.filled([phoneNumber].length, '?').join(',')})',
       where: 'searchString LIKE ?',
       orderBy: "lastName asc, firstName asc",
       // whereArgs: [[ "%" + phoneNumber + "%"]],
       whereArgs: ["%$phoneNumber%"],
     );
-      
-    if(results != null && results.length > 0){
-      Map<String,dynamic> result = results.first;
+
+    if (results != null && results.length > 0) {
+      Map<String, dynamic> result = results.first;
       PhoneContact phoneContact = PhoneContact.unserialize(result['raw']);
       phoneContact.profileImage = result['profileImage'];
       contact = phoneContact;
@@ -274,58 +284,60 @@ class PhoneContactsStore extends FusionStore<PhoneContact> {
     return contact;
   }
 
-  Future<PhoneContact> getPhoneContact(phoneNumber) async {
-    PhoneContact contact;
+  Future<PhoneContact?> getPhoneContact(phoneNumber) async {
+    PhoneContact? contact;
     List<PhoneContact> phoneContacts = getRecords();
-    if(phoneContacts.isNotEmpty){
+    if (phoneContacts.isNotEmpty) {
       for (PhoneContact phoneContact in phoneContacts) {
-        List<String> numbers = phoneContact.phoneNumbers.map((e) => e["number"]).toList().cast<String>();
-        if(numbers.contains(phoneNumber)){
+        List<String> numbers = phoneContact.phoneNumbers
+            .map((e) => e["number"])
+            .toList()
+            .cast<String>();
+        if (numbers.contains(phoneNumber)) {
           contact = phoneContact;
         }
       }
     } else {
       contact = await searchDb(phoneNumber);
     }
-            
+
     return contact;
   }
-  
-  setup(){
-      methodChannel.setMethodCallHandler(_contactsProviderHandler);
+
+  setup() {
+    methodChannel?.setMethodCallHandler(_contactsProviderHandler);
   }
 
   Future _contactsProviderHandler(MethodCall methodCall) async {
-    switch(methodCall.method) {
+    switch (methodCall.method) {
       case "CONTACTS_LOADED":
         List result = [];
-        result = Platform.isAndroid 
-          ? jsonDecode(methodCall.arguments)
-          : methodCall.arguments;
+        result = Platform.isAndroid
+            ? jsonDecode(methodCall.arguments)
+            : methodCall.arguments;
         for (var c in result) {
-          PhoneContact contact = Platform.isAndroid 
-            ? PhoneContact(c)
-            : PhoneContact(Map<String, dynamic>.from(c));
+          PhoneContact contact = Platform.isAndroid
+              ? PhoneContact(c)
+              : PhoneContact(Map<String, dynamic>.from(c));
           storeRecord(contact);
           persist(contact);
         }
         syncing = false;
         initSync = false;
-        if(updateView != null)
-          updateView();
+        if (updateView != null) updateView!();
         break;
       default:
-         print("contacts default");
+        print("contacts default");
     }
   }
 
   void syncPhoneContacts() async {
     final PermissionStatus status = await Permission.contacts.status;
-    if(status.isGranted){
-      if(!syncing){
+    if (status.isGranted) {
+      if (!syncing) {
         syncing = true;
         try {
-          methodChannel.invokeMethod('syncContacts');
+          methodChannel?.invokeMethod('syncContacts');
         } on PlatformException catch (e) {
           print("MDBM syncPhoneContacts error $e");
         }
@@ -335,30 +347,33 @@ class PhoneContactsStore extends FusionStore<PhoneContact> {
     }
   }
 
-
   Future<List<PhoneContact>> getAdderssBookContacts(String query) async {
-    List<PhoneContact> contacts = getRecords();  
-    if(contacts.isNotEmpty && query.isEmpty){
+    List<PhoneContact> contacts = getRecords();
+    if (contacts.isNotEmpty && query.isEmpty) {
       return contacts;
     } else {
-      getDatabasesPath().then((path){
-        openDatabase(join(path,"fusion.db")).then((db) async {
-          await db.query('phone_contacts',
-              where: 'searchString Like ?',
-              whereArgs: ["%" + query + "%"],
-              orderBy: "lastName asc, firstName asc",
-          ).then((List<Map<String, dynamic>> results) async {
+      getDatabasesPath().then((path) {
+        openDatabase(join(path, "fusion.db")).then((db) async {
+          await db
+              .query(
+            'phone_contacts',
+            where: 'searchString Like ?',
+            whereArgs: ["%" + query + "%"],
+            orderBy: "lastName asc, firstName asc",
+          )
+              .then((List<Map<String, dynamic>> results) async {
             List<PhoneContact> list = [];
 
             for (Map<String, dynamic> result in results) {
-              PhoneContact phoneContact = PhoneContact.unserialize(result['raw']);
+              PhoneContact phoneContact =
+                  PhoneContact.unserialize(result['raw']);
               phoneContact.profileImage = result['profileImage'];
               storeRecord(phoneContact);
               list.add(phoneContact);
             }
             contacts = list;
 
-            if(list.isEmpty && query.isEmpty && !syncing){
+            if (list.isEmpty && query.isEmpty && !syncing) {
               initSync = true;
               syncPhoneContacts();
             }

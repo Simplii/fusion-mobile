@@ -12,23 +12,23 @@ import 'package:sip_ua/sip_ua.dart';
 enum Views { Main, DialPad, Hold }
 
 class IncomingWhileOnCall extends StatefulWidget {
-  IncomingWhileOnCall({Key key, this.softphone, this.call}) : super(key: key);
+  IncomingWhileOnCall({Key? key, this.softphone, this.call}) : super(key: key);
 
-  final Softphone softphone;
-  final Call call;
+  final Softphone? softphone;
+  final Call? call;
 
   @override
   State<StatefulWidget> createState() => _IncomingWhileOnCallState();
 }
 
 class _IncomingWhileOnCallState extends State<IncomingWhileOnCall> {
-  Call get call => widget.call;
+  Call? get call => widget.call;
 
   _hangupButton() {
     return GestureDetector(
       onTap: () {
-        widget.softphone.blockAndroidAudioEvents(500);
-        widget.softphone.hangUp(widget.call);
+        widget.softphone!.blockAndroidAudioEvents(500);
+        widget.softphone!.hangUp(widget.call!);
       },
       child: Center(
           child: Container(
@@ -50,8 +50,8 @@ class _IncomingWhileOnCallState extends State<IncomingWhileOnCall> {
   _answerButton() {
     return GestureDetector(
       onTap: () {
-        widget.softphone.blockAndroidAudioEvents(500);
-        widget.softphone.answerCall(widget.call);
+        widget.softphone!.blockAndroidAudioEvents(500);
+        widget.softphone!.answerCall(widget.call);
       },
       child: Center(
           child: Container(
@@ -72,7 +72,7 @@ class _IncomingWhileOnCallState extends State<IncomingWhileOnCall> {
 
   @override
   Widget build(BuildContext context) {
-    CallpopInfo info = widget.softphone.getCallpopInfo(widget.call.id);
+    CallpopInfo? info = widget.softphone!.getCallpopInfo(widget.call!.id);
 
     Widget contents = Container(
         constraints: BoxConstraints(maxHeight: 180),
@@ -98,17 +98,17 @@ class _IncomingWhileOnCallState extends State<IncomingWhileOnCall> {
                     mainAxisAlignment: MainAxisAlignment.start,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                    Text(widget.softphone.getCallerCompany(widget.call),
+                    Text(widget.softphone!.getCallerCompany(widget.call)!,
                         style: TextStyle(
                             fontSize: 12,
                             color: translucentWhite(0.66),
                             fontWeight: FontWeight.w700)),
-                    Text(widget.softphone.getCallerName(widget.call),
+                    Text(widget.softphone!.getCallerName(widget.call),
                         style: TextStyle(
                             fontSize: 24,
                             color: translucentWhite(1.0),
                             fontWeight: FontWeight.w700)),
-                    Text(widget.softphone.getCallerNumber(widget.call),
+                    Text(widget.softphone!.getCallerNumber(widget.call!),
                         style: TextStyle(
                             fontSize: 12,
                             color: translucentWhite(0.66),
@@ -120,9 +120,9 @@ class _IncomingWhileOnCallState extends State<IncomingWhileOnCall> {
               Row(children: [
                 Spacer() ,
                 _hangupButton(),
-                if (widget.softphone.isIncoming(widget.call))
+                if (widget.softphone!.isIncoming(widget.call!))
                   Spacer(),
-                if (widget.softphone.isIncoming(widget.call))
+                if (widget.softphone!.isIncoming(widget.call!))
                   _answerButton(),
                 Spacer()])
             ])));

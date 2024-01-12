@@ -7,12 +7,12 @@ class DateTimePicker extends StatefulWidget {
   final double height;
   final bool iosStyle;
 
-  final Function(DateTime) onComplete;
+  final Function(DateTime?) onComplete;
   DateTimePicker({ 
-    @required this.height, 
-    @required this.onComplete, 
+    required this.height, 
+    required this.onComplete, 
     this.iosStyle = false ,
-    Key key}) : super(key: key);
+    Key? key}) : super(key: key);
 
   @override
   State<DateTimePicker> createState() => _DateTimePickerState();
@@ -20,14 +20,14 @@ class DateTimePicker extends StatefulWidget {
 
 class _DateTimePickerState extends State<DateTimePicker> {
   double get _height => widget.height;
-  Function(DateTime) get _onComplete => widget.onComplete;
+  Function(DateTime?) get _onComplete => widget.onComplete;
   bool get _iosStyle => widget.iosStyle;
-  TimeOfDay selectedTime;
-  DateTime selectedDate;
-  DateTime iosDateTime;
+  TimeOfDay? selectedTime;
+  DateTime? selectedDate;
+  DateTime? iosDateTime;
 
   Future _openTimePicker () async {
-    TimeOfDay time = await showTimePicker(
+    TimeOfDay? time = await showTimePicker(
       context: context, 
       initialTime: selectedTime ?? TimeOfDay.now(),
     );
@@ -37,7 +37,7 @@ class _DateTimePickerState extends State<DateTimePicker> {
   }
   
   Future _openDatePicker () async {
-    DateTime date = await showDatePicker(
+    DateTime? date = await showDatePicker(
       context: context, 
       initialDate:  DateTime.now(),
       firstDate: DateTime.now(),
@@ -150,7 +150,7 @@ class _DateTimePickerState extends State<DateTimePicker> {
                   style: TextButton.styleFrom(padding: EdgeInsets.all(10)),
                   onPressed: (){
                     if(selectedDate !=null && selectedTime != null){
-                      _onComplete(DateTime(selectedDate.year,selectedDate.month,selectedDate.day, selectedTime.hour,selectedTime.minute));
+                      _onComplete(DateTime(selectedDate!.year,selectedDate!.month,selectedDate!.day, selectedTime!.hour,selectedTime!.minute));
                       Navigator.of(context).pop();
                     }
                   }, 

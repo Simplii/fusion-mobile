@@ -28,10 +28,10 @@ import '../utils.dart';
 import 'answered_while_on_call.dart';
 
 class CallView extends StatefulWidget {
-  CallView(this._fusionConnection, this._softphone, {Key key, this.closeView})
+  CallView(this._fusionConnection, this._softphone, {Key? key, this.closeView})
       : super(key: key);
 
-  final VoidCallback closeView;
+  final VoidCallback? closeView;
   final FusionConnection _fusionConnection;
   final Softphone _softphone;
 
@@ -42,11 +42,11 @@ class CallView extends StatefulWidget {
 class _CallViewState extends State<CallView> {
   Softphone get _softphone => widget._softphone;
   FusionConnection get _fusionConnection => widget._fusionConnection;
-  Call get _activeCall => _softphone.activeCall;
-  List<Call> get _allCalls => _softphone.calls;
+  Call? get _activeCall => _softphone.activeCall;
+  List<Call> get _allCalls => _softphone!.calls;
 
   bool dialpadVisible = false;
-  Timer _timer;
+  late Timer _timer;
   bool TextBtnPressed = false;
   bool _showDisposition = false;
   initState() {
@@ -58,7 +58,7 @@ class _CallViewState extends State<CallView> {
         setState(() {});
       },
     );
-    _softphone.checkMicrophoneAccess(context);
+    _softphone!.checkMicrophoneAccess(context);
   }
 
   @override
@@ -68,17 +68,17 @@ class _CallViewState extends State<CallView> {
   }
 
   _onHoldBtnPress() {
-    _softphone.setHold(_activeCall, true, true);
+    _softphone!.setHold(_activeCall!, true, true);
   }
 
   _onResumeBtnPress() {
     if (Platform.isIOS &&
-        _softphone.couldGetAudioSession == _softphone.activeCall.id) {
-      String num = _softphone.getCallerNumber(_softphone.activeCall);
-      _softphone.hangUp(_softphone.activeCall);
-      _softphone.makeCall(num);
-    } else if (!_softphone.isCellPhoneCallActive)
-      _softphone.setHold(_activeCall, false, true);
+        _softphone!.couldGetAudioSession == _softphone!.activeCall!.id) {
+      String? num = _softphone!.getCallerNumber(_softphone!.activeCall!);
+      _softphone!.hangUp(_softphone!.activeCall!);
+      _softphone!.makeCall(num);
+    } else if (!_softphone!.isCellPhoneCallActive!)
+      _softphone!.setHold(_activeCall!, false, true);
   }
 
   _makeXferUrl(String url) {
@@ -98,7 +98,7 @@ class _CallViewState extends State<CallView> {
               Navigator.pop(context);
             }, (String xferTo, String xferType) {
               if (xferType == "blind") {
-                _softphone.transfer(_activeCall, _makeXferUrl(xferTo));
+                _softphone.transfer(_activeCall!, _makeXferUrl(xferTo));
               } else if (xferType == "assisted") {
                 _softphone.assistedTransfer(_activeCall, _makeXferUrl(xferTo));
               }
@@ -107,7 +107,7 @@ class _CallViewState extends State<CallView> {
   }
 
   _onDialBtnPress() {
-    if (_softphone.getHoldState(_activeCall)) {
+    if (_softphone!.getHoldState(_activeCall)) {
       setState(() {
         dialpadVisible = false;
         showModalBottomSheet(
@@ -141,10 +141,10 @@ class _CallViewState extends State<CallView> {
   }
 
   _onRecBtnPress() {
-    if (_softphone.getRecordState(_activeCall)) {
-      _softphone.stopRecordCall(_activeCall);
+    if (_softphone!.getRecordState(_activeCall!)) {
+      _softphone!.stopRecordCall(_activeCall!);
     } else {
-      _softphone.recordCall(_activeCall);
+      _softphone!.recordCall(_activeCall!);
     }
   }
 
@@ -157,13 +157,13 @@ class _CallViewState extends State<CallView> {
       TextBtnPressed = true;
     });
 
-    List<Coworker> coworkers = _fusionConnection.coworkers.getRecords();
-    String ext = _activeCall.remote_identity.onlyNumbers();
+    List<Coworker> coworkers = _fusionConnection!.coworkers.getRecords();
+    String ext = _activeCall!.remote_identity!.onlyNumbers();
     List<Coworker> coworker =
         coworkers.where((coworker) => coworker.extension == ext).toList();
-    CallpopInfo callPopInfo = _softphone.getCallpopInfo(_activeCall.id);
-    SMSDepartment personal = _fusionConnection.smsDepartments.getDepartment(DepartmentIds.Personal);
-    List<SMSDepartment> depts = _fusionConnection.smsDepartments.allDepartments();
+    CallpopInfo? callPopInfo = _softphone!.getCallpopInfo(_activeCall!.id);
+    SMSDepartment personal = _fusionConnection!.smsDepartments.getDepartment(DepartmentIds.Personal);
+    List<SMSDepartment> depts = _fusionConnection!.smsDepartments.allDepartments();
 
     if(personal.numbers.isEmpty && depts.isEmpty ||
       (depts[1].numbers.isEmpty || coworker.isNotEmpty)){
@@ -190,16 +190,16 @@ class _CallViewState extends State<CallView> {
       ); 
     }
 
-    SMSConversation convo = await _fusionConnection.messages.checkExistingConversation(
+    SMSConversation? convo = await _fusionConnection!.messages.checkExistingConversation(
       personal.numbers.isNotEmpty 
-        ? personal.id 
-        : depts[1].id,
+        ? personal.id! 
+        : depts[1].id!,
       personal.numbers.isNotEmpty 
         ? personal.numbers[0] 
         : depts[1].numbers[0],
-      callPopInfo != null
+      callPopInfo != null && callPopInfo.phoneNumber.isNotEmpty
         ? [callPopInfo.phoneNumber]
-        : [_softphone.getCallerNumber(_softphone.activeCall)],
+        : [_softphone!.getCallerNumber(_softphone!.activeCall!)],
       callPopInfo != null 
         ? callPopInfo.contacts 
         : []
@@ -216,7 +216,7 @@ class _CallViewState extends State<CallView> {
       builder: (context) =>
         StatefulBuilder(
           builder: (BuildContext context, StateSetter setState){
-            SMSConversation displayingConvo = convo;
+            SMSConversation? displayingConvo = convo;
             return SMSConversationView(
               fusionConnection: _fusionConnection, 
               softphone: _softphone, 
@@ -235,7 +235,7 @@ class _CallViewState extends State<CallView> {
   }
 
   _changeDefaultInputDevice() {
-    List<List<String>> options = _softphone.devicesList
+    List<List<String>> options = _softphone!.devicesList
         .where((element) => element[2] == "Microphone")
         .toList()
         .cast<List<String>>();
@@ -256,14 +256,14 @@ class _CallViewState extends State<CallView> {
                     children: options.map((List<String> option) {
                       return GestureDetector(
                           onTap: () {
-                            _softphone.setDefaultInput(option[1]);
+                            _softphone!.setDefaultInput(option[1]);
                             Navigator.pop(context);
                           },
                           child: Container(
                               padding: EdgeInsets.only(
                                   top: 12, bottom: 12, left: 8, right: 8),
                               decoration: BoxDecoration(
-                                  color: option[1] == _softphone.defaultInput
+                                  color: option[1] == _softphone!.defaultInput
                                       ? lightHighlight
                                       : Colors.transparent,
                                   border: Border(
@@ -276,7 +276,7 @@ class _CallViewState extends State<CallView> {
                                         fontSize: 16,
                                         fontWeight: FontWeight.w700)),
                                 Spacer(),
-                                if (_softphone.defaultInput == option[1])
+                                if (_softphone!.defaultInput == option[1])
                                   Image.asset(
                                       "assets/icons/call_view/check.png",
                                       width: 16,
@@ -286,15 +286,15 @@ class _CallViewState extends State<CallView> {
   }
 
   _changeDefaultOutputDevice() {
-    List<List<String>> options = Platform.isAndroid
-        ? _softphone.devicesList
+    List<List<String?>> options = Platform.isAndroid
+        ? _softphone!.devicesList
             .where((element) => element[2] != "Microphone")
             .toList()
             .cast<List<String>>()
-        : _softphone.devicesList;
-    String callDefaultOutputDeviceId = _softphone.activeCallOutputDevice != ''
-        ? _softphone.activeCallOutputDevice
-        : _softphone.defaultOutput;
+        : _softphone!.devicesList;
+    String? callDefaultOutputDeviceId = _softphone!.activeCallOutputDevice != ''
+        ? _softphone!.activeCallOutputDevice
+        : _softphone!.defaultOutput;
     showModalBottomSheet(
         context: context,
         backgroundColor: Colors.transparent,
@@ -309,10 +309,10 @@ class _CallViewState extends State<CallView> {
                     maxWidth: MediaQuery.of(context).size.width - 66),
                 child: ListView(
                     padding: EdgeInsets.all(8),
-                    children: options.map((List<String> option) {
+                    children: options.map((List<String?> option) {
                       return GestureDetector(
                           onTap: () {
-                            _softphone.setActiveCallOutputDevice(option[1]);
+                            _softphone!.setActiveCallOutputDevice(option[1]);
                             Navigator.pop(context);
                           },
                           child: Container(
@@ -327,7 +327,7 @@ class _CallViewState extends State<CallView> {
                                           color: lightDivider, width: 1.0))),
                               child: Row(children: [
                                 Text(
-                                    option[0]
+                                    option[0]!
                                         .replaceAll('Microphone', 'Earpiece'),
                                     style: TextStyle(
                                         color: Colors.white,
@@ -345,20 +345,20 @@ class _CallViewState extends State<CallView> {
 
   _onAudioBtnPress() {
     print("audiopress");
-    print(_softphone.devicesList);
-    print(_softphone.defaultInput);
+    print(_softphone!.devicesList);
+    print(_softphone!.defaultInput);
     List<List<String>> options = [
       ["assets/icons/call_view/audio_phone.png", "Phone", "phone"],
       ["assets/icons/call_view/audio_speaker.png", "Speaker", "speaker"],
       ["assets/icons/call_view/bluetooth.png", "Bluetooth", "bluetooth"],
     ];
-    String callAudioOutput = _softphone.activeCallOutput != ''
-        ? _softphone.activeCallOutput
-        : _softphone.outputDevice;
-    String callDefaultOutputDeviceId = _softphone.activeCallOutputDevice != ''
-        ? _softphone.activeCallOutputDevice
-        : _softphone.defaultOutput;
-    bool muted = _softphone.getMuted(_activeCall);
+    String? callAudioOutput = _softphone!.activeCallOutput != ''
+        ? _softphone!.activeCallOutput
+        : _softphone!.outputDevice;
+    String? callDefaultOutputDeviceId = _softphone!.activeCallOutputDevice != ''
+        ? _softphone!.activeCallOutputDevice
+        : _softphone!.defaultOutput;
+    bool? muted = _softphone!.getMuted(_activeCall!);
 
     showModalBottomSheet(
         context: context,
@@ -391,7 +391,7 @@ class _CallViewState extends State<CallView> {
                                       blurRadius: 36)
                                 ]),
                             child: Text(
-                                callDefaultOutputDeviceId.replaceAll(
+                                callDefaultOutputDeviceId!.replaceAll(
                                     'Microphone', 'Earpiece'),
                                 style: TextStyle(
                                   color: Colors.white70,
@@ -424,7 +424,7 @@ class _CallViewState extends State<CallView> {
                                       offset: Offset.zero,
                                       blurRadius: 36)
                                 ]),
-                            child: Text(_softphone.defaultInput,
+                            child: Text(_softphone!.defaultInput!,
                                 style: TextStyle(
                                   color: Colors.white70,
                                   fontWeight: FontWeight.w700,
@@ -437,7 +437,7 @@ class _CallViewState extends State<CallView> {
                 Expanded(
                     child: GestureDetector(
                         onTap: () {
-                          _softphone.setMute(_activeCall, !muted, true);
+                          _softphone!.setMute(_activeCall, !muted!, true);
                           Navigator.pop(context);
                         },
                         child: Container(
@@ -446,7 +446,7 @@ class _CallViewState extends State<CallView> {
                                 bottom: 24, left: 20, right: 20, top: 6),
                             padding: EdgeInsets.only(top: 12, bottom: 12),
                             decoration: BoxDecoration(
-                                color: muted ? crimsonDarker : coal,
+                                color: muted! ? crimsonDarker : coal,
                                 borderRadius:
                                     BorderRadius.all(Radius.circular(8)),
                                 boxShadow: [
@@ -476,10 +476,10 @@ class _CallViewState extends State<CallView> {
                       return GestureDetector(
                           onTap: () {
                             if (option[1] == "Bluetooth" &&
-                                !_softphone.bluetoothAvailable) {
+                                !_softphone!.bluetoothAvailable) {
                               return;
                             }
-                            _softphone.setCallOutput(_activeCall, option[2]);
+                            _softphone!.setCallOutput(_activeCall, option[2]);
                             Navigator.pop(context);
                           },
                           child: Container(
@@ -498,7 +498,7 @@ class _CallViewState extends State<CallView> {
                                 Text(option[1],
                                     style: TextStyle(
                                         color: option[1] == "Bluetooth" &&
-                                                !_softphone.bluetoothAvailable
+                                                !_softphone!.bluetoothAvailable
                                             ? Colors.white60
                                             : Colors.white,
                                         fontSize: 18,
@@ -514,16 +514,16 @@ class _CallViewState extends State<CallView> {
   }
 
   _onMuteBtnPress() {
-    _softphone.setMute(_activeCall, !_softphone.getMuted(_activeCall), true);
+    _softphone!.setMute(_activeCall, !_softphone!.getMuted(_activeCall!), true);
   }
 
   _onHangup() {
-    _softphone.hangUp(_activeCall);
-    widget.closeView();
+    _softphone.hangUp(_activeCall!);
+    widget.closeView!();
   }
 
   _onAnswer() {
-    _softphone.answerCall(_activeCall);
+    _softphone!.answerCall(_activeCall);
   }
 
   _onHoldView() {
@@ -555,9 +555,9 @@ class _CallViewState extends State<CallView> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        if (!_softphone.isCellPhoneCallActive &&
-                            !(_softphone.couldGetAudioSession !=
-                                    _softphone.activeCall &&
+                        if (!_softphone!.isCellPhoneCallActive! &&
+                            !(_softphone!.couldGetAudioSession !=
+                                    _softphone!.activeCall &&
                                 Platform.isIOS))
                           Container(
                               margin: EdgeInsets.only(right: 8),
@@ -566,10 +566,10 @@ class _CallViewState extends State<CallView> {
                                   width: 12,
                                   height: 16)),
                         Text(
-                            _softphone.isCellPhoneCallActive
+                            _softphone!.isCellPhoneCallActive!
                                 ? 'Mobile Call Active'
-                                : (_softphone.couldGetAudioSession ==
-                                            _softphone.activeCall.id &&
+                                : (_softphone!.couldGetAudioSession ==
+                                            _softphone!.activeCall!.id &&
                                         Platform.isIOS
                                     ? 'RESUME'
                                     : 'RESUME'),
@@ -604,7 +604,7 @@ class _CallViewState extends State<CallView> {
     var callerName = _softphone.getCallerName(_activeCall);
     String _linePrefix = _softphone.linePrefix;
     var callerNumber =
-        _softphone.getCallerNumber(_activeCall); // 'mobile' | 'work' ...etc
+        _softphone!.getCallerNumber(_activeCall!); // 'mobile' | 'work' ...etc
 
     Map<String, Function()> actions = {
       'onHoldBtnPress': _onHoldBtnPress,
@@ -622,16 +622,16 @@ class _CallViewState extends State<CallView> {
       'onAnswer': _onAnswer,
     };
 
-    String callRunTime = _softphone.getCallRunTimeString(_activeCall);
+    String callRunTime = _softphone!.getCallRunTimeString(_activeCall!);
 
-    bool isIncoming = _softphone.isIncoming(_activeCall);
-    bool isRinging = !_softphone.isConnected(_activeCall);
+    bool isIncoming = _softphone!.isIncoming(_activeCall!);
+    bool isRinging = !_softphone!.isConnected(_activeCall!);
 
-    Call incomingCall = null;
+    Call? incomingCall = null;
     List<Call> connectedCalls = [];
 
     for (Call c in _allCalls) {
-      if (c != _activeCall && !_softphone.isConnected(c))
+      if (c != _activeCall && !_softphone!.isConnected(c))
         incomingCall = c;
       else if (c != _activeCall) connectedCalls.add(c);
     }
@@ -651,7 +651,7 @@ class _CallViewState extends State<CallView> {
               decoration: BoxDecoration(
                   image: DecorationImage(
                     colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.8), BlendMode.dstATop),
-                      image: _softphone.getCallerPic(_activeCall),
+                      image: _softphone!.getCallerPic(_activeCall),
                       fit: BoxFit.cover
                   )
                 ),
@@ -661,7 +661,7 @@ class _CallViewState extends State<CallView> {
                   filter: ImageFilter.blur(sigmaX: _showDisposition ? 21 : 0, sigmaY: _showDisposition ?21 :0),
                   child: Stack(
                     children: [
-                      if (_softphone.getHoldState(_activeCall) || dialpadVisible)
+                      if (_softphone!.getHoldState(_activeCall) || dialpadVisible)
                         Container(
                             child: Container(
                           decoration: BoxDecoration(
@@ -671,7 +671,7 @@ class _CallViewState extends State<CallView> {
                             colors: [translucentWhite(0.0), Colors.black],
                           )),
                         )),
-                      if (_softphone.getHoldState(_activeCall) || dialpadVisible)
+                      if (_softphone!.getHoldState(_activeCall) || dialpadVisible)
                         ClipRect(
                             child: BackdropFilter(
                                 filter: ImageFilter.blur(sigmaX: 21, sigmaY: 21),
@@ -708,14 +708,14 @@ class _CallViewState extends State<CallView> {
                                     callerNumber:
                                         callerNumber.toString().formatPhone(),
                                     isRinging: isRinging,
-                                    prefix: _activeCall.direction == "INCOMING" || 
-                                    _activeCall.direction == "inbound" 
+                                    prefix: _activeCall!.direction == "INCOMING" || 
+                                    _activeCall!.direction == "inbound" 
                                       ? _linePrefix
                                       : "",
                                     callIsRecording:
-                                        _softphone.getRecordState(_activeCall),
+                                        _softphone!.getRecordState(_activeCall!),
                                     callRunTime: callRunTime),
-                                if (_softphone.getHoldState(_activeCall))
+                                if (_softphone!.getHoldState(_activeCall))
                                   _onHoldView()
                                 else
                                    _showDisposition 
@@ -732,7 +732,7 @@ class _CallViewState extends State<CallView> {
                                         )
                                       ) 
                                    : Spacer(),
-                                if (!_softphone.getHoldState(_activeCall) &&
+                                if (!_softphone!.getHoldState(_activeCall) &&
                                     dialpadVisible)
                                   CallDialPad(_softphone, _activeCall),
                                 if ((!Platform.isIOS || !isIncoming || !isRinging )&& !_showDisposition)
@@ -742,7 +742,7 @@ class _CallViewState extends State<CallView> {
                                       isIncoming: isIncoming,
                                       dialPadOpen: dialpadVisible,
                                       isOnConference:
-                                          _softphone.isCallMerged(_activeCall),
+                                          _softphone!.isCallMerged(_activeCall!),
                                       setDialpad: (bool isOpen) {
                                         setState(() {
                                           dialpadVisible = isOpen;
@@ -751,19 +751,19 @@ class _CallViewState extends State<CallView> {
                                       currentAudioSource: _softphone.outputDevice,
                                       loading: TextBtnPressed,
                                       callIsRecording:
-                                          _softphone.getRecordState(_activeCall),
-                                      callIsMuted: _softphone.getMuted(_activeCall),
+                                          _softphone!.getRecordState(_activeCall!),
+                                      callIsMuted: _softphone!.getMuted(_activeCall!),
                                       callOnHold:
-                                          _softphone.getHoldState(_activeCall)),
+                                          _softphone!.getHoldState(_activeCall)),
                                 CallFooterDetails( _softphone, _activeCall, _openDisposition)
                               ],
                             ),
                           )),
-                      if (connectedCalls.length > 0)
+                      if (connectedCalls.length > 0 && _activeCall != null)
                         AnsweredWhileOnCall(
                             calls: connectedCalls,
                             softphone: _softphone,
-                            activeCall: _activeCall),
+                            activeCall: _activeCall!),
                       if (incomingCall != null)
                         IncomingWhileOnCall(
                             call: incomingCall, softphone: _softphone)

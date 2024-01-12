@@ -10,15 +10,15 @@ import 'package:sip_ua/sip_ua.dart';
 
 class DispositionView extends StatefulWidget {
   final Call terminatedCall;
-  final Softphone softphone;
-  final FusionConnection fusionConnection;
+  final Softphone? softphone;
+  final FusionConnection? fusionConnection;
   final Function onDone;
   const DispositionView({
-    @required this.terminatedCall, 
-    @required this.softphone, 
-    @required this.fusionConnection,
-    @required this.onDone,
-    Key key
+    required this.terminatedCall, 
+    required this.softphone, 
+    required this.fusionConnection,
+    required this.onDone,
+    Key? key
   }) : super(key: key);
 
   @override
@@ -27,13 +27,13 @@ class DispositionView extends StatefulWidget {
 
 class _DispositionViewState extends State<DispositionView> {
   Call get _terminatedCall => widget.terminatedCall;
-  FusionConnection get _fusionConnection => widget.fusionConnection;
-  Softphone get _softphone => widget.softphone;
+  FusionConnection? get _fusionConnection => widget.fusionConnection;
+  Softphone? get _softphone => widget.softphone;
   Function get _onDone => widget.onDone;
 
   @override
   Widget build(BuildContext context) {
-    String phoneNumber = _softphone.getCallerNumber(_terminatedCall);
+    String? phoneNumber = _softphone!.getCallerNumber(_terminatedCall);
     
     return Scaffold(
       backgroundColor: smoke.withOpacity(0.33),
@@ -41,7 +41,7 @@ class _DispositionViewState extends State<DispositionView> {
         decoration: BoxDecoration(
           image: DecorationImage(
             colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.7), BlendMode.dstATop),
-              image: _softphone.getCallerPic(_terminatedCall),
+              image: _softphone!.getCallerPic(_terminatedCall),
               fit: BoxFit.cover)),
         child: SafeArea(
           child: BackdropFilter(

@@ -15,11 +15,11 @@ import "../utils.dart";
 import '../styles.dart';
 
 class Voicemails extends StatefulWidget {
-  Voicemails(this._fusionConnection, this._softphone, {Key key})
+  Voicemails(this._fusionConnection, this._softphone, {Key? key})
       : super(key: key);
 
   final FusionConnection _fusionConnection;
-  final Softphone _softphone;
+  final Softphone? _softphone;
 
   @override
   State<StatefulWidget> createState() => _VoicemailsState();
@@ -28,13 +28,13 @@ class Voicemails extends StatefulWidget {
 class _VoicemailsState extends State<Voicemails> {
   FusionConnection get _fusionConnection => widget._fusionConnection;
 
-  Softphone get _softphone => widget._softphone;
+  Softphone? get _softphone => widget._softphone;
   List<Voicemail> _voicemails = [];
   int _lookupState = 0;
-  String _openVmId = "";
+  String? _openVmId = "";
   int _audioPosition = 0;
   AudioPlayer _audioPlayer = AudioPlayer();
-  String _playingUrl = null;
+  String? _playingUrl = null;
   bool _isPlaying = false;
   bool _loading = false;
   bool _deletingVm = false;
@@ -75,13 +75,13 @@ class _VoicemailsState extends State<Voicemails> {
     if (_lookupState == 1) return;
     _lookupState = 1;
 
-    _fusionConnection.voicemails
+    _fusionConnection!.voicemails
         .getVoicemails((List<Voicemail> vms, bool fromServer) {
       if (!mounted) return;
       setState(() {
-            _lookupState = 2;
-            _voicemails = vms;
-          });
+        _lookupState = 2;
+        _voicemails = vms;
+      });
     });
   }
 
@@ -115,17 +115,17 @@ class _VoicemailsState extends State<Voicemails> {
   }
 
   _openProfile(Voicemail vm) {
-    if (vm.contacts.length > 0)
+    if (vm.contacts!.length > 0)
       showModalBottomSheet(
           context: context,
           backgroundColor: Colors.transparent,
           isScrollControlled: true,
           builder: (context) => ContactProfileView(
-              _fusionConnection, _softphone, vm.contacts[0],null));
+              _fusionConnection, _softphone, vm.contacts![0], null));
   }
 
   _makeCall(Voicemail vm) {
-    _softphone.makeCall(vm.phoneNumber);
+    _softphone!.makeCall(vm.phoneNumber);
   }
 
   void _deleteVoicemail(Voicemail vm) async {
@@ -134,7 +134,7 @@ class _VoicemailsState extends State<Voicemails> {
     });
     bool res = await _fusionConnection.voicemails.deleteVoicemail(vm);
     // ns always returns false for deleting vm even if it was succesful
-    if(!res){
+    if (!res) {
       setState(() {
         _deletingVm = false;
         _voicemails.removeWhere((element) => vm.id == element.id);
@@ -146,44 +146,44 @@ class _VoicemailsState extends State<Voicemails> {
     setState(() {
       _loading = true;
     });
-    SMSDepartment dept = _fusionConnection.smsDepartments.getDepartment(vm.phoneNumber.length > 6 
-      ? DepartmentIds.Personal
-      : DepartmentIds.FusionChats
-    );
+    SMSDepartment dept = _fusionConnection.smsDepartments.getDepartment(
+        vm.phoneNumber!.length > 6
+            ? DepartmentIds.Personal
+            : DepartmentIds.FusionChats);
 
-    if(dept.numbers.isEmpty){
-      _fusionConnection.smsDepartments.getDepartments((List<SMSDepartment> dep) {
+    if (dept.numbers.isEmpty) {
+      _fusionConnection.smsDepartments
+          .getDepartments((List<SMSDepartment> dep) {
         for (SMSDepartment d in dep) {
-          if(d.numbers.isNotEmpty){
+          if (d.numbers.isNotEmpty) {
             dept = d;
             break;
           }
         }
       });
-      if(dept.numbers.isEmpty){
+      if (dept.numbers.isEmpty) {
         return showModalBottomSheet(
-          context: context,
-          backgroundColor: coal,
-          shape: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
-          builder: (context)=> Container(
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height / 3,
-            ),
-            child: Center(
-              child: Text("No personal/departmens SMS number found for this account", 
-                style: TextStyle(color: Colors.white),),
-            ),
-          )).whenComplete(() =>  setState(() {
-            _loading = false;
-          }));
+            context: context,
+            backgroundColor: coal,
+            shape: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
+            builder: (context) => Container(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.height / 3,
+                  ),
+                  child: Center(
+                    child: Text(
+                      "No personal/departmens SMS number found for this account",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                )).whenComplete(() => setState(() {
+              _loading = false;
+            }));
       }
     }
-    SMSConversation convo = await _fusionConnection.messages.checkExistingConversation(
-      DepartmentIds.Personal,
-      dept.numbers[0],
-      [vm.phoneNumber],
-      vm.contacts
-    );
+    SMSConversation convo = await _fusionConnection.messages
+        .checkExistingConversation(DepartmentIds.Personal, dept.numbers[0],
+            [vm.phoneNumber ?? ""], vm.contacts ?? []);
 
     setState(() {
       _loading = false;
@@ -192,24 +192,28 @@ class _VoicemailsState extends State<Voicemails> {
         context: context,
         backgroundColor: Colors.transparent,
         isScrollControlled: true,
-        builder: (context) => StatefulBuilder(
-          builder: (BuildContext context, StateSetter setState) {
-          SMSConversation displayingConvo = convo;
-          return SMSConversationView(
-            fusionConnection: _fusionConnection, 
-            softphone: _softphone, 
-            smsConversation: displayingConvo, 
-            deleteConvo: null,
-            setOnMessagePosted: null,
-            changeConvo: (SMSConversation UpdatedConvo){
-              setState(() {
-                displayingConvo = UpdatedConvo;
-              },);
-            }
-          );
-          },
-        ),
-      );
+        builder: (context) => dept != null
+            ? StatefulBuilder(
+                builder: (BuildContext context, StateSetter setState) {
+                  SMSConversation displayingConvo = convo;
+                  return SMSConversationView(
+                      fusionConnection: _fusionConnection,
+                      softphone: _softphone,
+                      smsConversation: displayingConvo,
+                      deleteConvo: null,
+                      setOnMessagePosted: null,
+                      changeConvo: (SMSConversation UpdatedConvo) {
+                        setState(
+                          () {
+                            displayingConvo = UpdatedConvo;
+                          },
+                        );
+                      });
+                },
+              )
+            : Center(
+                child: Text("No personal number found"),
+              ));
   }
 
   Widget _vmRow(Voicemail vm) {
@@ -217,7 +221,8 @@ class _VoicemailsState extends State<Voicemails> {
         margin: EdgeInsets.only(bottom: 18),
         child: Column(children: [
           Row(children: [
-            ContactCircle.withCoworkerAndDiameter(vm.contacts, [], vm.coworker, 40),
+            ContactCircle.withCoworkerAndDiameter(
+                vm.contacts, [], vm.coworker, 40),
             Container(width: 6),
             Expanded(
                 child: Column(children: [
@@ -239,14 +244,14 @@ class _VoicemailsState extends State<Voicemails> {
                         color: char, fontSize: 13, fontWeight: FontWeight.w400))
               ]),
               Row(children: [
-                Text(vm.phoneNumber.formatPhone(),
+                Text(vm.phoneNumber!.formatPhone(),
                     style: TextStyle(
                         color: char,
                         fontSize: 13,
                         fontWeight: FontWeight.w400,
                         height: 1.4)),
                 Spacer(),
-                Text(vm.duration.printDuration(),
+                Text(vm.duration!.printDuration(),
                     style: TextStyle(
                         color: char.withAlpha((255 * 0.66).round()),
                         fontSize: 13,
@@ -327,15 +332,13 @@ class _VoicemailsState extends State<Voicemails> {
                                               width: 22,
                                               height: 22,
                                               alignment: Alignment.center,
-                                              child:
-                                              _isPlaying
+                                              child: _isPlaying
                                                   ? Icon(CupertinoIcons.pause,
-
-                                              size: 12, color: smoke)
+                                                      size: 12, color: smoke)
                                                   : Image.asset(
-                                                  "assets/icons/audio-play.png",
-                                                  width: 6,
-                                                  height: 8))),
+                                                      "assets/icons/audio-play.png",
+                                                      width: 6,
+                                                      height: 8))),
                                       Expanded(
                                           child: Stack(children: [
                                         Container(
@@ -360,7 +363,7 @@ class _VoicemailsState extends State<Voicemails> {
                                                       fontWeight:
                                                           FontWeight.w400)),
                                               Spacer(),
-                                              Text(vm.duration.printDuration(),
+                                              Text(vm.duration!.printDuration(),
                                                   style: TextStyle(
                                                       color: char,
                                                       fontSize: 10,
@@ -370,49 +373,51 @@ class _VoicemailsState extends State<Voicemails> {
                                             ])),
                                         Container(
                                             alignment: FractionalOffset(
-                                                (_audioPosition /
-                                                      vm.duration),
+                                                (_audioPosition / vm.duration!),
                                                 0),
                                             child: Container(
-                                            margin: EdgeInsets.only(
-                                                top: 2, left: 8),
-                                            child: Container(
-                                              decoration: BoxDecoration(
-                                                  color: Colors.white,
-                                                  border: Border.all(
-                                                      width: 2.0, color: coal),
-                                                  borderRadius:
-                                                      BorderRadius.all(
-                                                          Radius.circular(8))),
-                                              width: 16,
-                                              height: 16,
-                                            )))
+                                                margin: EdgeInsets.only(
+                                                    top: 2, left: 8),
+                                                child: Container(
+                                                  decoration: BoxDecoration(
+                                                      color: Colors.white,
+                                                      border: Border.all(
+                                                          width: 2.0,
+                                                          color: coal),
+                                                      borderRadius:
+                                                          BorderRadius.all(
+                                                              Radius.circular(
+                                                                  8))),
+                                                  width: 16,
+                                                  height: 16,
+                                                )))
                                       ]))
                                     ]),
                                 Container(height: 12),
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                  actionButton("", "user_dark", 18, 18,
-                                      () {
-                                    _openProfile(vm);
-                                  },
-                                      flex: 0,
-                                      opacity:
-                                          vm.contacts.length > 0 ? 1.0 : 0.35),
-                                  actionButton("", "phone_dark", 18, 18,
-                                      () {
-                                    _makeCall(vm);
-                                  }, flex: 0),
-                                  actionButton(
-                                      "", "message_dark", 18, 18, () {
-                                    _openMessage(vm);
-                                  },isLoading: _loading,flex: 0),
-                                  actionButton(
-                                      "", "trashcan_red", 18, 18, () {
-                                    _deleteVoicemail(vm);
-                                  },isLoading: _deletingVm, flex: 0),
-                                ])
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      actionButton("", "user_dark", 18, 18, () {
+                                        _openProfile(vm);
+                                      },
+                                          flex: 0,
+                                          opacity: vm.contacts!.length > 0
+                                              ? 1.0
+                                              : 0.35),
+                                      actionButton("", "phone_dark", 18, 18,
+                                          () {
+                                        _makeCall(vm);
+                                      }, flex: 0),
+                                      actionButton("", "message_dark", 18, 18,
+                                          () {
+                                        _openMessage(vm);
+                                      }, isLoading: _loading, flex: 0),
+                                      actionButton("", "trashcan_red", 18, 18,
+                                          () {
+                                        _deleteVoicemail(vm);
+                                      }, isLoading: _deletingVm, flex: 0),
+                                    ])
                               ]))))
             ])
         ]));
@@ -439,13 +444,18 @@ class _VoicemailsState extends State<Voicemails> {
                       borderRadius: BorderRadius.all(Radius.circular(8))),
                   child: _isSpinning()
                       ? _spinner()
-                      : _voicemails.length > 0 ? ListView.builder(
-                      itemCount: _voicemails.length,
-                      itemBuilder: (BuildContext context, int index) {
-                        return _vmRow(_voicemails[index]);
-                      },
-                      padding:
-                      EdgeInsets.only(left: 12, right: 12, top: 12)) : Center(child: Text("No Voicemails", style: TextStyle(fontSize: 18, color: Colors.black54)))))
+                      : _voicemails.length > 0
+                          ? ListView.builder(
+                              itemCount: _voicemails.length,
+                              itemBuilder: (BuildContext context, int index) {
+                                return _vmRow(_voicemails[index]);
+                              },
+                              padding:
+                                  EdgeInsets.only(left: 12, right: 12, top: 12))
+                          : Center(
+                              child: Text("No Voicemails",
+                                  style: TextStyle(
+                                      fontSize: 18, color: Colors.black54)))))
         ],
       ),
     );

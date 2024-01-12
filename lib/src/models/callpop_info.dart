@@ -7,10 +7,10 @@ import 'fusion_model.dart';
 import 'fusion_store.dart';
 
 class CallpopInfo extends FusionModel {
-  String phoneNumber;
+  String phoneNumber = "";
   List<CrmContact> crmContacts = [];
-  List<Contact> contacts;
-  List<dynamic> dispositionGroups;
+  List<Contact> contacts = [];
+  List<dynamic> dispositionGroups = [];
   String _id = 'phoneNumber';
 
   CallpopInfo(Map<String, dynamic> map) {
@@ -18,14 +18,14 @@ class CallpopInfo extends FusionModel {
     this.contacts = map['contacts'];
     this.dispositionGroups = map['dispositions'];
     var added = {};
-    this.contacts.forEach((contact) {
-      List<String> emails = [];
-      contact.emails.forEach((email) {
+    this.contacts!.forEach((contact) {
+      List<String?> emails = [];
+      contact.emails!.forEach((email) {
         if(email['email'].runtimeType == String){
           emails.add(email['email']);
         }
       });
-      contact.externalReferences.forEach((extRef) {
+      contact.externalReferences!.forEach((extRef) {
         if (extRef['externalId'] != null) {
           var key = extRef['externalId'] + ':' + extRef['network'];
           if (!added.containsKey(key)) {
@@ -53,16 +53,16 @@ class CallpopInfo extends FusionModel {
     });
   }
 
-  String getId() => this.phoneNumber;
+  String? getId() => this.phoneNumber;
 
-  String getCompany({String defaul}) {
-    for (Contact c in contacts) {
-      if (c.company.trim() != "") {
+  String? getCompany({String? defaul}) {
+    for (Contact c in contacts!) {
+      if (c.company!.trim() != "") {
         return c.company;
       }
     }
     for (CrmContact c in crmContacts) {
-      if (c.company.trim() != '') {
+      if (c.company!.trim() != '') {
         return c.company;
       }
     }
@@ -70,18 +70,18 @@ class CallpopInfo extends FusionModel {
   }
 
 
-  String getName({String defaul}) {
+  String getName({String? defaul}) {
     for (Contact c in contacts) {
-      if (c.name.trim() != "") {
-        return c.name;
+      if (c.name != null && c.name!.trim() != "") {
+        return c.name!;
       }
     }
     for (CrmContact c in crmContacts) {
-      if (c.name.trim() != '') {
-        return c.name;
+      if (c.name != null && c.name!.trim() != '') {
+        return c.name!;
       }
     }
-    return defaul != null ? defaul : "";
+    return defaul ?? "";
   }
 }
 
@@ -92,12 +92,12 @@ class CallpopInfoStore extends FusionStore<CallpopInfo> {
   CallpopInfoStore(FusionConnection _fusionConnection)
       : super(_fusionConnection);
 
-  lookupPhone(String phoneNumber, Function(CallpopInfo callpopInfo) callback) {
+  lookupPhone(String? phoneNumber, Function(CallpopInfo? callpopInfo) callback) {
     if (hasRecord(phoneNumber)) {
       return getRecord(phoneNumber, callback);
     }
 
-    String extOrPN = phoneNumber.length <= 6 ? phoneNumber + "@" + fusionConnection.getDomain(): phoneNumber;
+    String? extOrPN = phoneNumber!.length <= 6 ? phoneNumber + "@" + fusionConnection.getDomain(): phoneNumber;
 
     fusionConnection.apiV2Call(
         "get",

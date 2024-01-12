@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class CallNotes extends StatefulWidget {
-  CallNotes({Key key}) : super(key: key);
+  CallNotes({Key? key}) : super(key: key);
 
   @override
   State<StatefulWidget> createState() => _CallNotesState();

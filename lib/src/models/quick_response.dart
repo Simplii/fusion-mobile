@@ -6,13 +6,13 @@ import 'fusion_model.dart';
 import 'fusion_store.dart';
 
 class QuickResponse extends FusionModel {
-  String createdAt;
-  String domain;
-  int groupId;
-  int id;
-  String message;
-  String uid;
-  String updatedAt;
+  String? createdAt;
+  String? domain;
+  int? groupId;
+  int? id;
+  String? message;
+  String? uid;
+  String? updatedAt;
 
   QuickResponse(Map<String,dynamic>obj){
     this.createdAt = obj['created_at'];
@@ -50,7 +50,7 @@ class QuickResponse extends FusionModel {
 class QuickResponsesStore extends FusionStore<QuickResponse> {
   QuickResponsesStore(FusionConnection fusionConnection) : super(fusionConnection);
 
-  void getQuickResponses(String departmentId, Function(List<QuickResponse>) quickResponses){
+  void getQuickResponses(String? departmentId, Function(List<QuickResponse>) quickResponses){
     fusionConnection.apiV2Call("get", 
     departmentId == "-1" 
       ? "/messaging/user/${fusionConnection.getUid()}/quickMessages"

@@ -8,10 +8,10 @@ import 'package:sip_ua/sip_ua.dart';
 import '../styles.dart';
 
 class CallDialPad extends StatefulWidget {
-  CallDialPad(this._softphone, this._activeCall, {Key key}) : super(key: key);
+  CallDialPad(this._softphone, this._activeCall, {Key? key}) : super(key: key);
 
-  final Softphone _softphone;
-  final Call _activeCall;
+  final Softphone? _softphone;
+  final Call? _activeCall;
 
   @override
   State<StatefulWidget> createState() => _CallDialPadState();
@@ -24,8 +24,8 @@ class _CallDialPadState extends State<CallDialPad> {
     setState(() {
       dialedNumber += key;
     });
-    widget._softphone.sendDtmf(
-        widget._activeCall,
+    widget._softphone!.sendDtmf(
+        widget._activeCall!,
         key,
         true);
     Dtmf.playTone(digits: key, durationMs: 300);

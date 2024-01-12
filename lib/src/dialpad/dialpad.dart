@@ -15,40 +15,40 @@ class DialPad extends StatefulWidget {
   DialPad(
     this._fusionConnection, 
     this._softphone,
-    {Key key, 
+    {Key? key, 
       this.onQueryChange, 
       this.onPlaceCall, 
       this.fromTransferScreen = false,
       this.directTransfer
     }) : super(key: key);
 
-  final FusionConnection _fusionConnection;
-  final Softphone _softphone;
-  final Function onQueryChange;
+  final FusionConnection? _fusionConnection;
+  final Softphone? _softphone;
+  final Function? onQueryChange;
   final bool fromTransferScreen;
-  final Function(String number) onPlaceCall;
-  final Function(String to) directTransfer;
+  final Function(String number)? onPlaceCall;
+  final Function(String to)? directTransfer;
 
   @override
   State<StatefulWidget> createState() => _DialPadState();
 }
 
 class _DialPadState extends State<DialPad> with TickerProviderStateMixin {
-  FusionConnection get _fusionConnection => widget._fusionConnection;
+  FusionConnection? get _fusionConnection => widget._fusionConnection;
 
-  Softphone get _softphone => widget._softphone;
+  Softphone? get _softphone => widget._softphone;
 
   var dialedNumber = '';
   final _dialEntryController = ScrollController();
   bool _lastNumberCalledIsSet = false;
   bool get _fromTransferScreen => widget.fromTransferScreen;
-  String _myPhoneNumber = "";
-  Function(String to) get _directTransfer => widget.directTransfer;
+  String? _myPhoneNumber = "";
+  Function(String to)? get _directTransfer => widget.directTransfer;
   @override
   void initState() {
     super.initState();
     _loadLastCalledNumber();
-    _myPhoneNumber = _fusionConnection.settings.myCellPhoneNumber;
+    _myPhoneNumber = _fusionConnection!.settings!.myCellPhoneNumber;
   }
 
   void _scrollToEnd() {
@@ -69,7 +69,7 @@ class _DialPadState extends State<DialPad> with TickerProviderStateMixin {
   void handleDialPadKeyPress(String key) {
     setState(() {
       dialedNumber += key;
-      if (widget.onQueryChange != null) widget.onQueryChange(dialedNumber);
+      if (widget.onQueryChange != null) widget.onQueryChange!(dialedNumber);
       Future.delayed(const Duration(milliseconds: 50), () {
         _scrollToEnd();
       });
@@ -77,15 +77,15 @@ class _DialPadState extends State<DialPad> with TickerProviderStateMixin {
   }
 
   void pasteNumber() async {
-    ClipboardData data = await Clipboard.getData(Clipboard.kTextPlain);
+    ClipboardData? data = await Clipboard.getData(Clipboard.kTextPlain);
     if (data == null) return;
-    String pastedNumber = data.text.onlyNumbers();
+    String pastedNumber = data.text!.onlyNumbers();
     if (pastedNumber.length > 10 && pastedNumber.startsWith("1", 0)) {
       pastedNumber = pastedNumber.substring(1);
     }
     setState(() {
       dialedNumber = pastedNumber;
-      if (widget.onQueryChange != null) widget.onQueryChange(dialedNumber);
+      if (widget.onQueryChange != null) widget.onQueryChange!(dialedNumber);
     });
   }
 
@@ -94,15 +94,15 @@ class _DialPadState extends State<DialPad> with TickerProviderStateMixin {
 
     setState(() {
       dialedNumber = dialedNumber.substring(0, dialedNumber.length - 1);
-      if (widget.onQueryChange != null) widget.onQueryChange(dialedNumber);
+      if (widget.onQueryChange != null) widget.onQueryChange!(dialedNumber);
     });
   }
 
   void placeCall() {
     if (widget.onPlaceCall != null)
-      widget.onPlaceCall(dialedNumber);
+      widget.onPlaceCall!(dialedNumber);
     else {
-      _softphone.makeCall(dialedNumber);
+      _softphone!.makeCall(dialedNumber);
       Navigator.pop(context);
     }
   }
@@ -149,7 +149,7 @@ class _DialPadState extends State<DialPad> with TickerProviderStateMixin {
                         border: OutlineInputBorder(),
                         contentPadding: EdgeInsets.symmetric(horizontal: 16),
                       ),
-                      initialValue: _myPhoneNumber.formatPhone(),
+                      initialValue: _myPhoneNumber!.formatPhone(),
                       onChanged: (value) {
                         setDialogState(() {
                           setState(() {
@@ -167,9 +167,9 @@ class _DialPadState extends State<DialPad> with TickerProviderStateMixin {
                     foregroundColor: Colors.white,
                     backgroundColor: crimsonLight
                   ),
-                  onPressed:_myPhoneNumber.length < 10 ? null : (){
+                  onPressed:_myPhoneNumber!.length < 10 ? null : (){
                     if(_directTransfer != null){
-                      _directTransfer(_myPhoneNumber.onlyNumbers());
+                      _directTransfer!(_myPhoneNumber!.onlyNumbers());
                     }
                     Navigator.of(context).pop();
                   },
@@ -285,7 +285,7 @@ class _DialPadState extends State<DialPad> with TickerProviderStateMixin {
                               ),
                             if(dialedNumber == '' && 
                               _fromTransferScreen && 
-                              _fusionConnection.settings.myCellPhoneNumber.isNotEmpty)
+                              _fusionConnection!.settings!.myCellPhoneNumber!.isNotEmpty)
                             SizedBox(
                               height: 40,
                               child: ElevatedButton(
@@ -410,13 +410,13 @@ class _DialPadState extends State<DialPad> with TickerProviderStateMixin {
                           ? () async {
                               final prefs =
                                   await SharedPreferences.getInstance();
-                              final String lastDialedNumber =
+                              final String? lastDialedNumber =
                                   prefs.getString('lastCalledNumber');
                               if (lastDialedNumber != null) {
                                 setState(() {
                                   dialedNumber = lastDialedNumber;
                                   if (widget.onQueryChange != null)
-                                    widget.onQueryChange(lastDialedNumber);
+                                    widget.onQueryChange!(lastDialedNumber);
                                 });
                               } else {
                                 print("No number have been called yet");

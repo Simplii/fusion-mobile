@@ -19,12 +19,12 @@ import 'package:fusion_mobile_revamped/src/utils.dart';
 import 'package:sip_ua/sip_ua.dart';
 import 'package:fusion_mobile_revamped/src/calls/recent_calls.dart';
 class DialPadModal extends StatefulWidget {
-  DialPadModal(this._fusionConnection, this._softphone, {Key key, this.initialTab})
+  DialPadModal(this._fusionConnection, this._softphone, {Key? key, this.initialTab})
       : super(key: key);
 
   final FusionConnection _fusionConnection;
   final Softphone _softphone;
-  int initialTab;
+  final int? initialTab;
 
   @override
   State<StatefulWidget> createState() => _DialPadModalState();
@@ -33,13 +33,13 @@ class DialPadModal extends StatefulWidget {
 class _DialPadModalState extends State<DialPadModal>
     with TickerProviderStateMixin {
   FusionConnection get _fusionConnection => widget._fusionConnection;
-  Call get _activeCall => _softphone.activeCall;
+  Call? get _activeCall => _softphone.activeCall;
   Softphone get _softphone => widget._softphone;
-  TabController _tc;
-  int _initialIndex = 1;
-  int _tabIndex = 1;
+  TabController? _tc;
+  int? _initialIndex = 1;
+  int? _tabIndex = 1;
   String _query = "";
-  Timer _timer;
+  Timer? _timer;
   bool v2Domain = false;
   
   final List<Tab> tabs = [
@@ -47,7 +47,7 @@ class _DialPadModalState extends State<DialPadModal>
     Tab(text: "Contacts",height: 30),
     Tab(text: "Coworkers", height: 30),
   ];
-  TabController _tabController;
+  TabController? _tabController;
 
   @override
   void initState() {
@@ -64,26 +64,26 @@ class _DialPadModalState extends State<DialPadModal>
     _tabIndex = _initialIndex;
 
     _tc =
-        new TabController(length: 3, initialIndex: _initialIndex, vsync: this);
-    _tc.addListener(_updateTabIndex);
-    v2Domain = _fusionConnection.settings.isV2User();
+        new TabController(length: 3, initialIndex: _initialIndex!, vsync: this);
+    _tc!.addListener(_updateTabIndex);
+    v2Domain = _fusionConnection!.settings!.isV2User();
   }
 
   @override
   void dispose() {
-    _tc.dispose();
-    _timer.cancel();
-    _tabController.dispose();
     super.dispose();
+    _tc!.dispose();
+    _timer!.cancel();
+    _tabController!.dispose();
   }
 
   void _onTabTapped(int index) {
-    _tc.animateTo(index);
+    _tc!.animateTo(index);
   }
 
   void _updateTabIndex() {
     setState(() {
-      _tabIndex = _tc.index;
+      _tabIndex = _tc!.index;
     });
   }
 
@@ -134,10 +134,10 @@ class _DialPadModalState extends State<DialPadModal>
                         fromDialpad: true,
                       );
                     } else {
-                      return ContactsSearchList(_fusionConnection, _softphone, _query, tab.text.toLowerCase(),
+                      return ContactsSearchList(_fusionConnection, _softphone, _query, tab.text!.toLowerCase(),
                         v2Domain,
                         embedded: true,
-                        onSelect: (Contact contact, CrmContact crmContact) {
+                        onSelect: (Contact? contact, CrmContact? crmContact) {
                           if (contact != null && contact.firstNumber() != null) {
                             _softphone.makeCall(contact.firstNumber());
                             Navigator.pop(context);
@@ -219,7 +219,7 @@ class _DialPadModalState extends State<DialPadModal>
               selectedItemColor: crimsonDarker,
               unselectedItemColor: coal,
               onTap: _onTabTapped,
-              currentIndex: _tc != null ? _tc.index : 1,
+              currentIndex: _tc != null ? _tc!.index : 1,
               iconSize: 20,
               selectedLabelStyle: TextStyle(
                   color: crimsonDarker,
@@ -249,7 +249,7 @@ class _DialPadModalState extends State<DialPadModal>
   }
 
   Widget _callView() {
-    CallpopInfo info = _softphone.getCallpopInfo(_activeCall.id);
+    CallpopInfo? info = _softphone.getCallpopInfo(_activeCall!.id);
     if (info == null)
       return Container();
     else
@@ -264,14 +264,14 @@ class _DialPadModalState extends State<DialPadModal>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (info.getCompany(defaul: "").trim() != "")
-                    Text(info.getCompany(),
+                  if (info.getCompany(defaul: "")!.trim() != "")
+                    Text(info.getCompany()!,
                     style: TextStyle(
                       color: translucentWhite(0.66),
                       fontWeight: FontWeight.w700,
                       fontSize: 14
                     )),
-                  if (!(info.getCompany(defaul: "").trim() != ""))
+                  if (!(info.getCompany(defaul: "")!.trim() != ""))
                     Text(" ",
                     style: TextStyle(
                       color: translucentWhite(0.66),
@@ -280,14 +280,14 @@ class _DialPadModalState extends State<DialPadModal>
                     )),
 
                   Text(
-                    info.getName(defaul: "Unknown"),
+                    info.getName(defaul: "Unknown")!,
                     style: TextStyle(
                         color: Colors.white,
                         fontSize: 21,
                         fontWeight: FontWeight.w900)
                   ),
                   Text(
-                    info.phoneNumber.formatPhone(),
+                    info.phoneNumber!.formatPhone(),
                     style: TextStyle(
                       color: translucentWhite(0.66),
                       fontSize: 12,
@@ -297,7 +297,7 @@ class _DialPadModalState extends State<DialPadModal>
                 ]
               )),
           Text(
-            _softphone.getCallRunTimeString(_activeCall),
+            _softphone.getCallRunTimeString(_activeCall!),
             style: TextStyle(
               height: 1.0,
               color: Colors.white,
