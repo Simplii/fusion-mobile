@@ -394,7 +394,6 @@ class _SMSConversationViewState extends State<SMSConversationView> {
                 );
               } 
               else if (chosen == "assignConvo") {
-                print("MDBM assign");
                 Coworker emptyCoworker = Coworker.empty();
                 emptyCoworker.uid = "Unassigned";
                 emptyCoworker.firstName = "Unassigned"; 
@@ -566,6 +565,7 @@ class _SMSConversationViewState extends State<SMSConversationView> {
   void _assignCoworker(Coworker selectedCoworker) {
     setState(() {
       _conversation.assigneeUid = selectedCoworker.uid;
+      _fusionConnection.conversations.storeRecord(_conversation);
     });
     _fusionConnection.conversations.editConvoAssignment(
       coworkerUid: selectedCoworker.uid, convo: _conversation

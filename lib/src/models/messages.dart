@@ -370,7 +370,7 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
             List<CrmContact> leads = [];
             for (Map<String, dynamic> obj in data['conversationMembers']) {
               List<dynamic> convoMembersLeads = obj['leads'];
-              if(convoMembersLeads!= null && convoMembersLeads.length > 0){
+              if(convoMembersLeads != null && convoMembersLeads.length > 0 && !fusionConnection.settings.usesV2){
                 convoMembersLeads.forEach((lead) { 
                   leads.add(CrmContact.fromExpanded(lead));
                 });
