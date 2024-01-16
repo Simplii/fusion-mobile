@@ -511,7 +511,7 @@ class _CallHistorySummaryViewState extends State<CallHistorySummaryView> {
       return linePrefix != ""
           ? linePrefix + "_" + _historyItem.phoneContact.name.toTitleCase()
           : _historyItem.phoneContact.name.toTitleCase();
-    } else if (_historyItem.callerId != '') {
+    } else if (_historyItem.callerId != null && _historyItem.callerId != '') {
       String linePrefix =  _getLinePrefix(_historyItem.callerId);
       return _historyItem.callerId.startsWith(linePrefix) && 
              _historyItem.callerId.replaceAll(linePrefix + "_", "") != "" 
