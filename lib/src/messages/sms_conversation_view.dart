@@ -393,12 +393,12 @@ class _SMSConversationViewState extends State<SMSConversationView> {
                                 _setOnMessagePosted!(null);
                               })));
                 });
-              } else if (chosen == "markunread") {
-                _fusionConnection!.conversations.markUnread(
-                    _conversation!.message!.id,
-                    _conversation!,
-                    () => Navigator.pop(this.context));
-              } else if (chosen == "assignConvo") {
+              } else if (chosen == "markunread"){
+                _fusionConnection.conversations.markUnread(_conversation.message!.id,_conversation, 
+                  () => Navigator.pop(this.context)
+                );
+              } 
+              else if (chosen == "assignConvo") {
                 Coworker emptyCoworker = Coworker.empty();
                 emptyCoworker.uid = "Unassigned";
                 emptyCoworker.firstName = "Unassigned";
@@ -586,6 +586,7 @@ class _SMSConversationViewState extends State<SMSConversationView> {
   void _assignCoworker(Coworker selectedCoworker) {
     setState(() {
       _conversation.assigneeUid = selectedCoworker.uid;
+      _fusionConnection.conversations.storeRecord(_conversation);
     });
     _fusionConnection.conversations.editConvoAssignment(
         coworkerUid: selectedCoworker.uid, convo: _conversation);

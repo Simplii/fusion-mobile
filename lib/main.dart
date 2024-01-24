@@ -311,10 +311,12 @@ class _MyHomePageState extends State<MyHomePage> {
     List<String> numbers = [];
     List<dynamic> members = [];
     bool isGroup = data['is_group'] == "1" ? true : false;
-    String depId = '';
-    fusionConnection.smsDepartments
-        .getDepartments((p0) => null, username: username?.toLowerCase() ?? "");
-    if (data.containsKey('numbers')) {
+    String depId = DepartmentIds.AllMessages;
+    fusionConnection.smsDepartments.getDepartments(
+      (p0) => null,
+      username: username?.toLowerCase() ?? ""
+    );
+    if(data.containsKey('numbers')){
       numbers = (jsonDecode(data['numbers']) as List<dynamic>).cast<String>();
     }
 
@@ -406,37 +408,38 @@ class _MyHomePageState extends State<MyHomePage> {
           fusionConnection.integratedContacts.search(data['from_number'], 10, 0,
               (crmContacts, fromServer, hasMore) {
             if (fromServer || contactsFromPhonebook) {
-              contacts.addAll(crmContacts);
-              showModalBottomSheet(
-                context: context,
-                backgroundColor: Colors.transparent,
-                isScrollControlled: true,
-                builder: (context) => StatefulBuilder(
-                  builder: (BuildContext context, StateSetter setState) {
-                    SMSConversation displayingConvo = SMSConversation.build(
-                        contacts: contacts,
-                        crmContacts: [],
-                        isGroup: false,
-                        hash: data['to_number'] + ":" + data['from_number'],
-                        selectedDepartmentId: depId,
-                        myNumber: data['to_number'],
-                        number: data['from_number']);
-                    return SMSConversationView(
-                        fusionConnection: fusionConnection,
-                        softphone: softphone,
-                        smsConversation: displayingConvo,
-                        deleteConvo: null, //deleteConvo
-                        setOnMessagePosted: null, //onMessagePosted
-                        changeConvo: (SMSConversation updateConvo) {
-                          setState(
-                            () {
+              if(!fusionConnection.settings.usesV2){
+                contacts.addAll(crmContacts);
+              }
+              fusionConnection.messages.checkExistingConversation(
+                depId,
+                data['to_number'],
+                [data['from_number']],
+                contacts
+              ).then((convo) {
+                showModalBottomSheet(
+                  context: context,
+                  backgroundColor: Colors.transparent,
+                  isScrollControlled: true,
+                  builder: (context) => StatefulBuilder(
+                    builder: (BuildContext context,StateSetter setState) {
+                      SMSConversation displayingConvo = convo;
+                      return SMSConversationView(
+                          fusionConnection: fusionConnection, 
+                          softphone: softphone, 
+                          smsConversation: displayingConvo, 
+                          deleteConvo: null,//deleteConvo
+                          setOnMessagePosted: null,//onMessagePosted
+                          changeConvo: (SMSConversation updateConvo){
+                            setState(() {
                               displayingConvo = updateConvo;
-                            },
-                          );
-                        });
-                  },
-                ),
-              );
+                            },);
+                          }
+                      );
+                    },
+                  ),
+                );
+              },);
             }
           });
         }

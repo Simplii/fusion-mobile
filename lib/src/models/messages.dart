@@ -382,23 +382,33 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
         isGroup: numbers.length > 1,
         hash: myNumber + ':' + numbers.join(':'));
     await fusionConnection.apiV2Call(
-        "post", "/messaging/group/${departmentId}/conversations/existing", {
-      'identifiers': [myNumber, ...numbers]
-    }, callback: (Map<String, dynamic> data) {
-      if (data['lastMessage'] != null) {
-        List<CrmContact> leads = [];
-        for (Map<String, dynamic> obj in data['conversationMembers']) {
-          List<dynamic> convoMembersLeads = obj['leads'];
-          if (convoMembersLeads != null && convoMembersLeads.length > 0) {
-            convoMembersLeads.forEach((lead) {
-              leads.add(CrmContact.fromExpanded(lead));
-            });
+      "post", 
+      "/messaging/group/${departmentId}/conversations/existing", 
+      {'identifiers': [myNumber,...numbers]}, 
+      callback: (Map<String, dynamic> data) {
+        if(data['lastMessage'] != null){
+          List<CrmContact> leads = [];
+          for (Map<String, dynamic> obj in data['conversationMembers']) {
+            List<dynamic> convoMembersLeads = obj['leads'];
+            if(convoMembersLeads != null && convoMembersLeads.length > 0 && !fusionConnection.settings.usesV2){
+              convoMembersLeads.forEach((lead) { 
+                leads.add(CrmContact.fromExpanded(lead));
+              });
+            }
           }
+          convo = SMSConversation(data);
+          convo.crmContacts = leads;
+          convo.contacts = contacts;
+        } else {
+          convo = SMSConversation.build(
+            myNumber: myNumber,
+            contacts: contacts,
+            crmContacts: [],
+            number: numbers.join(','),
+            isGroup: numbers.length > 1,
+            hash: myNumber +':'+numbers.join(':')
+          );
         }
-        convo = SMSConversation(data);
-        convo.crmContacts = leads;
-        convo.contacts = contacts;
-      }
     });
 
     return convo;
