@@ -140,7 +140,7 @@ import Foundation
         } catch let error {
             print("\(error)")
         }*/
-        
+        UIApplication.shared.applicationIconBadgeNumber = 0
       return super.application(application, didFinishLaunchingWithOptions: launchOptions)
     }
     

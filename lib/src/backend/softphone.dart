@@ -1287,7 +1287,7 @@ class Softphone implements SipUaHelperListener {
     } else if (Platform.isAndroid) {
       _getMethodChannel().invokeMethod("lpEndCall", [_uuidFor(call)]);
       _callKeep.endCall(_uuidFor(call));
-      calls.removeWhere((c) => call.id == c.id);
+      // calls.removeWhere((c) => call.id == c.id);
     }
 
     if (call == activeCall) {
@@ -1599,6 +1599,7 @@ class Softphone implements SipUaHelperListener {
         if (data.getName().trim().length > 0 && data.contacts.length > 0)
           return data.getName();
         else if (phoneContacts.isNotEmpty)
+          //this loop is bad... 
           for (PhoneContact phoneContact in phoneContacts) {
             for (Map<String, dynamic> phoneNumber
                 in phoneContact.phoneNumbers) {
@@ -1611,6 +1612,8 @@ class Softphone implements SipUaHelperListener {
                   : data.phoneNumber;
               if (number == otherNumber) {
                 return phoneContact.name;
+              } else {
+                return "Unknown";
               }
             }
           }

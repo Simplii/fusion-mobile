@@ -330,7 +330,6 @@ class _MessagesListState extends State<MessagesList> {
     return ValueListenableBuilder<SMSConversation?>(
         valueListenable: _fusionConnection.messages.notification,
         builder: (context, updatedConvo, child) {
-          print("MDBM $updatedConvo");
           if (updatedConvo != null) {
             _convos.removeWhere((element) =>
                 element.conversationId == updatedConvo.conversationId);

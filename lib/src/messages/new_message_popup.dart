@@ -94,7 +94,7 @@ class _NewMessagePopupState extends State<NewMessagePopup> {
           _contacts = [];
         });
       } else if (groupId == DepartmentIds.FusionChats) {
-        _fusionConnection!.coworkers.search(query, (p0) {
+        _fusionConnection.coworkers.search(query, (p0) {
           setState(() {
             _contacts = [...p0];
             _searchingFor = '';
@@ -102,7 +102,7 @@ class _NewMessagePopupState extends State<NewMessagePopup> {
         });
       } else if (query != _searchingFor) {
         _searchingFor = query;
-        bool usesV2 = _fusionConnection!.settings!.isV2User();
+        bool usesV2 = _fusionConnection.settings.isV2User();
 
         if (!usesV2) {
           _fusionConnection!.contacts.search(query, 50, 0,
@@ -118,7 +118,7 @@ class _NewMessagePopupState extends State<NewMessagePopup> {
             });
           });
         } else {
-          _fusionConnection!.contacts.searchV2(query, 50, 0, false,
+          _fusionConnection.contacts.searchV2(query, 50, 0, false,
               (List<Contact> contacts, bool fromServer, bool fromPhonebook) {
             if (mounted && query == _searchingFor) {
               setState(() {
@@ -178,8 +178,8 @@ class _NewMessagePopupState extends State<NewMessagePopup> {
   }
 
   _header() {
-    String myImageUrl = _fusionConnection!.myAvatarUrl();
-    List<SMSDepartment> groups = _fusionConnection!.smsDepartments
+    String myImageUrl = _fusionConnection.myAvatarUrl();
+    List<SMSDepartment> groups = _fusionConnection.smsDepartments
         .allDepartments()
         .where((department) => department.id != DepartmentIds.AllMessages)
         .toList();
@@ -271,7 +271,7 @@ class _NewMessagePopupState extends State<NewMessagePopup> {
       });
     }
 
-    SMSConversation? convo = await _fusionConnection!.messages
+    SMSConversation? convo = await _fusionConnection.messages
         .checkExistingConversation(
             groupId, myPhoneNumber, toNumbers, toContacts);
 

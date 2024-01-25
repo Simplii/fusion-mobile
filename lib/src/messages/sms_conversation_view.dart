@@ -262,16 +262,16 @@ class _SMSConversationViewState extends State<SMSConversationView> {
     List<Widget> singleMessageHeader = [
       _coworker != null
           ? ContactCircle.withCoworkerAndDiameter([], [], _coworker, 60)
-          : ContactCircle(_conversation!.contacts, _conversation!.crmContacts),
+          : ContactCircle(_conversation.contacts, _conversation.crmContacts),
       Expanded(
           child: Column(children: [
         Align(
             alignment: Alignment.centerLeft,
-            child: Text(_conversation!.contactName(coworker: _coworker),
+            child: Text(_conversation.contactName(coworker: _coworker),
                 style: headerTextStyle)),
         Align(
             alignment: Alignment.centerLeft,
-            child: Text(_conversation!.number.formatPhone(),
+            child: Text(_conversation.number.formatPhone(),
                 style: subHeaderTextStyle))
       ])),
     ];
