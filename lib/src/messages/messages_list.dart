@@ -478,16 +478,17 @@ class _SMSConversationSummaryViewState
   Function? get _refreshView => widget.refreshView;
   Function({int? limit, int? offset})? get _lookupMessages =>
       widget.lookupMessages;
+  SMSConversation? _selectedConvo;
 
   _openConversation() {
-    _fusionConnection!.conversations.markRead(_convo);
+    _fusionConnection.conversations.markRead(_selectedConvo!);
     showModalBottomSheet(
         context: context,
         backgroundColor: Colors.transparent,
         isScrollControlled: true,
         builder: (context) => StatefulBuilder(
                 builder: (BuildContext context, StateSetter setState) {
-              SMSConversation displayingConvo = _convo;
+              SMSConversation displayingConvo = _selectedConvo!;
               return SMSConversationView(
                   fusionConnection: _fusionConnection,
                   softphone: _softphone,
@@ -611,6 +612,9 @@ class _SMSConversationSummaryViewState
 
     return GestureDetector(
         onTap: () {
+          setState(() {
+            _selectedConvo = _convo;
+          });
           _openConversation();
         },
         child: Dismissible(
