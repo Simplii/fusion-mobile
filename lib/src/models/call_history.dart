@@ -83,7 +83,9 @@ class CallHistory extends FusionModel {
       data['id'] = data['uid'];
       coworker = Coworker.fromV2(data);
     }
-    cdrIdHash = obj['cdrIdHash'].toString();
+    cdrIdHash = obj.containsKey('cdrIdHash') 
+      ? obj['cdrIdHash'].toString()
+      : obj['id'].toString();
     missed = obj['missed'].runtimeType == String
         ? obj['missed'] == 'true'
             ? true
@@ -224,28 +226,25 @@ class CallHistoryStore extends FusionStore<CallHistory> {
           if (datas.containsKey('items')) {
             for (Map<String, dynamic> item in datas['items']) {
               CallHistory obj = CallHistory(item);
-              if (obj.cdrIdHash != "0") {
-                // backend returning an empty callHistory obj when there are no
-                // calls
-                obj.coworker = fusionConnection.coworkers.lookupCoworker(
-                    obj.direction == 'inbound' ? obj.from! : obj.to!);
-                if (phoneContacts.isNotEmpty) {
-                  for (PhoneContact phoneContact in phoneContacts) {
-                    List<String> numbers = phoneContact.phoneNumbers
-                        .map((e) => e["number"])
-                        .toList()
-                        .cast<String>();
-                    if (obj.isInbound() && numbers.contains(obj.fromDid)) {
-                      obj.phoneContact = phoneContact;
-                    } else if (!obj.isInbound() &&
-                        numbers.contains(obj.toDid)) {
-                      obj.phoneContact = phoneContact;
-                    }
+              print("MDBM dir ${obj.direction}");
+              obj.coworker = fusionConnection.coworkers.lookupCoworker(
+                  obj.direction == 'inbound' ? obj.from! : obj.to!);
+              if (phoneContacts.isNotEmpty) {
+                for (PhoneContact phoneContact in phoneContacts) {
+                  List<String> numbers = phoneContact.phoneNumbers
+                      .map((e) => e["number"])
+                      .toList()
+                      .cast<String>();
+                  if (obj.isInbound() && numbers.contains(obj.fromDid)) {
+                    obj.phoneContact = phoneContact;
+                  } else if (!obj.isInbound() &&
+                      numbers.contains(obj.toDid)) {
+                    obj.phoneContact = phoneContact;
                   }
                 }
-                storeRecord(obj);
-                response.add(obj);
               }
+              storeRecord(obj);
+              response.add(obj);
             }
           }
 
