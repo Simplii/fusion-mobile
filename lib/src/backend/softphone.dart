@@ -265,8 +265,8 @@ class Softphone implements SipUaHelperListener {
     setup();
   }
 
-  setup() {
-    setupPermissions();
+  setup() async {
+    await setupPermissions();
 
     if (Platform.isIOS)
       _setupCallKit();
@@ -844,7 +844,10 @@ class Softphone implements SipUaHelperListener {
     registerLinphone(_savedLogin, _savedPassword, _savedAor);
   }
 
-  setupPermissions() {
+  setupPermissions() async{
+    if (Platform.isIOS) {
+      await FirebaseMessaging.instance.getAPNSToken();
+    }
     FirebaseMessaging.instance.getToken().then((String? key) {
       print("firebase token - " + key!);
     });

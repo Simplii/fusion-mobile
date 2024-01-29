@@ -867,6 +867,9 @@ class FusionConnection {
     String? _pass = await prefs.getString('fusion-data1');
     settings.usesV2 = prefs.getBool("v2User") ?? false;
     if (_pass != null && _pass.isNotEmpty && user != null) {
+      if (Platform.isIOS) {
+        await FirebaseMessaging.instance.getAPNSToken();
+      }
       final String deviceToken =
           await FirebaseMessaging.instance.getToken() ?? "";
       final String hash = generateMd5(
