@@ -84,9 +84,9 @@ class FusionConnection {
   Connectivity connectivity = Connectivity();
   ConnectivityResult connectivityResult = ConnectivityResult.none;
   bool internetAvailable = true;
-  String serverRoot = "http://zaid-fusion-dev.fusioncomm.net";
+  String serverRoot = "http://fusioncom.co";
   String mediaServer = "https://fusion-media.sfo2.digitaloceanspaces.com";
-  String defaultAvatar = "https://zaid-fusion-dev.fusioncomm.net/img/defaultuser.png";
+  String defaultAvatar = "https://fusioncom.co/img/defaultuser.png";
   static const MethodChannel contactsChannel =
       MethodChannel('net.fusioncomm.ios/contacts');
 
@@ -148,7 +148,7 @@ class FusionConnection {
   }
 
   final channel = WebSocketChannel.connect(
-    Uri.parse('wss://zaid-fusion-dev.fusioncomm.net:8443'),
+    Uri.parse('wss://fusioncom.co:8443'),
   );
 
   onLogOut(Function callback) {
@@ -434,7 +434,7 @@ class FusionConnection {
       data['username'] = await _getUsername();
 
       Uri url = Uri.parse(
-          'https://zaid-fusion-dev.fusioncomm.net/api/v1/clients/api_request?username=' +
+          'https://fusioncom.co/api/v1/clients/api_request?username=' +
               data['username']);
       Map<String, String> headers = await _cookieHeaders(url);
       String body = convert.jsonEncode(data);
@@ -483,7 +483,7 @@ class FusionConnection {
               '&';
         }
       }
-      Uri url = Uri.parse('https://zaid-fusion-dev.fusioncomm.net/api/v1' + route + urlParams);
+      Uri url = Uri.parse('https://fusioncom.co/api/v1' + route + urlParams);
       Map<String, String> headers = await _cookieHeaders(url);
       if (method.toLowerCase() != 'get') {
         args[#body] = convert.jsonEncode(data);
@@ -554,7 +554,7 @@ class FusionConnection {
               key + "=" + Uri.encodeQueryComponent(data[key].toString()) + '&';
         }
       }
-      Uri url = Uri.parse('https://zaid-fusion-dev.fusioncomm.net/api/v2' + route + urlParams);
+      Uri url = Uri.parse('https://fusioncom.co/api/v2' + route + urlParams);
       Map<String, String> headers = await _cookieHeaders(url);
 
       if (method.toLowerCase() != 'get') {
@@ -608,7 +608,7 @@ class FusionConnection {
     try {
       data['username'] = await _getUsername();
 
-      Uri url = Uri.parse('https://zaid-fusion-dev.fusioncomm.net/api/v2' + route);
+      Uri url = Uri.parse('https://fusioncom.co/api/v2' + route);
       http.MultipartRequest request = new http.MultipartRequest(method, url);
       (await _cookieHeaders(url)).forEach((k, v) => request.headers[k] = v);
 
@@ -814,7 +814,7 @@ class FusionConnection {
 
   setupSocket() {
     int messageNum = 0;
-    final wsUrl = Uri.parse('wss://zaid-fusion-dev.fusioncomm.net:8443/');
+    final wsUrl = Uri.parse('wss://fusioncom.co:8443/');
     socketChannel = WebSocketChannel.connect(wsUrl);
     socketChannel.stream.listen((messageData) async {
       Map<String, dynamic> message = convert.jsonDecode(messageData);
@@ -887,9 +887,9 @@ class FusionConnection {
       _password = _pass;
       try {
         Response res = await http.post(
-            Uri.parse('https://zaid-fusion-dev.fusioncomm.net/api/v2/user/auth'),
+            Uri.parse('https://fusioncom.co/api/v2/user/auth'),
             body: {"username": _username, "password": _password});
-        // print('url https://zaid-fusion-dev.fusioncomm.net/api/v2/user/auth');
+        // print('url https://fusioncom.co/api/v2/user/auth');
         // print(res.headers['set-cookie']);
         Map<String, dynamic> body = jsonDecode(res.body);
         if (body.containsKey("success")) {
