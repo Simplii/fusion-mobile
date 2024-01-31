@@ -22,7 +22,7 @@ class Disposition {
     this.updatedAt,
     this.customDispositionsCrmId,
     this.createdAt,
-    Key:Key
+    Key = Key
   });
   serialize(){
     return {
@@ -69,7 +69,7 @@ class DispositionCustomField {
     this.options,
     this.type,
     this.updatedAt,
-    Key:Key
+    Key = Key
   });
 
   DispositionCustomField.fromJson(Map<String,dynamic> data){
@@ -94,7 +94,7 @@ class DispositionCustomFieldOption {
     this.requireFor,
     this.validationWebhook,
     this.dropdownChoices,
-    Key:Key
+    Key = Key
   });
 
   DispositionCustomFieldOption.fromJson(Map<String,dynamic> data){
@@ -126,7 +126,7 @@ class CallType {
     this.updatedAt,
     this.createdAt,
     this.crmAssociations,
-    Key:Key
+    Key = Key
   });
   toJson(){
     return {
@@ -178,7 +178,7 @@ class DispositionGroup {
   DispositionGroup({
     this.id,
     this.name,
-    Key:Key
+    Key = Key
   });
 
   serialize(){

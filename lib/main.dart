@@ -20,6 +20,7 @@ import 'package:fusion_mobile_revamped/src/dialpad/dialpad_modal.dart';
 import 'package:fusion_mobile_revamped/src/models/contact.dart';
 import 'package:fusion_mobile_revamped/src/models/conversations.dart';
 import 'package:fusion_mobile_revamped/src/models/dids.dart';
+import 'package:fusion_mobile_revamped/src/models/notification_data.dart';
 import 'package:fusion_mobile_revamped/src/models/sms_departments.dart';
 import 'package:overlay_support/overlay_support.dart';
 import 'package:path_provider/path_provider.dart';
@@ -307,66 +308,38 @@ class _MyHomePageState extends State<MyHomePage> {
     // }
   }
 
-  checkForIMNotification(Map<String, dynamic> data, {String? username}) {
-    List<String> numbers = [];
-    List<dynamic> members = [];
-    bool isGroup = data['is_group'] == "1" ? true : false;
-    String depId = DepartmentIds.AllMessages;
-    fusionConnection.smsDepartments.getDepartments(
-      (p0) => null,
-      username: username?.toLowerCase() ?? ""
-    );
-    if(data.containsKey('numbers')){
-      numbers = (jsonDecode(data['numbers']) as List<dynamic>).cast<String>();
-    }
+  checkForIMNotification(Map<String, dynamic> d, {String? username}) async {
+    NotificationData notificationData = NotificationData.fromJson(d);
+    String depId = notificationData.departmentId ?? DepartmentIds.AllMessages;
 
-    if (data.containsKey('members')) {
-      members = (jsonDecode(data['members']) as List<dynamic>);
-    }
-
-    if (data.containsKey('to_number') && isGroup) {
-      List<SMSDepartment> deps =
-          fusionConnection.smsDepartments.allDepartments();
+    if (notificationData.toNumber.isNotEmpty && notificationData.isGroup) {
+      List<SMSDepartment> deps = fusionConnection.smsDepartments.allDepartments();
+      if (deps.isEmpty) {
+        await fusionConnection.smsDepartments.getDepartments((p0) => deps = p0);
+      }
+      SMSDepartment? dep = deps.where((element) => element.id == depId).firstOrNull;
       String numberUsed = "";
 
-      for (SMSDepartment dep in deps) {
-        for (String number in dep.numbers) {
-          if (dep.id == DepartmentIds.Personal) {
-            // in case its a new conversation we didn't start
-            depId = dep.id!;
-            numberUsed = number;
-          }
-          if (numbers.contains(number)) {
-            depId = dep.id!;
-            numberUsed = number;
-          }
-        }
-      }
-
+      List<String> depNumbers = dep?.numbers ?? [];
       List<Contact> convoContacts = [];
 
-      for (Map<String, dynamic> member in members) {
-        List<dynamic> memberContacts = member['contacts'] ?? [];
-        List<dynamic> memberLeads = member['leads'] ?? [];
-        if (memberContacts.isNotEmpty) {
-          memberContacts.forEach((contact) {
-            convoContacts.add(Contact(contact));
-          });
-        } else if (memberLeads.isNotEmpty) {
-          memberLeads.forEach((c) {
-            Contact contact = Contact.fromV2(c);
-            convoContacts.add(contact);
-          });
-        } else if (memberContacts.isEmpty &&
-            memberLeads.isEmpty &&
-            member['number'] != numberUsed) {
-          fusionConnection.phoneContacts.searchDb(member['number']).then((res) {
-            if (res != null) {
-              print("MDBM res ${res}");
-            } else {
-              convoContacts.add(Contact.fake(member['number']));
-            }
-          });
+      for (String num in notificationData.numbers) {
+        for (NotificationMember member in notificationData.members) {
+          if (depNumbers.contains(num)) {
+            numberUsed = num;
+          }
+          if (num == numberUsed) {
+            continue;
+          }
+          if (num == member.number) {
+            convoContacts.add(
+              Contact.build(name: member.name, pictures: [{"url" : member.avatar}])
+            );
+          } else {
+            convoContacts.add(
+              Contact.fake(num)
+            );
+          }
         }
       }
       print("MDBM res here group");
@@ -378,13 +351,13 @@ class _MyHomePageState extends State<MyHomePage> {
           builder: (BuildContext context, StateSetter setState) {
             SMSConversation displayingConvo = SMSConversation.build(
                 contacts: convoContacts,
-                conversationId: int.parse(data['to_number']),
+                conversationId: int.parse(notificationData.toNumber),
                 crmContacts: [],
                 selectedDepartmentId: depId,
-                hash: numbers.join(':'),
-                isGroup: isGroup,
+                hash: notificationData.numbers.join(':'),
+                isGroup: notificationData.isGroup,
                 myNumber: numberUsed,
-                number: data['to_number']);
+                number: notificationData.toNumber);
             return SMSConversationView(
                 fusionConnection: fusionConnection,
                 softphone: softphone,
@@ -401,11 +374,11 @@ class _MyHomePageState extends State<MyHomePage> {
           },
         ),
       );
-    } else if (data.containsKey('to_number') && !isGroup) {
-      fusionConnection.contacts.search(data['from_number'], 10, 0,
+    } else if (notificationData.toNumber.isNotEmpty && !notificationData.isGroup) {
+      fusionConnection.contacts.search(notificationData.fromNumber, 10, 0,
           (contacts, contactsFromServer, contactsFromPhonebook) {
         if (contactsFromServer || contactsFromPhonebook) {
-          fusionConnection.integratedContacts.search(data['from_number'], 10, 0,
+          fusionConnection.integratedContacts.search(notificationData.fromNumber, 10, 0,
               (crmContacts, fromServer, hasMore) {
             if (fromServer || contactsFromPhonebook) {
               if(!fusionConnection.settings.usesV2){
@@ -413,8 +386,8 @@ class _MyHomePageState extends State<MyHomePage> {
               }
               fusionConnection.messages.checkExistingConversation(
                 depId,
-                data['to_number'],
-                [data['from_number']],
+                notificationData.toNumber,
+                [notificationData.fromNumber],
                 contacts
               ).then((convo) {
                 showModalBottomSheet(

@@ -446,6 +446,11 @@ class Contact extends FusionModel {
     this.crmId = contact.crmId;
     this.unread = contact.unread;
   }
+
+  Contact.build({
+    required this.name,
+    required this.pictures
+  });
 }
 
 class ContactsStore extends FusionStore<Contact> {
@@ -640,6 +645,14 @@ class ContactsStore extends FusionStore<Contact> {
       }
       updateUi(contact);
     });
+  }
+
+  Future<Contact?> getContactById ({int? fusionId, int? crmId}) async {
+    Contact? contact = null;
+    //first search persisted
+    //then search legacy and v2
+    await fusionConnection.apiV2Call("get", "", {}, callback: (){});
+    return contact;
   }
 }
 
