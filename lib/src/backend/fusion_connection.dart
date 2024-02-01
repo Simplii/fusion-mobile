@@ -242,7 +242,8 @@ class FusionConnection {
           `to` STRING,
           user STRING,
           raw BLOB,
-          broadcastConvoId int
+          broadcastConvoId int,
+          errorMessage TEXT
           );'''));
 
         print(db.execute('''
@@ -364,6 +365,17 @@ class FusionConnection {
                       .then((value) => null)
                       .catchError((onError) => print(
                           "MyDebugMessage db couldn't create assigneeUid col"))
+                });
+        db
+            .rawQuery('SELECT errorMessage FROM sms_message')
+            .then((value) => null)
+            .catchError((error) => {
+                  db
+                      .rawQuery(
+                          'ALTER TABLE sms_message ADD COLUMN errorMessage')
+                      .then((value) => null)
+                      .catchError(() => print(
+                          "MyDebugMessage db couldn't create errorMessage col"))
                 });
         this.db = db;
       }).catchError((error) {});

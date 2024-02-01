@@ -1818,7 +1818,7 @@ class _SMSMessageViewState extends State<SMSMessageView> {
                           fontSize: 11, fontWeight: FontWeight.w800, color: smoke)),
                 ],
               ),
-              if (_message.errorMessage != null) 
+              if (_message.errorMessage.isNotEmpty) 
                 Padding(
                   padding: const EdgeInsets.only(top:1, bottom: 2),
                   child: Text(

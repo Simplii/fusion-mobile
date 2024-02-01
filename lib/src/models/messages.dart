@@ -45,7 +45,7 @@ class SMSMessage extends FusionModel {
   late String type;
   late int unixtime;
   String? user;
-  String? errorMessage;
+  String errorMessage = "";
   int broadcastConvoId = 0;
 
   SMSMessage(Map<String, dynamic> map) {
@@ -73,10 +73,10 @@ class SMSMessage extends FusionModel {
     this.unixtime = map['unixtime'];
     this.user = map['user'].runtimeType == String ? map['user'] : null;
     this.broadcastConvoId = map['broadcastConversationId'] ?? 0;
+    this.errorMessage = map['errorMessage'] ?? "";
   }
 
   SMSMessage.fromV2(Map<String, dynamic> map) {
-    print("MDBM message m ${map}");
     String time = map.containsKey('scheduledAt') && map['scheduledAt'] != null
         ? map['scheduledAt']
         : map['time'];
@@ -106,7 +106,7 @@ class SMSMessage extends FusionModel {
         ? map['user'].toString().replaceFirst(RegExp("@.*"), "")
         : null;
     this.broadcastConvoId = map['broadcastConversationId'] ?? 0;
-    this.errorMessage = map['errorMessage'];
+    this.errorMessage = map['errorMessage'] ?? "";
   }
 
   serialize() {
@@ -130,6 +130,7 @@ class SMSMessage extends FusionModel {
       'unixtime': unixtime,
       'user': user,
       'broadcastConvoId': broadcastConvoId,
+      'errorMessage': errorMessage
     });
   }
 
@@ -154,6 +155,7 @@ class SMSMessage extends FusionModel {
     this.unixtime = obj['unixtime'];
     this.user = obj['user'];
     this.broadcastConvoId = obj['broadcastConvoId'] ?? 0;
+    this.errorMessage = obj['errorMessage'] ?? "";
   }
 
   SMSMessage.offline(
@@ -183,6 +185,7 @@ class SMSMessage extends FusionModel {
     this.unixtime = DateTime.parse(date).millisecondsSinceEpoch ~/ 1000;
     this.user = user;
     this.broadcastConvoId = 0;
+    this.errorMessage = "";
   }
 
   @override
@@ -303,7 +306,8 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
           'to': record.to!.toLowerCase(),
           'user': record.user,
           'raw': record.serialize(),
-          'broadcastConvoId': record.broadcastConvoId
+          'broadcastConvoId': record.broadcastConvoId,
+          'errorMessage': record.errorMessage 
         },
         conflictAlgorithm: ConflictAlgorithm.replace);
   }
