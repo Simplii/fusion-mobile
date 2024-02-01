@@ -15,14 +15,12 @@ import 'package:intl/intl.dart';
 uuidFromString(String str) {
   if (str.length == 0)
     return Uuid().v4();
-
   else {
     List<int> numbers = [];
     int strIndex = 0;
 
     for (var i = 0; i < 16; i++) {
-      if (strIndex > str.length)
-        strIndex = 0;
+      if (strIndex > str.length) strIndex = 0;
 
       numbers.add(str.codeUnitAt(strIndex));
       strIndex += 1;
@@ -32,10 +30,9 @@ uuidFromString(String str) {
   }
 }
 
-intIdForString(String str) {
+intIdForString(String? str) {
   if (str == null)
     return 0;
-
   else {
     int id = 1;
     for (var i = 0; i < str.length; i++) {
@@ -54,25 +51,33 @@ extension durations on int {
     int hours = (this / (60 * 60)).floor();
 
     if (hours > 0) {
-      return hours.toString() + ":"
-          + (minutes < 10 ? "0" : "") + minutes.toString() + ":"
-          + (seconds < 10 ? "0" : "") + seconds.toString();
+      return hours.toString() +
+          ":" +
+          (minutes < 10 ? "0" : "") +
+          minutes.toString() +
+          ":" +
+          (seconds < 10 ? "0" : "") +
+          seconds.toString();
     } else {
-        return (minutes < 10 ? "0" : "") + minutes.toString() + ":"
-          + (seconds < 10 ? "0" : "") + seconds.toString();
+      return (minutes < 10 ? "0" : "") +
+          minutes.toString() +
+          ":" +
+          (seconds < 10 ? "0" : "") +
+          seconds.toString();
     }
   }
 }
 
 extension PhoneNumbers on String {
   String formatPhone() {
-    if(this == null)return '';
+    if (this == null) return '';
     if (this.contains("@"))
       return this;
     else if (this.length < 10)
       return this;
     else
-      return this.replaceAllMapped(RegExp(r'([02-9]\d{2})(\d{3})(\d{4})'), (match) {
+      return this.replaceAllMapped(RegExp(r'([02-9]\d{2})(\d{3})(\d{4})'),
+          (match) {
         return '(${match.group(1)}) ${match.group(2)}-${match.group(3)}';
       });
   }
@@ -105,7 +110,7 @@ bool iphoneIsLarge() {
   }
 }
 
-Map<String, dynamic> checkDateObj(dynamic dateToCheck) {
+Map<String, dynamic>? checkDateObj(dynamic dateToCheck) {
   if (dateToCheck.runtimeType == String) {
     final date = DateTime.parse(dateToCheck).toLocal();
     return {"date": date, "timezone": "MST", "timezone_type": 3};
@@ -114,21 +119,24 @@ Map<String, dynamic> checkDateObj(dynamic dateToCheck) {
   }
 }
 
-String avatarUrl(String firstName, String lastName) {
-    return "https://fusioncom.co/api/v2/client/" +
-        "nameAvatar/${firstName}/${lastName}";
+String avatarUrl(String? firstName, String? lastName) {
+  return "https://fusioncom.co/api/v2/client/" +
+      "nameAvatar/${firstName}/${lastName}";
 }
 
 extension Capitalize on String {
-  String capitalize() => this.length > 0 
-    ? "${this[0].toUpperCase()}${this.substring(1).toLowerCase()}" 
-    : this;
-  String toTitleCase() => replaceAll(RegExp(' +'), ' ').split(' ').map((str) => str.capitalize()).join(' ');
+  String capitalize() => this.length > 0
+      ? "${this[0].toUpperCase()}${this.substring(1).toLowerCase()}"
+      : this;
+  String toTitleCase() => replaceAll(RegExp(' +'), ' ')
+      .split(' ')
+      .map((str) => str.capitalize())
+      .join(' ');
 }
 
 class Debounce {
   Duration delay;
-  Timer _timer;
+  Timer? _timer;
 
   Debounce(
     this.delay,
@@ -144,53 +152,58 @@ class Debounce {
   }
 }
 
-  Future<XFile> urlToXFile(Uri imageUrl) async {
-    var rng = new Random();
-    Directory tempDir = await getTemporaryDirectory();
-    String tempPath = tempDir.path;
-    File file  = new File('$tempPath'+ (rng.nextInt(100)).toString() +'.png');
-    http.Response response = await http.get(imageUrl);
-    await file.writeAsBytes(response.bodyBytes);
-    XFile xfile = new XFile(file.path);
-    return xfile;
-  }
-
-String generateMd5(String input) {
-    return md5.convert(utf8.encode(input)).toString();
+Future<XFile> urlToXFile(Uri imageUrl) async {
+  var rng = new Random();
+  Directory tempDir = await getTemporaryDirectory();
+  String tempPath = tempDir.path;
+  File file = new File('$tempPath' + (rng.nextInt(100)).toString() + '.png');
+  http.Response response = await http.get(imageUrl);
+  await file.writeAsBytes(response.bodyBytes);
+  XFile xfile = new XFile(file.path);
+  return xfile;
 }
 
-String fusionDataHelper = "299ea792cc17100390c7a4a1b6e6f909f0a1b7c725ad820bd54292ca111cfa30";
+String generateMd5(String input) {
+  return md5.convert(utf8.encode(input)).toString();
+}
+
+String fusionDataHelper =
+    "299ea792cc17100390c7a4a1b6e6f909f0a1b7c725ad820bd54292ca111cfa30";
 
 class InputPhoneFormatter extends TextInputFormatter {
   String inputPhoneFormat(String value) {
     String phoneFormatted = value.length >= 1
-    ? (value.length >= 1 ? '(' : '') + value.substring(0, value.length >= 3 ? 3 : null) 
-      + (value.length  > 3 ? ') ' : '') + (value.length > 3
-        ? value.substring(3, value.length >= 6 ? 6 : null) + (value.length > 6
-          ? '-' + value.substring(6, value.length >= 10 ? 10 : null)
-          : '')
-        : '')
-    : value;
+        ? (value.length >= 1 ? '(' : '') +
+            value.substring(0, value.length >= 3 ? 3 : null) +
+            (value.length > 3 ? ') ' : '') +
+            (value.length > 3
+                ? value.substring(3, value.length >= 6 ? 6 : null) +
+                    (value.length > 6
+                        ? '-' +
+                            value.substring(6, value.length >= 10 ? 10 : null)
+                        : '')
+                : '')
+        : value;
     return phoneFormatted;
   }
 
   @override
   TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue, TextEditingValue newValue) {
-      String text = newValue.text;
+      TextEditingValue oldValue, TextEditingValue newValue) {
+    String text = newValue.text;
 
-      if (newValue.selection.baseOffset == 0) {
-        return newValue;
-      }
+    if (newValue.selection.baseOffset == 0) {
+      return newValue;
+    }
 
-      return newValue.copyWith(
+    return newValue.copyWith(
         text: inputPhoneFormat(text),
-        selection: new TextSelection.collapsed(offset: inputPhoneFormat(text).length)
-      );
+        selection:
+            new TextSelection.collapsed(offset: inputPhoneFormat(text).length));
   }
 }
 
-String getDateTime (DateTime dateTime) {
+String getDateTime(DateTime dateTime) {
   DateTime now = DateTime.now().toLocal();
   DateTime localDateTime = dateTime.toLocal();
 
@@ -200,15 +213,17 @@ String getDateTime (DateTime dateTime) {
 
     // if (differenceInHours > 0) {
     //   return '$differenceInHours ${differenceInHours > 1 ? 'hours' : 'hour'} ';
-    // } else if (differenceInMins > 0) { 
+    // } else if (differenceInMins > 0) {
     //   return '$differenceInMins ${differenceInMins > 1 ? 'mins' : 'min'} ';
     // } else {
     //   return "just now";
     // }
     if (differenceInHours > 0) {
       // return '$differenceInHours ${differenceInHours > 1 ? 'hours' : 'hour'} ';
-      return DateFormat('h:mm a',).format(localDateTime);
-    } else if (differenceInMins > 0) { 
+      return DateFormat(
+        'h:mm a',
+      ).format(localDateTime);
+    } else if (differenceInMins > 0) {
       return '$differenceInMins min ';
     } else {
       return "just now";
@@ -248,9 +263,9 @@ String getDateTime (DateTime dateTime) {
   return "$month";
 }
 
-Uint8List getImageBinary(dynamicList) {
-  if(dynamicList != null && dynamicList.runtimeType != String){
-    List<dynamic>dy = dynamicList as List<dynamic>;
+Uint8List? getImageBinary(dynamicList) {
+  if (dynamicList != null && dynamicList.runtimeType != String) {
+    List<dynamic> dy = dynamicList as List<dynamic>;
     List<int> intList = dy.cast<int>().toList();
     Uint8List data = Uint8List.fromList(intList);
     return data;

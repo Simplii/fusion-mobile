@@ -26,7 +26,7 @@ class RecentCallsTab extends StatefulWidget {
   final FusionConnection _fusionConnection;
   final Softphone _softphone;
 
-  RecentCallsTab(this._fusionConnection, this._softphone, {Key key})
+  RecentCallsTab(this._fusionConnection, this._softphone, {Key? key})
       : super(key: key);
 
   @override
@@ -37,7 +37,7 @@ class _RecentCallsTabState extends State<RecentCallsTab> {
   FusionConnection get _fusionConnection => widget._fusionConnection;
 
   Softphone get _softphone => widget._softphone;
-  SMSConversation openConversation = null;
+  SMSConversation? openConversation = null;
   bool _showingResults = false;
   String _selectedTab = 'all';
   String _query = '';
@@ -49,16 +49,14 @@ class _RecentCallsTabState extends State<RecentCallsTab> {
     children = [
       SearchCallsBar(_fusionConnection, (String query) {
         this.setState(() {
-            _query = query;
+          _query = query;
         });
-      }, () {
-      }),
+      }, () {}),
       Container(height: 4),
-      Expanded(child:RecentCallsList(
-          _fusionConnection, 
-          _softphone, "Recent Calls", 
-          _selectedTab,
-          query: _query))
+      Expanded(
+          child: RecentCallsList(
+              _fusionConnection, _softphone, "Recent Calls", _selectedTab,
+              query: _query))
     ];
     return Container(child: Column(children: children));
   }
@@ -67,15 +65,15 @@ class _RecentCallsTabState extends State<RecentCallsTab> {
 class RecentCallsList extends StatefulWidget {
   final FusionConnection _fusionConnection;
   final Softphone _softphone;
-  final String _label;
+  final String? _label;
   final String _selectedTab;
-  final String query;
-  final Function(Contact contact, CrmContact crmContact) onSelect;
+  final String? query;
+  final Function(Contact? contact, CrmContact? crmContact)? onSelect;
   final bool fromDialpad;
 
   RecentCallsList(
       this._fusionConnection, this._softphone, this._label, this._selectedTab,
-      {Key key, this.onSelect, this.query, this.fromDialpad = false})
+      {Key? key, this.onSelect, this.query, this.fromDialpad = false})
       : super(key: key);
 
   @override
@@ -87,20 +85,21 @@ class _RecentCallsListState extends State<RecentCallsList> {
 
   Softphone get _softphone => widget._softphone;
 
-  String get _label => widget._label;
+  String? get _label => widget._label;
 
   String get _selectedTab => widget._selectedTab;
   bool get _fromDialpad => widget.fromDialpad;
   int lookupState = 0; // 0 - not looking up; 1 - looking up; 2 - got results
   List<CallHistory> _history = [];
-  String _lookedUpTab;
-  String _subscriptionKey;
-  Map<String, Coworker> _coworkers = {};
+  String? _lookedUpTab;
+  String? _subscriptionKey;
+  Map<String?, Coworker> _coworkers = {};
   String rand = randomString(10);
-  String expandedId = "";
+  String? expandedId = "";
   int _page = 0;
   int _pageSize = 100;
-  final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey = GlobalKey<RefreshIndicatorState>();
+  final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
+      GlobalKey<RefreshIndicatorState>();
   expand(item) {
     setState(() {
       if (expandedId == item.id)
@@ -124,7 +123,6 @@ class _RecentCallsListState extends State<RecentCallsList> {
     }
   }
 
-
   _loadMore() {
     _page += 1;
     _lookupQuery();
@@ -136,7 +134,7 @@ class _RecentCallsListState extends State<RecentCallsList> {
     lookupState = 1;
 
     if (_page == -1) return;
-    if(_pageSize > historyPage.length) return;
+    if (_pageSize > historyPage.length) return;
     _page += 1;
     _lookupHistory();
   }
@@ -151,19 +149,17 @@ class _RecentCallsListState extends State<RecentCallsList> {
 
     _subscriptionKey =
         _fusionConnection.coworkers.subscribe(null, (List<Coworker> coworkers) {
-          if (!mounted) return;
-        this.setState(() {
+      if (!mounted) return;
+      this.setState(() {
         for (Coworker c in coworkers) {
           _coworkers[c.uid] = c;
         }
       });
     });
 
-    await _fusionConnection.callHistory.getRecentHistory(
-      _pageSize, 
-      _page * _pageSize, 
-      pullToRefresh, 
-      (List<CallHistory> history, bool fromServer, bool presisted) {
+    await _fusionConnection.callHistory
+        .getRecentHistory(_pageSize, _page * _pageSize, pullToRefresh,
+            (List<CallHistory> history, bool fromServer, bool presisted) {
       if (!mounted) return;
       if (!fromServer && _page > 0) return;
 
@@ -171,18 +167,18 @@ class _RecentCallsListState extends State<RecentCallsList> {
         if (fromServer) {
           lookupState = 2;
         }
-        Map<String,CallHistory> oldHistory = new Map<String,CallHistory>();
+        Map<String?, CallHistory> oldHistory = new Map<String?, CallHistory>();
         _history.forEach((element) {
           oldHistory[element.cdrIdHash] = element;
         });
 
         history.forEach((element) {
-          if(oldHistory.containsKey(element.cdrIdHash))return;
+          if (oldHistory.containsKey(element.cdrIdHash)) return;
           oldHistory[element.cdrIdHash] = element;
         });
         List<CallHistory> list = oldHistory.values.toList();
         list.sort((a, b) {
-          return a.startTime.isBefore(b.startTime) ? 1 : -1;
+          return a.startTime!.isBefore(b.startTime!) ? 1 : -1;
         });
         _history = list;
       });
@@ -195,22 +191,33 @@ class _RecentCallsListState extends State<RecentCallsList> {
 
   List<CallHistory> _filteredHistoryItems() {
     return _history.where((item) {
-      String searchQuery = item.to + ":" + item.from + ":";
+      String searchQuery =
+          "${item.to}:${item.from}:${item.fromDid}:${item.toDid}:";
 
       if (item.contact != null)
-        searchQuery += item.contact.searchString() + ":";
+        searchQuery += item.contact!.searchString() + ":";
 
       if (item.crmContact != null)
-        searchQuery += item.crmContact.company + ":" + item.crmContact.name + ":" + item.crmContact.crm;
+        searchQuery += item.crmContact!.company!.toLowerCase() +
+            ":" +
+            item.crmContact!.name!.toLowerCase() +
+            ":" +
+            item.crmContact!.crm!.toLowerCase();
 
       if (item.coworker != null)
-        searchQuery += item.coworker.firstName + ':' + item.coworker.lastName;
+        searchQuery += item.coworker!.firstName!.toLowerCase() +
+            ':' +
+            item.coworker!.lastName!.toLowerCase();
 
-      if(item.callerId != null && item.callerId.isNotEmpty){
-        searchQuery += item.callerId.toLowerCase();
+      if (item.callerId != null && item.callerId!.isNotEmpty) {
+        searchQuery += item.callerId!.toLowerCase();
       }
-      
-      if (widget.query != "" && !searchQuery.contains(widget.query)) {
+
+      if (item.callerId != null && item.callerId!.isNotEmpty) {
+        searchQuery += item.callerId!.toLowerCase();
+      }
+      if (widget.query != "" &&
+          !searchQuery.contains(widget.query!.toLowerCase())) {
         return false;
       } else if (_selectedTab == 'all') {
         return true;
@@ -229,18 +236,23 @@ class _RecentCallsListState extends State<RecentCallsList> {
   _historyList() {
     List<Widget> response = [Container(height: 50)];
     response.addAll(_history.where((item) {
-      String searchQuery = item.to + ":" + item.from + ":";
+      String searchQuery = item.to! + ":" + item.from! + ":";
 
       if (item.contact != null)
-        searchQuery += item.contact.searchString() + ":";
+        searchQuery += item.contact!.searchString() + ":";
 
       if (item.crmContact != null)
-        searchQuery += item.crmContact.company + ":" + item.crmContact.name + ":" + item.crmContact.crm;
+        searchQuery += item.crmContact!.company! +
+            ":" +
+            item.crmContact!.name! +
+            ":" +
+            item.crmContact!.crm!;
 
       if (item.coworker != null)
-        searchQuery += item.coworker.firstName + ':' + item.coworker.lastName;
+        searchQuery +=
+            item.coworker!.firstName! + ':' + item.coworker!.lastName!;
 
-      if (widget.query != "" && !searchQuery.contains(widget.query)) {
+      if (widget.query != "" && !searchQuery.contains(widget.query!)) {
         return false;
       } else if (_selectedTab == 'all') {
         return true;
@@ -254,18 +266,20 @@ class _RecentCallsListState extends State<RecentCallsList> {
         return false;
       }
     }).map((item) {
-      if (item.coworker != null && _coworkers[item.coworker.uid] != null) {
-        item.coworker = _coworkers[item.coworker.uid];
+      if (item.coworker != null && _coworkers[item.coworker!.uid] != null) {
+        item.coworker = _coworkers[item.coworker!.uid]!;
       }
       return CallHistorySummaryView(_fusionConnection, _softphone, item,
-          onExpand: () { expand(item); },
+          onExpand: () {
+        expand(item);
+      },
           expanded: item.id == expandedId,
           onSelect: widget.onSelect == null
               ? null
               : () {
-                  widget.onSelect(
+                  widget.onSelect!(
                       item.coworker != null
-                          ? item.coworker.toContact()
+                          ? item.coworker!.toContact()
                           : item.contact,
                       item.crmContact);
                 });
@@ -274,49 +288,50 @@ class _RecentCallsListState extends State<RecentCallsList> {
     return response;
   }
 
-  Contact _getItemContact(CallHistory item){
-    if(item.coworker != null){
-      return item.coworker.toContact();
+  Contact _getItemContact(CallHistory item) {
+    if (item.coworker != null) {
+      return item.coworker!.toContact();
     }
-    if(item.contact != null){
-      return  item.contact;
-    } else if(item.phoneContact != null) {
-      return item.phoneContact.toContact();
+    if (item.contact != null) {
+      return item.contact!;
+    } else if (item.phoneContact != null) {
+      return item.phoneContact!.toContact();
     } else {
       return Contact.fake(item.toDid);
     }
   }
 
   _historyRow(CallHistory item, int index) {
-      if (item.coworker != null && _coworkers[item.coworker.uid] != null) {
-        item.coworker = _coworkers[item.coworker.uid];
-      }
-      Widget ret = _fromDialpad 
+    if (item.coworker != null && _coworkers[item.coworker!.uid] != null) {
+      item.coworker = _coworkers[item.coworker!.uid];
+    }
+    Widget ret = _fromDialpad
         ? DialpadRecentCalls(
-          date: item.startTime,
-          contact: _getItemContact(item),
-          crmContact: item.crmContact,
-          softphone: _softphone,
-          onSelect: widget.onSelect)
+            date: item.startTime,
+            contact: _getItemContact(item),
+            crmContact: item.crmContact,
+            softphone: _softphone,
+            onSelect: widget.onSelect)
         : CallHistorySummaryView(_fusionConnection, _softphone, item,
-          onExpand: () { expand(item); },
-          expanded: item.id == expandedId,
-          refreshHistoryList: _refreshHistoryList,
-          onSelect: widget.onSelect == null
-              ? null
-              : () {
-                  widget.onSelect(
-                      item.coworker != null
-                          ? item.coworker.toContact()
-                          : item.contact,
-                      item.crmContact);
-                });
-      if (index == 0 && !_fromDialpad) {
-        return Container(padding:EdgeInsets.only(top:40), child: ret);
-      }
-      else {
-        return ret;
-      }
+            onExpand: () {
+            expand(item);
+          },
+            expanded: item.id == expandedId,
+            refreshHistoryList: _refreshHistoryList,
+            onSelect: widget.onSelect == null
+                ? null
+                : () {
+                    widget.onSelect!(
+                        item.coworker != null
+                            ? item.coworker!.toContact()
+                            : item.contact,
+                        item.crmContact);
+                  });
+    if (index == 0 && !_fromDialpad) {
+      return Container(padding: EdgeInsets.only(top: 40), child: ret);
+    } else {
+      return ret;
+    }
   }
 
   _spinner() {
@@ -345,9 +360,9 @@ class _RecentCallsListState extends State<RecentCallsList> {
         child: Container(
             decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: _fromDialpad 
-                  ? null 
-                  : BorderRadius.all(Radius.circular(16))),
+                borderRadius: _fromDialpad
+                    ? null
+                    : BorderRadius.all(Radius.circular(16))),
             padding: EdgeInsets.only(top: 0, left: 0, right: 0, bottom: 0),
             child: Stack(children: [
               Column(
@@ -355,33 +370,38 @@ class _RecentCallsListState extends State<RecentCallsList> {
                   Expanded(
                       child: _isSpinning()
                           ? _spinner()
-                : RefreshIndicator(
-              key: _refreshIndicatorKey,
-              triggerMode: RefreshIndicatorTriggerMode.onEdge,
-              onRefresh: (){
-                // For android only users who have Touch vibration turned on in settings will
-                // get the feedback otherwise feedback will be ignored
-                HapticFeedback.mediumImpact(); 
-                return _refreshHistoryList();
-              },
-              child: historyPage.length == 0 
-                ? Center(child: Text( _fromDialpad ? "No Match Was Found" : "No Recent Calls Found"),)
-                : ListView.builder(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        itemCount: _page == -1
-                            ? historyPage.length
-                            : historyPage.length + 1,
-                        itemBuilder: (BuildContext context, int index) {
-                          if (index >= historyPage.length) {
-                            _loadMore();
-                            return Container();
-                          } else {
-                            return _historyRow(historyPage[index], index);
-                          }
-                        }
-
-            ))
-            /*Container(
+                          : RefreshIndicator(
+                              key: _refreshIndicatorKey,
+                              triggerMode: RefreshIndicatorTriggerMode.onEdge,
+                              onRefresh: () {
+                                // For android only users who have Touch vibration turned on in settings will
+                                // get the feedback otherwise feedback will be ignored
+                                HapticFeedback.mediumImpact();
+                                return _refreshHistoryList();
+                              },
+                              child: historyPage.length == 0
+                                  ? Center(
+                                      child: Text(_fromDialpad
+                                          ? "No Match Was Found"
+                                          : "No Recent Calls Found"),
+                                    )
+                                  : ListView.builder(
+                                      physics:
+                                          const AlwaysScrollableScrollPhysics(),
+                                      itemCount: _page == -1
+                                          ? historyPage.length
+                                          : historyPage.length + 1,
+                                      itemBuilder:
+                                          (BuildContext context, int index) {
+                                        if (index >= historyPage.length) {
+                                          _loadMore();
+                                          return Container();
+                                        } else {
+                                          return _historyRow(
+                                              historyPage[index], index);
+                                        }
+                                      }))
+                      /*Container(
                               padding: EdgeInsets.only(top: 00),
                               child: RefreshIndicator(
                                 onRefresh: () => _refreshHistoryList(),
@@ -391,26 +411,27 @@ class _RecentCallsListState extends State<RecentCallsList> {
                                       SliverChildListDelegate(_historyList()))
                                 ]),
                               )))*/
-                  )],
+                      )
+                ],
               ),
-              if(!_fromDialpad)
+              if (!_fromDialpad)
                 Container(
-                  alignment: Alignment.topLeft,
-                  decoration: BoxDecoration(
-                      boxShadow: [],
-                      borderRadius: BorderRadius.all(Radius.circular(16)),
-                      gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          stops: [0.5, 1.0],
-                          colors: [Colors.white, translucentWhite(0.0)])),
-                  height: 60,
-                  padding: EdgeInsets.only(
-                    bottom: 24,
-                    top: 12,
-                    left: 16,
-                  ),
-                  child: Text(_label.toUpperCase(), style: headerTextStyle)),
+                    alignment: Alignment.topLeft,
+                    decoration: BoxDecoration(
+                        boxShadow: [],
+                        borderRadius: BorderRadius.all(Radius.circular(16)),
+                        gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            stops: [0.5, 1.0],
+                            colors: [Colors.white, translucentWhite(0.0)])),
+                    height: 60,
+                    padding: EdgeInsets.only(
+                      bottom: 24,
+                      top: 12,
+                      left: 16,
+                    ),
+                    child: Text(_label!.toUpperCase(), style: headerTextStyle)),
             ])));
   }
 }
@@ -419,14 +440,18 @@ class CallHistorySummaryView extends StatefulWidget {
   final FusionConnection _fusionConnection;
   final CallHistory _historyItem;
   final Softphone _softphone;
-  final bool expanded;
-  Function() onSelect;
-  Function() onExpand;
-  Function refreshHistoryList;
+  final bool? expanded;
+  Function()? onSelect;
+  Function()? onExpand;
+  Function? refreshHistoryList;
 
   CallHistorySummaryView(
       this._fusionConnection, this._softphone, this._historyItem,
-      {Key key, this.onSelect, this.onExpand, this.expanded,this.refreshHistoryList})
+      {Key? key,
+      this.onSelect,
+      this.onExpand,
+      this.expanded,
+      this.refreshHistoryList})
       : super(key: key);
 
   @override
@@ -439,35 +464,33 @@ class _CallHistorySummaryViewState extends State<CallHistorySummaryView> {
   Softphone get _softphone => widget._softphone;
 
   CallHistory get _historyItem => widget._historyItem;
-  bool get _expanded => widget.expanded;
-  Function get _refreshHistoryList => widget.refreshHistoryList;
+  bool? get _expanded => widget.expanded;
+  Function? get _refreshHistoryList => widget.refreshHistoryList;
   bool _loading = false;
 
   initState() {
     super.initState();
 
     if (_historyItem.coworker == null) {
-      var matchingCoworker = _fusionConnection.coworkers
-          .lookupCoworker(_historyItem.isInbound()
-          ? _historyItem.from
-          : _historyItem.to);
+      var matchingCoworker = _fusionConnection.coworkers.lookupCoworker(
+          _historyItem.isInbound() ? _historyItem.from! : _historyItem.to!);
       setState(() {
         _historyItem.coworker = matchingCoworker;
       });
     }
   }
 
-  List<Contact> _contacts() {
+  List<Contact?> _contacts() {
     if (_historyItem.contact != null) {
       return [_historyItem.contact];
-    } else if(_historyItem.phoneContact != null) {
-      return [_historyItem.phoneContact.toContact()];
+    } else if (_historyItem.phoneContact != null) {
+      return [_historyItem.phoneContact!.toContact()];
     } else {
       return [];
     }
   }
 
-  List<CrmContact> _crmContacts() {
+  List<CrmContact?> _crmContacts() {
     if (_historyItem.crmContact != null) {
       return [_historyItem.crmContact];
     } else {
@@ -477,16 +500,16 @@ class _CallHistorySummaryViewState extends State<CallHistorySummaryView> {
 
   _expand() {
     if (widget.onExpand != null) {
-      widget.onExpand();
+      widget.onExpand!();
     }
   }
 
-  String _getLinePrefix (String callerId){
-    String linePrefix;
-    List<dynamic> domainPrefixes = _fusionConnection.settings.domainPrefixes();
+  String _getLinePrefix(String? callerId) {
+    String? linePrefix;
+    List<dynamic>? domainPrefixes = _fusionConnection.settings.domainPrefixes();
     if (domainPrefixes != null) {
       domainPrefixes.forEach((prefix) {
-        if (callerId.startsWith(prefix)) {
+        if (callerId!.startsWith(prefix)) {
           linePrefix = prefix;
         }
       });
@@ -496,31 +519,31 @@ class _CallHistorySummaryViewState extends State<CallHistorySummaryView> {
 
   _name() {
     if (_historyItem.coworker != null) {
-      return _historyItem.coworker.firstName +
+      return _historyItem.coworker!.firstName! +
           ' ' +
-          _historyItem.coworker.lastName;
+          _historyItem.coworker!.lastName!;
     } else if (_historyItem.contact != null) {
       String linePrefix = _getLinePrefix(_historyItem.callerId);
       return linePrefix != ""
-          ? linePrefix + "_" + _historyItem.contact.name.toTitleCase()
-          : _historyItem.contact.name.toTitleCase();
+          ? linePrefix + "_" + _historyItem.contact!.name!.toTitleCase()
+          : _historyItem.contact!.name!.toTitleCase();
     } else if (_historyItem.crmContact != null) {
-      return _historyItem.crmContact.name;
-    } else if(_historyItem.phoneContact != null){
+      return _historyItem.crmContact!.name;
+    } else if (_historyItem.phoneContact != null) {
       String linePrefix = _getLinePrefix(_historyItem.callerId);
       return linePrefix != ""
-          ? linePrefix + "_" + _historyItem.phoneContact.name.toTitleCase()
-          : _historyItem.phoneContact.name.toTitleCase();
+          ? linePrefix + "_" + _historyItem.phoneContact!.name.toTitleCase() 
+          : _historyItem.phoneContact!.name.toTitleCase();
     } else if (_historyItem.callerId != null && _historyItem.callerId != '') {
       String linePrefix =  _getLinePrefix(_historyItem.callerId);
-      return _historyItem.callerId.startsWith(linePrefix) && 
-             _historyItem.callerId.replaceAll(linePrefix + "_", "") != "" 
+      return _historyItem.callerId!.startsWith(linePrefix) && 
+             _historyItem.callerId!.replaceAll(linePrefix + "_", "") != "" 
                 ? _historyItem.callerId
-                : _historyItem.callerId + "Unknown";
+                : _historyItem.callerId! + "Unknown";
     } else {
       return _historyItem.direction == 'inbound'
-          ? _historyItem.fromDid.formatPhone()
-          : _historyItem.toDid.formatPhone();
+          ? _historyItem.fromDid!.formatPhone()
+          : _historyItem.toDid!.formatPhone();
     }
   }
 
@@ -530,7 +553,7 @@ class _CallHistorySummaryViewState extends State<CallHistorySummaryView> {
 
   _icon() {
     if (_isMissed()) {
-      if(_historyItem.queue == "true"){
+      if (_historyItem.queue == "true") {
         return "assets/icons/queue-call-missed.png";
       } else {
         return "assets/icons/phone_missed_red.png";
@@ -546,167 +569,173 @@ class _CallHistorySummaryViewState extends State<CallHistorySummaryView> {
     }
   }
 
-  List<Contact> _messageContacts(CallHistory item){
+  List<Contact> _messageContacts(CallHistory item) {
     List<Contact> contacts = [];
-    if(_historyItem.contact != null){
-      contacts.add(_historyItem.contact);
-    } else if(_historyItem.coworker != null){
-      contacts.add(_historyItem.coworker.toContact());
-    } else if(_historyItem.phoneContact != null){
-      contacts.add(_historyItem.phoneContact.toContact());
+    if (_historyItem.contact != null) {
+      contacts.add(_historyItem.contact!);
+    } else if (_historyItem.coworker != null) {
+      contacts.add(_historyItem.coworker!.toContact());
+    } else if (_historyItem.phoneContact != null) {
+      contacts.add(_historyItem.phoneContact!.toContact());
     }
     return contacts;
   }
 
   _openMessage() async {
-    bool isExt = _historyItem.fromDid.length < 6 || _historyItem.toDid.length < 6;
+    bool isExt =
+        _historyItem.fromDid!.length < 6 || _historyItem.toDid!.length < 6;
     setState(() {
       _loading = true;
     });
-    SMSDepartment dept = _fusionConnection.smsDepartments.getDepartment(isExt 
-      ? DepartmentIds.FusionChats 
-      : DepartmentIds.Personal
-    );
-    if(dept.numbers.isEmpty){
-      _fusionConnection.smsDepartments.getDepartments((List<SMSDepartment> dep) {
+    SMSDepartment dept = _fusionConnection.smsDepartments.getDepartment(
+        isExt ? DepartmentIds.FusionChats : DepartmentIds.Personal);
+    if (dept.numbers.isEmpty) {
+      _fusionConnection.smsDepartments
+          .getDepartments((List<SMSDepartment> dep) {
         for (SMSDepartment d in dep) {
-          if(d.numbers.isNotEmpty){
+          if (d.numbers.isNotEmpty) {
             dept = d;
             break;
           }
         }
       });
 
-      if(dept.numbers.isEmpty){
+      if (dept.numbers.isEmpty) {
         return showModalBottomSheet(
-          context: context,
-          backgroundColor: coal,
-          shape: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
-          builder: (context)=> 
-            Container(
-              constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(context).size.height / 3,
-              ),
-              color: coal,
-              child: Center(
-                child: Text("No personal/departmens SMS number found for this account", 
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-            )
-        ).whenComplete(() =>  setState(() {
-          _loading = false;
-        }));
+            context: context,
+            backgroundColor: coal,
+            shape: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
+            builder: (context) => Container(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.height / 3,
+                  ),
+                  color: coal,
+                  child: Center(
+                    child: Text(
+                      "No personal/departmens SMS number found for this account",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                )).whenComplete(() => setState(() {
+              _loading = false;
+            }));
       }
     }
-    SMSConversation convo = await _fusionConnection.messages.checkExistingConversation(
-      DepartmentIds.Personal,
-      dept.numbers[0],
-      [_historyItem.getOtherNumber(_fusionConnection.getDomain())],
-      _messageContacts(_historyItem)
-    );
+    SMSConversation convo = await _fusionConnection.messages
+        .checkExistingConversation(
+            DepartmentIds.Personal,
+            dept.numbers[0],
+            [_historyItem.getOtherNumber(_fusionConnection.getDomain())],
+            _messageContacts(_historyItem));
 
     setState(() {
       _loading = false;
     });
-    
+
     showModalBottomSheet(
-        context: context,
-        backgroundColor: Colors.transparent,
-        isScrollControlled: true,
-        builder: (context) => StatefulBuilder(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => StatefulBuilder(
           builder: (BuildContext context, StateSetter setState) {
-              SMSConversation displayingConvo = convo;
-              return SMSConversationView(
-                  fusionConnection: _fusionConnection, 
-                  softphone: _softphone, 
-                  smsConversation: displayingConvo, 
-                  deleteConvo: null,
-                  setOnMessagePosted: null,
-                  changeConvo: (SMSConversation updateConvo){
-                    setState(() {
-                      displayingConvo = updateConvo;
-                    },);
-                  }
-                );
-              
-          }
-        ),
-        );
+        SMSConversation displayingConvo = convo;
+        return SMSConversationView(
+            fusionConnection: _fusionConnection,
+            softphone: _softphone,
+            smsConversation: displayingConvo,
+            deleteConvo: null,
+            setOnMessagePosted: null,
+            changeConvo: (SMSConversation updateConvo) {
+              setState(
+                () {
+                  displayingConvo = updateConvo;
+                },
+              );
+            });
+      }),
+    );
   }
 
   _makeCall() {
-    _softphone.makeCall(
-        _historyItem.getOtherNumber(
-            _fusionConnection.getDomain()));
+    print(
+        "MDBM ${_historyItem.to} ${_historyItem.from} ${_historyItem.fromDid}");
+    _softphone
+        .makeCall(_historyItem.getOtherNumber(_fusionConnection.getDomain()));
   }
 
   _openProfile() {
-    Contact contact = _historyItem.contact;
-    Contact newContact = null;
-    if (contact == null && _historyItem.coworker != null){
-      contact = _historyItem.coworker.toContact();
-    } else if(contact == null && _historyItem.phoneContact != null) {
-      contact = _historyItem.phoneContact.toContact();
-    }
-    else if (contact == null && _historyItem.coworker == null && _historyItem.direction == "inbound"){
+    Contact? contact = _historyItem.contact;
+    Contact? newContact = null;
+    if (contact == null && _historyItem.coworker != null) {
+      contact = _historyItem.coworker!.toContact();
+    } else if (contact == null && _historyItem.phoneContact != null) {
+      contact = _historyItem.phoneContact!.toContact();
+    } else if (contact == null &&
+        _historyItem.coworker == null &&
+        _historyItem.direction == "inbound") {
       newContact = Contact.fake(_historyItem.fromDid);
-    } else if(contact == null && _historyItem.coworker == null && _historyItem.direction == "outbound"){
+    } else if (contact == null &&
+        _historyItem.coworker == null &&
+        _historyItem.direction == "outbound") {
       newContact = Contact.fake(_historyItem.toDid);
     }
-
 
     if (contact != null)
       showModalBottomSheet(
           context: context,
           backgroundColor: Colors.transparent,
           isScrollControlled: true,
-          builder: (context) => ContactProfileView(
-                _fusionConnection, _softphone, contact, (){
-                  setState(() {
-                    _refreshHistoryList();
-                  });
-                }
-              ));
-    if(newContact != null){
+          builder: (context) =>
+              ContactProfileView(_fusionConnection, _softphone, contact, () {
+                setState(() {
+                  _refreshHistoryList!();
+                });
+              }));
+    if (newContact != null) {
       showModalBottomSheet(
-        context: context,
-        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height - 60),
-        isScrollControlled: true,
-        builder: (context) => EditContactView(
-            _fusionConnection, newContact, () => Navigator.pop(context, true),(){
-              _refreshHistoryList(); 
-            }));
+          context: context,
+          constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height - 60),
+          isScrollControlled: true,
+          builder: (context) => EditContactView(_fusionConnection, newContact!,
+                  () => Navigator.pop(context, true), () {
+                _refreshHistoryList!();
+              }));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     List<Widget> children = [_topPart()];
-    bool haveProfile = _historyItem.contact != null || 
-      _historyItem.coworker != null || _historyItem.phoneContact != null ? true : false;
-    if (_expanded) {
+    bool haveProfile = _historyItem.contact != null ||
+            _historyItem.coworker != null ||
+            _historyItem.phoneContact != null
+        ? true
+        : false;
+    if (_expanded!) {
       children.add(Container(
           child: Row(children: [horizontalLine(0)]),
           margin: EdgeInsets.only(top: 4, bottom: 4)));
       children.add(Container(
           height: 28,
           margin: EdgeInsets.only(top: 12, bottom: 12),
-          child: Row(
-           mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-            actionButton(haveProfile ? "" : "", "user_dark", 18, 18, _openProfile, flex: 0),
-            actionButton("", "phone_dark", 18, 18, _makeCall,flex: 0),
-            actionButton("", "message_dark", 18, 18, _openMessage, isLoading: _loading,flex: 0)
+          child:
+              Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+            actionButton(
+                haveProfile ? "" : "", "user_dark", 18, 18, _openProfile,
+                flex: 0),
+            actionButton("", "phone_dark", 18, 18, _makeCall, flex: 0),
+            actionButton("", "message_dark", 18, 18, _openMessage,
+                isLoading: _loading, flex: 0)
             // _actionButton("Video", "video_dark", 18, 18, () {}),
           ])));
     }
 
     return Container(
-        height: _expanded ? 132 : 76,
+        height: _expanded! ? 132 : 76,
         padding: EdgeInsets.all(4),
         margin: EdgeInsets.only(bottom: 0, left: 12, right: 12),
-        decoration: _expanded
+        decoration: _expanded!
             ? BoxDecoration(
                 color: particle,
                 borderRadius: BorderRadius.only(
@@ -727,7 +756,9 @@ class _CallHistorySummaryViewState extends State<CallHistorySummaryView> {
 
     if (lastMidnight.isBefore(calcDate)) {
       return "Today " + todayAndYesterdayFmt.format(calcDate);
-    } else if (lastMidnight.subtract(new Duration(days: 1)).isBefore(calcDate)) {
+    } else if (lastMidnight
+        .subtract(new Duration(days: 1))
+        .isBefore(calcDate)) {
       return "Yesterday " + todayAndYesterdayFmt.format(calcDate);
     } else {
       return olderThanYesterdayFmt.format(calcDate);
@@ -738,7 +769,7 @@ class _CallHistorySummaryViewState extends State<CallHistorySummaryView> {
     return GestureDetector(
         onTap: () {
           if (widget.onSelect != null)
-            widget.onSelect();
+            widget.onSelect!();
           else
             _expand();
         },
@@ -749,51 +780,56 @@ class _CallHistorySummaryViewState extends State<CallHistorySummaryView> {
               child: Container(
                   decoration: BoxDecoration(color: Colors.transparent),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                     Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(_name() != null ? _name() : "Unknown",
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 16)),
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(_name() != null ? _name() : "Unknown",
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 16)),
                         ),
-                    Align(
-                        alignment: Alignment.centerLeft,
-                        child: Row(children: [
-                          Container(
-                              margin: EdgeInsets.only(top: 4),
-                              decoration: BoxDecoration(
-                                color: _expanded
-                                    ? Colors.white
-                                    : Color.fromARGB(255, 243, 242, 242),
-                                borderRadius:
-                                    BorderRadius.all(Radius.circular(4)),
-                              ),
-                              alignment: Alignment.topLeft,
-                              padding: EdgeInsets.only(
-                                  left: 6, right: 6, top: 2, bottom: 2),
-                              child: Row(children: [
-                                Image.asset(_icon(), width: 12, height: 12),
-                                Container(width: 2),
-                                Text(" " +
-                                    ("" + _historyItem.getOtherNumber(
-                                        _fusionConnection.getDomain()))
-                                        .toString()
-                                        .formatPhone() +
-                                    " " +
-                                    mDash +
-                                    " " +
-                                    _relativeDateFormatted(_historyItem.startTime),
-                                    style: TextStyle(
-                                        color:
-                                            _isMissed() ? crimsonDarker : coal,
-                                        fontSize: 12,
-                                        height: 1.4,
-                                        fontWeight: FontWeight.w400))
-                              ])),
-                          Expanded(child: Container())
-                        ]))
-                  ])))
+                        Align(
+                            alignment: Alignment.centerLeft,
+                            child: Row(children: [
+                              Container(
+                                  margin: EdgeInsets.only(top: 4),
+                                  decoration: BoxDecoration(
+                                    color: _expanded!
+                                        ? Colors.white
+                                        : Color.fromARGB(255, 243, 242, 242),
+                                    borderRadius:
+                                        BorderRadius.all(Radius.circular(4)),
+                                  ),
+                                  alignment: Alignment.topLeft,
+                                  padding: EdgeInsets.only(
+                                      left: 6, right: 6, top: 2, bottom: 2),
+                                  child: Row(children: [
+                                    Image.asset(_icon(), width: 12, height: 12),
+                                    Container(width: 2),
+                                    Text(
+                                        " " +
+                                            ("" +
+                                                    _historyItem.getOtherNumber(
+                                                        _fusionConnection
+                                                            .getDomain()))
+                                                .toString()
+                                                .formatPhone() +
+                                            " " +
+                                            mDash +
+                                            " " +
+                                            _relativeDateFormatted(
+                                                _historyItem.startTime),
+                                        style: TextStyle(
+                                            color: _isMissed()
+                                                ? crimsonDarker
+                                                : coal,
+                                            fontSize: 12,
+                                            height: 1.4,
+                                            fontWeight: FontWeight.w400))
+                                  ])),
+                              Expanded(child: Container())
+                            ]))
+                      ])))
         ]));
   }
 }
@@ -804,7 +840,7 @@ class SearchCallsBar extends StatefulWidget {
   final Function(String query) _onChange;
 
   SearchCallsBar(this._fusionConnection, this._onChange, this._onClearSearch,
-      {Key key})
+      {Key? key})
       : super(key: key);
 
   @override
@@ -813,7 +849,7 @@ class SearchCallsBar extends StatefulWidget {
 
 class _SearchCallsBarState extends State<SearchCallsBar> {
   final _searchInputController = TextEditingController();
-  String _selectedTab;
+  String? _selectedTab_selectedTab;
 
   _openMenu() {
     Scaffold.of(context).openDrawer();

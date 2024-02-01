@@ -22,8 +22,8 @@
 		B87203FD2B1E888600D12701 /* IntentsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = B87203F52B1E888600D12701 /* IntentsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		B87204092B1E939700D12701 /* AppIntentVocabulary.plist in Resources */ = {isa = PBXBuildFile; fileRef = B87204082B1E939700D12701 /* AppIntentVocabulary.plist */; };
 		B872040A2B1E939700D12701 /* AppIntentVocabulary.plist in Resources */ = {isa = PBXBuildFile; fileRef = B87204082B1E939700D12701 /* AppIntentVocabulary.plist */; };
+		B875D6E52AEB133B00E376F4 /* ContactsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B875D6E42AEB133B00E376F4 /* ContactsProvider.swift */; };
 		B884B694292D5CCF00205021 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = B884B693292D5CCF00205021 /* GoogleService-Info.plist */; };
-		B8C0ABEF2AD9C1F600B8666F /* ContactsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8C0ABEE2AD9C1F600B8666F /* ContactsProvider.swift */; };
 		B8ED2FD7293A9BDE00AA03DA /* ProviderDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8ED2FD6293A9BDE00AA03DA /* ProviderDelegate.swift */; };
 		F2ADB5A528DCB0FE00BBA250 /* outgoing.wav in Resources */ = {isa = PBXBuildFile; fileRef = F2ADB5A428DCB0FD00BBA250 /* outgoing.wav */; };
 /* End PBXBuildFile section */
@@ -86,6 +86,7 @@
 		B87203F82B1E888600D12701 /* IntentHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntentHandler.swift; sourceTree = "<group>"; };
 		B87203FA2B1E888600D12701 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B87204082B1E939700D12701 /* AppIntentVocabulary.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = AppIntentVocabulary.plist; sourceTree = "<group>"; };
+		B875D6E42AEB133B00E376F4 /* ContactsProvider.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ContactsProvider.swift; sourceTree = "<group>"; };
 		B884B693292D5CCF00205021 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		B8C0ABEE2AD9C1F600B8666F /* ContactsProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactsProvider.swift; sourceTree = "<group>"; };
 		B8ED2FD6293A9BDE00AA03DA /* ProviderDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ProviderDelegate.swift; sourceTree = "<group>"; };
@@ -172,6 +173,7 @@
 				1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */,
 				B8ED2FD6293A9BDE00AA03DA /* ProviderDelegate.swift */,
 				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
+				B875D6E42AEB133B00E376F4 /* ContactsProvider.swift */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
 				B8C0ABEE2AD9C1F600B8666F /* ContactsProvider.swift */,
 				B87203EF2B1E352F00D12701 /* Utils.swift */,
@@ -258,7 +260,7 @@
 			isa = PBXProject;
 			attributes = {
 				LastSwiftUpdateCheck = 1500;
-				LastUpgradeCheck = 1300;
+				LastUpgradeCheck = 1430;
 				ORGANIZATIONNAME = "";
 				TargetAttributes = {
 					97C146ED1CF9000F007C117D = {
@@ -317,10 +319,12 @@
 /* Begin PBXShellScriptBuildPhase section */
 		3B06AD1E1E4923F5004D2608 /* Thin Binary */ = {
 			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			inputPaths = (
+				"${TARGET_BUILD_DIR}/${INFOPLIST_PATH}",
 			);
 			name = "Thin Binary";
 			outputPaths = (
@@ -370,6 +374,7 @@
 		};
 		9740EEB61CF901F6004384FC /* Run Script */ = {
 			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
@@ -395,7 +400,7 @@
 				B87203F02B1E352F00D12701 /* Utils.swift in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 				B86F1DA52B1A4B48009B6B8C /* StartCallConvertible.swift in Sources */,
-				B8C0ABEF2AD9C1F600B8666F /* ContactsProvider.swift in Sources */,
+				B875D6E52AEB133B00E376F4 /* ContactsProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

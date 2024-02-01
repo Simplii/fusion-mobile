@@ -7,24 +7,24 @@ import 'fusion_store.dart';
 import 'messages.dart';
 
 class CallLog {
-  DateTime startTime;
-  DateTime endTime;
-  int duration;
-  String type;
-  String to;
-  String from;
-  String recording;
-  String note;
-  String disposition;
+  DateTime? startTime;
+  DateTime? endTime;
+  int? duration;
+  String? type;
+  late String to;
+  late String from;
+  String? recording;
+  String? note;
+  String? disposition;
 }
 
 class TimelineItem extends FusionModel {
-  String id;
-  DateTime time;
-  String phoneNumber;
-  String type;
-  SMSMessage message;
-  CallLog callLog;
+  String? id;
+  DateTime? time;
+  late String phoneNumber;
+  String type = "";
+  SMSMessage? message;
+  late CallLog callLog;
 
   TimelineItem(Map<String, dynamic> obj) {
       time = obj.containsKey('time')
@@ -80,7 +80,7 @@ class TimelineItem extends FusionModel {
         time = callLog.startTime;
         if (callObj['duration'] != null)
           callLog.endTime = DateTime.fromMillisecondsSinceEpoch(
-            callLog.startTime.millisecondsSinceEpoch + (callObj['duration'] * 1000));
+            callLog.startTime!.millisecondsSinceEpoch + (callObj['duration'] * 1000) as int);
         else
           callLog.endTime = time;
         callLog.duration = callObj['duration'];
@@ -102,7 +102,7 @@ class TimelineItem extends FusionModel {
     }
 
   @override
-  String getId() => this.id;
+  String? getId() => this.id;
 }
 
 class TimelineItemStore extends FusionStore<TimelineItem> {
@@ -127,8 +127,8 @@ class TimelineItemStore extends FusionStore<TimelineItem> {
               TimelineItem obj = TimelineItem(item);
               if (obj.type == 'message')
                 obj.phoneNumber =
-                (obj.message.domain == fusionConnection.getDomain()
-                    ? obj.message.to : obj.message.from);
+                (obj.message!.domain == fusionConnection.getDomain()
+                    ? obj.message!.to : obj.message!.from);
               storeRecord(obj);
               response.add(obj);
             } catch (e) {
@@ -143,7 +143,7 @@ class TimelineItemStore extends FusionStore<TimelineItem> {
 
 
   getTimelineFromNumbers(List<String> numbers,
-      Function(List<TimelineItem>, bool) callback) {
+      Function(List<TimelineItem>?, bool) callback) {
     callback(getRecords()
         .where((TimelineItem item) => numbers.contains(item.phoneNumber))
         .toList()
@@ -161,8 +161,8 @@ class TimelineItemStore extends FusionStore<TimelineItem> {
               TimelineItem obj = TimelineItem(item);
               if (obj.type == 'message')
                 obj.phoneNumber =
-                (obj.message.domain == fusionConnection.getDomain()
-                    ? obj.message.to : obj.message.from);
+                (obj.message!.domain == fusionConnection.getDomain()
+                    ? obj.message!.to : obj.message!.from);
               storeRecord(obj);
               response.add(obj);
             } catch (e) {

@@ -11,20 +11,20 @@ import 'package:sip_ua/sip_ua.dart';
 import '../styles.dart';
 
 class DispositionListView extends StatefulWidget {
-  final Softphone softphone;
-  final FusionConnection fusionConnection;
-  final Call call;
-  final String phoneNumber;
+  final Softphone? softphone;
+  final FusionConnection? fusionConnection;
+  final Call? call;
+  final String? phoneNumber;
   final Function onDone;
   final bool fromCallView;
   const DispositionListView({
-    @required this.softphone,
-    @required this.fusionConnection,
-    @required this.call,
-    @required this.phoneNumber,
-    @required this.onDone,
-    @required this.fromCallView,
-    Key key
+    required this.softphone,
+    required this.fusionConnection,
+    required this.call,
+    required this.phoneNumber,
+    required this.onDone,
+    required this.fromCallView,
+    Key? key
   }) : super(key: key);
 
   @override
@@ -32,32 +32,32 @@ class DispositionListView extends StatefulWidget {
 }
 
 class _DispositionListViewState extends State<DispositionListView> {
-  FusionConnection get _fusionConnection => widget.fusionConnection;
-  Softphone get _softphone => widget.softphone;
-  Call get _call => widget.call;
-  String get _phoneNumber => widget.phoneNumber;
+  FusionConnection? get _fusionConnection => widget.fusionConnection;
+  Softphone? get _softphone => widget.softphone;
+  Call? get _call => widget.call;
+  String? get _phoneNumber => widget.phoneNumber;
   bool get _fromCallView => widget.fromCallView;
-  UserSettings get settings => widget.fusionConnection.settings;
+  UserSettings? get settings => widget.fusionConnection!.settings;
   Function get _onDone => widget.onDone;
   final _formKey = GlobalKey<FormState>();
   bool _showError = false;
-  Disposition _selectedDisposition;
+  Disposition? _selectedDisposition;
   List<CallType> _callTypes = [];
   bool _callTypeEnabled = false;
   List<DispositionCustomField> dispositionCustomFields = [];
-  CallType _selectedCallType;
-  Map<String,dynamic> _fieldValues = {};
-  String _notes = "";
+  CallType? _selectedCallType;
+  Map<String,dynamic>? _fieldValues = {};
+  String? _notes = "";
 
   @override
   initState(){
     super.initState();
-    _notes = _softphone.getCallDispositionData(_call.id, "dispositionNotes");
-    _selectedDisposition = _softphone.getCallDispositionData(_call.id, "selectedDisposition");
-    _selectedCallType = _softphone.getCallDispositionData(_call.id, "selectedCallType");
-    _fieldValues = _softphone.getCallDispositionData(_call.id, "fieldValues");
-    _callTypeEnabled = settings.isFeatureEnabled("Hubspot");
-    List<dynamic> schema = settings.options["schema"];
+    _notes = _softphone!.getCallDispositionData(_call!.id, "dispositionNotes");
+    _selectedDisposition = _softphone!.getCallDispositionData(_call!.id, "selectedDisposition");
+    _selectedCallType = _softphone!.getCallDispositionData(_call!.id, "selectedCallType");
+    _fieldValues = _softphone!.getCallDispositionData(_call!.id, "fieldValues");
+    _callTypeEnabled = settings!.isFeatureEnabled("Hubspot");
+    List<dynamic> schema = settings!.options["schema"];
     schema.where((element) => element['object_type'] == "call_disposition").toList();
     if(schema.isNotEmpty){
       for (var element in schema) {
@@ -68,14 +68,14 @@ class _DispositionListViewState extends State<DispositionListView> {
         }
       }
     }
-    if(settings.isFeatureEnabled("Hubspot")){
+    if(settings!.isFeatureEnabled("Hubspot")){
       _getCallTypes();
     }
   }
 
   Future<void> _getCallTypes() async {
     List<CallType> callTypesList = [];
-    await _fusionConnection.apiV2Call("get", "/dispositions/group/-2/dispositions", {},
+    await _fusionConnection!.apiV2Call("get", "/dispositions/group/-2/dispositions", {},
       callback: (Map<String,dynamic> data){
         if(data["items"] != null){
           for (Map<String,dynamic> item in data["items"]) {
@@ -91,12 +91,12 @@ class _DispositionListViewState extends State<DispositionListView> {
 
   List<DispositionGroup> _dispositionOptions() {
     List<DispositionGroup> options = [];
-    CallpopInfo info = _softphone.getCallpopInfo(_call.id);
+    CallpopInfo? info = _softphone!.getCallpopInfo(_call!.id);
 
     if (info == null || info.dispositionGroups == null)
       return options;
     else {
-      List<Map<String, dynamic>> dispositionGroups = info.dispositionGroups.cast<Map<String, dynamic>>();
+      List<Map<String, dynamic>> dispositionGroups = info.dispositionGroups!.cast<Map<String, dynamic>>();
       for (Map<String, dynamic> group in dispositionGroups) {
         DispositionGroup dispoGroup = DispositionGroup(
           id: group["id"].toString(),
@@ -137,7 +137,7 @@ class _DispositionListViewState extends State<DispositionListView> {
                             borderRadius: BorderRadius.circular(2)
                           ),
                           child: Text(
-                            groups[0].name.toUpperCase(), 
+                            groups[0].name!.toUpperCase(), 
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.white,
@@ -167,8 +167,8 @@ class _DispositionListViewState extends State<DispositionListView> {
                             onPressed: () => {
                               setState(() {
                                 _showError = false;
-                                _softphone.setCallDispositionData(
-                                  callId: _call.id, 
+                                _softphone!.setCallDispositionData(
+                                  callId: _call!.id, 
                                   name: "selectedDisposition",
                                   selectedDisposition: groups[0].dispositions[index]
                                 );
@@ -177,7 +177,7 @@ class _DispositionListViewState extends State<DispositionListView> {
                               },)
                             },
                             child: Text(
-                              groups[0].dispositions[index].label,
+                              groups[0].dispositions[index].label!,
                               textAlign: TextAlign.start,
                               style: TextStyle(
                                 color: offWhite,
@@ -250,8 +250,8 @@ class _DispositionListViewState extends State<DispositionListView> {
                             ),
                             onPressed: () => {
                               setState(() {
-                                _softphone.setCallDispositionData(
-                                  callId: _call.id, 
+                                _softphone!.setCallDispositionData(
+                                  callId: _call!.id, 
                                   name: "selectedCallType",
                                   selectedCallType: _callTypes[index]
                                 );
@@ -260,7 +260,7 @@ class _DispositionListViewState extends State<DispositionListView> {
                               },)
                             },
                             child: Text(
-                              _callTypes[index].label,
+                              _callTypes[index].label!,
                               textAlign: TextAlign.start,
                               style: TextStyle(
                                 color: offWhite,
@@ -287,19 +287,19 @@ class _DispositionListViewState extends State<DispositionListView> {
     }
     
     for (DispositionCustomField customField in dispositionCustomFields) {
-      if(customField.options.displayFor.contains(int.parse(_selectedDisposition.id)) || 
-        customField.options.requireFor.contains(int.parse(_selectedDisposition.id))){
+      if(customField.options!.displayFor!.contains(int.parse(_selectedDisposition!.id!)) || 
+        customField.options!.requireFor!.contains(int.parse(_selectedDisposition!.id!))){
         if(customField.type == DispositionCustomFieldTypes.Text || 
             customField.type == DispositionCustomFieldTypes.Textarea){
               Widget field = TextFormField(
                 validator:(value) {
                   if ((value == null || value.isEmpty) &&  
-                  customField.options.requireFor.contains(int.parse(_selectedDisposition.id))) {
+                  customField.options!.requireFor!.contains(int.parse(_selectedDisposition!.id!))) {
                     return 'This field is required';
                   }
                   return null;
                 },
-                initialValue: _fieldValues[customField.id.toString()],
+                initialValue: _fieldValues![customField.id.toString()],
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 18
@@ -313,7 +313,7 @@ class _DispositionListViewState extends State<DispositionListView> {
                 decoration: InputDecoration(
                   errorStyle: TextStyle(fontWeight: FontWeight.w500, color: Colors.red.shade800),
                   alignLabelWithHint: true,
-                  labelText:  customField.options.requireFor.contains(int.parse(_selectedDisposition.id)) 
+                  labelText:  customField.options!.requireFor!.contains(int.parse(_selectedDisposition!.id!)) 
                     ? "* ${customField.label}"
                     : customField.label,
                   labelStyle: TextStyle(
@@ -334,9 +334,9 @@ class _DispositionListViewState extends State<DispositionListView> {
                 ),
                 onChanged: (value) {
                   setState(() {
-                    _fieldValues[customField.id.toString()] = value; 
-                    _softphone.setCallDispositionData(
-                      callId: _call.id, 
+                    _fieldValues![customField.id.toString()] = value; 
+                    _softphone!.setCallDispositionData(
+                      callId: _call!.id, 
                       name: "fieldValues",
                       fieldValues: _fieldValues
                     );
@@ -352,11 +352,11 @@ class _DispositionListViewState extends State<DispositionListView> {
               padding: EdgeInsets.symmetric(vertical: 10, horizontal: 8),
               minimumSize: Size(double.infinity, 50)
             ),
-            onPressed: ()=>_showCustomDropdownOptions(customField.options.dropdownChoices, customField),
+            onPressed: ()=>_showCustomDropdownOptions(customField.options!.dropdownChoices, customField),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(_fieldValues[customField.id.toString()] ?? customField.label,
+                Text(_fieldValues![customField.id.toString()] ?? customField.label!,
                   style: TextStyle(
                   fontSize: 20,
                   color: Colors.white,
@@ -373,7 +373,7 @@ class _DispositionListViewState extends State<DispositionListView> {
     return customFields;
   }
 
-  void _showCustomDropdownOptions(List<String> options, DispositionCustomField field){
+  void _showCustomDropdownOptions(List<String>? options, DispositionCustomField field){
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -382,7 +382,7 @@ class _DispositionListViewState extends State<DispositionListView> {
         label: field.label,
         bottomChild: Container(
           height: MediaQuery.of(context).size.height / 2,
-          child: options.isNotEmpty 
+          child: options!.isNotEmpty 
             ? Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -406,9 +406,9 @@ class _DispositionListViewState extends State<DispositionListView> {
                             ),
                             onPressed: () => {
                               setState(() {
-                                _fieldValues[field.id.toString()] =  options[index];
-                                _softphone.setCallDispositionData(
-                                  callId: _call.id, 
+                                _fieldValues![field.id.toString()] =  options[index];
+                                _softphone!.setCallDispositionData(
+                                  callId: _call!.id, 
                                   name: "fieldValues",
                                   fieldValues: _fieldValues
                                 );
@@ -448,23 +448,23 @@ class _DispositionListViewState extends State<DispositionListView> {
     }
 
     if(_selectedDisposition != null){
-      payload.dispositionId = _selectedDisposition.id;
+      payload.dispositionId = _selectedDisposition!.id;
     }
-    _fusionConnection.apiV2Call(
+    _fusionConnection!.apiV2Call(
       "post", 
-      "/calls/${_call.id}/setDisposition",
+      "/calls/${_call!.id}/setDisposition",
       payload.toJson()
     );
-    _softphone.endedCalls.removeWhere((call) => call.id == _call.id);
+    _softphone!.endedCalls.removeWhere((call) => call.id == _call!.id);
     _onDone();
   }
 
   @override
   Widget build(BuildContext context) {
-    String callerName       = _softphone.getCallerName(_call);
-    String companyName      = _softphone.getCallerCompany(_call);
-    String _linePrefix      = _softphone.linePrefix;
-    ImageProvider callerPic = _softphone.getCallerPic(_call, callerName: callerName);
+    String? callerName       = _softphone!.getCallerName(_call);
+    String? companyName      = _softphone!.getCallerCompany(_call);
+    String _linePrefix      = _softphone!.linePrefix;
+    ImageProvider callerPic = _softphone!.getCallerPic(_call, callerName: callerName);
 
     return ListView(
       children: [
@@ -496,13 +496,13 @@ class _DispositionListViewState extends State<DispositionListView> {
                       color: translucentWhite(0.67))),  
                     Text(
                       callerName == "Unknown" 
-                        ? _phoneNumber.formatPhone() 
-                        : callerName.toTitleCase(),
+                        ? _phoneNumber!.formatPhone() 
+                        : callerName!.toTitleCase(),
                       style: TextStyle(
                         fontSize: 32,
                         color: Colors.white,
                         fontWeight: FontWeight.w700),),
-                    Text(companyName.capitalize(),
+                    Text(companyName!.capitalize(),
                       style:  TextStyle(
                       fontSize: 18,
                       height: 1.4,
@@ -604,8 +604,8 @@ class _DispositionListViewState extends State<DispositionListView> {
                     ),
                     initialValue: _notes,
                     onChanged: (value) => {
-                      _softphone.setCallDispositionData(
-                        callId: _call.id, 
+                      _softphone!.setCallDispositionData(
+                        callId: _call!.id, 
                         name: "dispositionNotes",
                         dispositionNotes: value
                       )
@@ -656,7 +656,7 @@ class _DispositionListViewState extends State<DispositionListView> {
                                     _showError = true;
                                   });
                                 }
-                                if (_formKey.currentState.validate() && _selectedDisposition != null) {
+                                if (_formKey.currentState!.validate() && _selectedDisposition != null) {
                                   _setDisposition();
                                 }
                               }

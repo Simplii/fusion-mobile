@@ -5,7 +5,7 @@ import 'contact.dart';
 
 class UserSettings {
   Map<String, dynamic> options = {"avatars": {}};
-  Map<String, dynamic> subscriber = {'callid_nmbr': '', 'user': ''};
+  Map<String, dynamic>? subscriber = {'callid_nmbr': '', 'user': ''};
   final FusionConnection _fusionConnection;
   String myOutboundCallerId = "";
   bool isDynamicDialingDept = false;
@@ -19,25 +19,25 @@ class UserSettings {
   bool usesV2 = false;
   
   myContact() {
-    if (subscriber['first_name'] == null) subscriber['first_name'] = "";
-    if (subscriber['last_name'] == null) subscriber['last_name'] = "";
+    if (subscriber!['first_name'] == null) subscriber!['first_name'] = "";
+    if (subscriber!['last_name'] == null) subscriber!['last_name'] = "";
     return Contact({
       'addresses': [],
       'company': options['domain'],
       'contacts': [],
       'deleted': false,
       'domain': options['domain'],
-      'emails': subscriber['email'].runtimeType == String
-          ? [{'email': subscriber['email'], 'type': 'Work'}]
+      'emails': subscriber!['email'].runtimeType == String
+          ? [{'email': subscriber!['email'], 'type': 'Work'}]
           : [],
       'first_contact_diate': '',
-      'first_name': subscriber['first_name'],
-      'last_name': subscriber['last_name'],
+      'first_name': subscriber!['first_name'],
+      'last_name': subscriber!['last_name'],
       'groups': [],
       'id': '-1',
       'job_title': '',
       'lead_creation_date': '',
-      'name': subscriber['first_name'] + ' ' + subscriber['last_name'],
+      'name': subscriber!['first_name'] + ' ' + subscriber!['last_name'],
       'owner': '',
       'parent_id': '',
       'phone_numbers': [],
@@ -68,18 +68,18 @@ class UserSettings {
         callback: (Map<String, dynamic> data) {
           if (data.containsKey('subscriber') && data['subscriber'].containsKey('user')) {
             subscriber = data['subscriber'];
-            if (subscriber['callid_nmbr'] == null)
-              subscriber['callid_nmbr'] = '';
+            if (subscriber!['callid_nmbr'] == null)
+              subscriber!['callid_nmbr'] = '';
             // netsapians returns empty object if last name not provided
-            if(subscriber['last_name'].runtimeType != String ){
-              subscriber['last_name'] = '';
+            if(subscriber!['last_name'].runtimeType != String ){
+              subscriber!['last_name'] = '';
             }
           }
         });
   }
 
-  String userScope() {
-    return subscriber['scope'];
+  String? userScope() {
+    return subscriber!['scope'];
   }
 
   bool hasFusionPlus() {
@@ -88,7 +88,7 @@ class UserSettings {
   }
 
   bool hasManagerPermissions() {
-    String scope = userScope();
+    String? scope = userScope();
     return scope == 'Office Manager' || scope == 'Super User';
   }
 
@@ -112,26 +112,26 @@ class UserSettings {
     return (options['crm_features'] as Map<String, dynamic>).values as List<Map<String, dynamic>>;
   }
 
-  String crmIcon(crmName) {
+  String? crmIcon(crmName) {
     List<Map<String, dynamic>> crms = crmData();
     for (Map<String, dynamic> crmData in crms) {
       if (crmData['CRM_NAME'] == crmName) {
-        return crmData['CRM_ICON'] as String;
+        return crmData['CRM_ICON'] as String?;
       }
     }
     throw "Crm not found (" + crmName + ")";
   }
 
-  List<dynamic> enabledFeatures() {
+  List<dynamic>? enabledFeatures() {
     return options['client']['options'];
   }
 
   bool isFeatureEnabled(featureName) {
-    return enabledFeatures().contains(featureName);
+    return enabledFeatures()!.contains(featureName);
   }
 
-  List<String> parkLines() {
-    return options['park_lines'] as List<String>;
+  List<String>? parkLines() {
+    return options['park_lines'] as List<String>?;
   }
 
   List<Map<String, dynamic>> userSmsNumbers() {
@@ -153,7 +153,7 @@ class UserSettings {
       "dynamicDialingDepartment" : isDepartment
     },
         callback: (Map<String, dynamic> datas) {
-          Map<String, dynamic> oldSubscriber = subscriber;
+          Map<String, dynamic> oldSubscriber = subscriber!;
           oldSubscriber['callid_nmbr'] = newDid;
           setSubscriber(oldSubscriber);
         });
@@ -168,14 +168,13 @@ class UserSettings {
   }
 
   void setMyUserInfo({
-    String outboundCallerId, 
-    bool isDepartment, 
-    bool dynamicDialingEnabledForDomain,
-    String cellPhoneNumber,
-    bool useCarrier,
-    String simParams,
-    bool dndIsOn,
-    bool forceDispoEnabled,
+    required String outboundCallerId, 
+    required bool isDepartment, 
+    required String cellPhoneNumber,
+    required bool useCarrier,
+    required String simParams,
+    required bool dndIsOn,
+    required bool forceDispoEnabled,
     }) {
       usesCarrier = useCarrier;
       myCellPhoneNumber = cellPhoneNumber;
@@ -197,10 +196,10 @@ class UserSettings {
         if(data["success"] != null){
           settings.forEach((SettingsPayload setting){
             if(setting.setting == "uses_carrier"){
-              usesCarrier = setting.value.isNotEmpty;
+              usesCarrier = setting.value!.isNotEmpty;
             }
             if(setting.setting == "cell_phone_number"){
-              myCellPhoneNumber = setting.value;
+              myCellPhoneNumber = setting.value ?? "";
             }
             if(setting.setting == "fm_on_dnd"){
               dnd = setting.value == "true" ? true : false;
@@ -217,7 +216,7 @@ class UserSettings {
 class SettingsPayload {
   String uid;
   String setting;
-  String value;
+  String? value;
   SettingsPayload(this.uid,this.setting,this.value);
   Map<String,dynamic> toJson(){
     return {

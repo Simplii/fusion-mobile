@@ -12,11 +12,11 @@ class CallFooterDetails extends StatefulWidget {
     this._softphone, 
     this._activeCall,
     this.toggleDisposition,
-      {Key key})
+      {Key? key})
       : super(key: key);
 
-  final Softphone _softphone;
-  final Call _activeCall;
+  final Softphone? _softphone;
+  final Call? _activeCall;
   final Function toggleDisposition;
 
   @override
@@ -28,14 +28,14 @@ class _CallFooterDetailsState extends State<CallFooterDetails> {
 
   @override
   Widget build(BuildContext context) {
-    CallpopInfo info = widget._softphone.getCallpopInfo(widget._activeCall.id);
+    CallpopInfo? info = widget._softphone!.getCallpopInfo(widget._activeCall!.id);
 
     return Container(
       color: Colors.white,
       padding: EdgeInsets.fromLTRB(12, 6, 12, iphoneIsLarge() ? 32 : 6),
       alignment: Alignment.center,
       child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-        if (!widget._softphone.isConnected(widget._activeCall)) Spacer(),
+        if (!widget._softphone!.isConnected(widget._activeCall!)) Spacer(),
         Container(
             height: 38,
             constraints: BoxConstraints(
@@ -45,12 +45,12 @@ class _CallFooterDetailsState extends State<CallFooterDetails> {
               CrmLeadsRow(widget._softphone, info != null ? info.crmContacts : [])
             ])),
         Spacer(),
-        if (widget._softphone.isConnected(widget._activeCall))
+        if (widget._softphone!.isConnected(widget._activeCall!))
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: ash
             ),
-            onPressed: _toggleDisposition, 
+            onPressed: _toggleDisposition as void Function()?, 
             child: Text("Disposition"))
       ]),
     );

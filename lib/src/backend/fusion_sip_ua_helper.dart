@@ -10,7 +10,7 @@ class FusionSIPUAHelper extends SIPUAHelper {
 
 
   @override
-  Map<String, Object> buildCallOptions([bool voiceonly = false]) {
+  Map<String, Object?> buildCallOptions([bool voiceonly = false]) {
     var options = super.buildCallOptions(voiceonly);
     // if this isn't set for a hold request, reinvites will not be sent out for holds on outbound calls
     // if it is seton makecall, the app crashes

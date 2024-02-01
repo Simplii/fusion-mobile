@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fusion_mobile_revamped/src/styles.dart';
 
 class DialPadKey extends StatefulWidget {
-  DialPadKey({Key key, this.onPressed, this.digit, this.alphas})
+  DialPadKey({Key? key,required this.onPressed, this.digit, this.alphas})
       : super(key: key);
 
   final Function(String) onPressed;
@@ -26,7 +26,7 @@ class _DialPadKeyState extends State<DialPadKey> {
               padding: EdgeInsets.all(8),
             ),
             onPressed: () {
-              widget.onPressed(widget.digit);
+              widget.onPressed(widget.digit.toString());
             },
             child: Container(
                 decoration: clearBg(),

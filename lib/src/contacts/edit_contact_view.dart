@@ -21,13 +21,13 @@ import '../styles.dart';
 import '../utils.dart';
 
 class EditContactView extends StatefulWidget {
-  final FusionConnection _fusionConnection;
+  final FusionConnection? _fusionConnection;
   final Function() _goBack;
   final Contact _contact;
-  final Function onCreate;
+  final Function? onCreate;
 
   EditContactView(this._fusionConnection, this._contact, this._goBack, this.onCreate,
-      {Key key})
+      {Key? key})
       : super(key: key);
 
   @override
@@ -35,16 +35,16 @@ class EditContactView extends StatefulWidget {
 }
 
 class _EditContactViewState extends State<EditContactView> {
-  FusionConnection get _fusionConnection => widget._fusionConnection;
+  FusionConnection? get _fusionConnection => widget._fusionConnection;
 
   Contact get _contact => widget._contact;
-  Contact _edited = null;
-  Function get _onCreate => widget.onCreate;
+  Contact? _edited = null;
+  Function? get _onCreate => widget.onCreate;
   bool _saving = false; 
   Map<String, TextEditingController> textControllers = {};
-  XFile pickedImage = null;
+  XFile? pickedImage = null;
 
-  _textControllerFor(name, String value) {
+  _textControllerFor(name, String? value) {
     if (textControllers.containsKey(name))
       return textControllers[name];
     else {
@@ -61,7 +61,7 @@ class _EditContactViewState extends State<EditContactView> {
     }
   }
 
-  _renderFieldEditor(String fieldName, String fieldValue,
+  _renderFieldEditor(String fieldName, String? fieldValue,
       String fieldPlaceholder, Function(String) onEdit) {
     return Row(children: [
       Expanded(
@@ -69,9 +69,9 @@ class _EditContactViewState extends State<EditContactView> {
     ]);
   }
 
-  _renderField(String fieldName, String fieldValue, String fieldPlaceholder,
+  _renderField(String fieldName, String? fieldValue, String fieldPlaceholder,
       Function(String) onEdit,
-      {EdgeInsets margin}) {
+      {EdgeInsets? margin}) {
     return _renderFieldWrapper(
         TextField(
           textCapitalization: TextCapitalization.sentences,
@@ -91,7 +91,7 @@ class _EditContactViewState extends State<EditContactView> {
         margin);
   }
 
-  _renderFieldWrapper(Widget child, EdgeInsets margin) {
+  _renderFieldWrapper(Widget child, EdgeInsets? margin) {
     return Container(
         margin: margin == null
             ? EdgeInsets.only(top: 12, bottom: 4, right: 0)
@@ -110,9 +110,9 @@ class _EditContactViewState extends State<EditContactView> {
             child: child));
   }
 
-  _renderDropDownField(String fieldName, String fieldValue, String label,
+  _renderDropDownField(String fieldName, String? fieldValue, String label,
       List<List<String>> options, Function(String) onEdit,
-      {EdgeInsets margin}) {
+      {EdgeInsets? margin}) {
     return _renderFieldWrapper(
         Container(
             alignment: Alignment.center,
@@ -121,6 +121,7 @@ class _EditContactViewState extends State<EditContactView> {
                 style: TextStyle(
                     color: coal, fontSize: 16, fontWeight: FontWeight.w700),
                 label: label,
+                selectedNumber: "",
                 options: options,
                 value: fieldValue != null ? fieldValue : "",
                 onChange: (String value) {
@@ -137,7 +138,7 @@ class _EditContactViewState extends State<EditContactView> {
       Expanded(
           child: _renderField("phone" + index.toString() + "phone",
               phone['number'], "Phone Number", (String newPhone) {
-        _edited.phoneNumbers[index]['number'] = newPhone;
+        _edited!.phoneNumbers![index]['number'] = newPhone;
       })),
       _renderDropDownField(
           "phone" + index.toString() + "type", phone['type'], "Phone Type", [
@@ -145,13 +146,13 @@ class _EditContactViewState extends State<EditContactView> {
         ["Mobile", "Mobile"],
         ["Home", "Home"]
       ], (String newType) {
-        _edited.phoneNumbers[index]['type'] = newType;
+        _edited!.phoneNumbers![index]['type'] = newType;
       }, margin: EdgeInsets.only(left: 12, top: 12, bottom: 4)),
       GestureDetector(
           onTap: () {
             _startEditingIfNotStared();
             setState(() {
-              _edited.phoneNumbers.removeAt(index);
+              _edited!.phoneNumbers!.removeAt(index);
             });
           },
           child: Container(
@@ -168,7 +169,7 @@ class _EditContactViewState extends State<EditContactView> {
         Expanded(
             child: _renderField("email" + index.toString() + "email",
                 email['email'], "Email Address", (String newEmail) {
-          _edited.emails[index]['email'] = newEmail;
+          _edited!.emails![index]['email'] = newEmail;
         }))
       ]),
       Row(children: [
@@ -178,13 +179,13 @@ class _EditContactViewState extends State<EditContactView> {
           ["Mobile", "Mobile"],
           ["Home", "Home"]
         ], (String newType) {
-          _edited.emails[index]['type'] = newType;
+          _edited!.emails![index]['type'] = newType;
         }, margin: EdgeInsets.only(top: 12, bottom: 4)),
         GestureDetector(
             onTap: () {
               _startEditingIfNotStared();
               setState(() {
-                _edited.emails.removeAt(index);
+                _edited!.emails!.removeAt(index);
               });
             },
             child: Container(
@@ -202,7 +203,7 @@ class _EditContactViewState extends State<EditContactView> {
         Expanded(
             child: _renderField("social" + index.toString() + "social",
                 social['value'], "Name", (String newSocialValue) {
-          _edited.socials[index]['value'] = newSocialValue;
+          _edited!.socials![index]['value'] = newSocialValue;
         })),
         _renderDropDownField(
             "social" + index.toString() + "type", social['social'], "Social Platform", [
@@ -212,13 +213,13 @@ class _EditContactViewState extends State<EditContactView> {
           ["Instagram", "Instagram"],
           ["Website", "Website"],
         ], (String newType) {
-          _edited.socials[index]['type'] = newType;
+          _edited!.socials![index]['type'] = newType;
         }, margin: EdgeInsets.only(top: 12, bottom: 4)),
         GestureDetector(
             onTap: () {
               _startEditingIfNotStared();
               setState(() {
-                _edited.socials.removeAt(index);
+                _edited!.socials!.removeAt(index);
               });
             },
             child: Container(
@@ -258,33 +259,33 @@ class _EditContactViewState extends State<EditContactView> {
             ])));
   }
 
-  Contact _editingContact() {
+  Contact? _editingContact() {
     return _edited == null ? _contact : _edited;
   }
 
   List<Widget> _fieldGroups() {
-    Contact contact = _editingContact();
+    Contact contact = _editingContact()!;
     List<Widget> groups = [];
 
     groups.add(_renderFieldGroup("user_filled_dark", [
       _renderFieldEditor("firstName", contact.firstName, "First Name",
           (String newVal) {
-        _edited.firstName = newVal;
+        _edited!.firstName = newVal;
       }),
       _renderFieldEditor("lastName", contact.lastName, "Last Name",
           (String newVal) {
-        _edited.lastName = newVal;
+        _edited!.lastName = newVal;
       })
     ]));
 
     groups.add(_renderFieldGroup("building_filled_dark", [
       _renderFieldEditor("company", contact.company, "Company",
           (String newVal) {
-        _edited.company = newVal;
+        _edited!.company = newVal;
       }),
       _renderFieldEditor("jobTitle", contact.jobTitle, "Job Title",
           (String newVal) {
-        _edited.jobTitle = newVal;
+        _edited!.jobTitle = newVal;
       })
     ]));
 
@@ -296,7 +297,7 @@ class _EditContactViewState extends State<EditContactView> {
     }
     phoneFields.add(_addButton("ADD PHONE", () {
       setState(() {
-        _edited.phoneNumbers.add({"number": "", "type": "Work"});
+        _edited!.phoneNumbers!.add({"number": "", "type": "Work"});
       });
     }));
 
@@ -304,45 +305,45 @@ class _EditContactViewState extends State<EditContactView> {
 
     List<Widget> emailFields = [];
     index = 0;
-    for (Map<String, dynamic> email in contact.emails) {
+    for (Map<String, dynamic> email in contact.emails!) {
       emailFields.add(_renderEmailEditor(email, index));
       index++;
     }
     emailFields.add(_addButton("ADD EMAIL", () {
       setState(() {
-        _edited.emails.add({"email": "", "type": "Work"});
+        _edited!.emails!.add({"email": "", "type": "Work"});
       });
     }));
 
     groups.add(_renderFieldGroup("mail_filled_dark", emailFields));
 
-    if (contact.addresses == null || contact.addresses.length == 0)
+    if (contact.addresses == null || contact.addresses!.length == 0)
       contact.addresses = [{}];
 
     groups.add(_renderFieldGroup("geopointer_filled_dark", [
-      _renderFieldEditor("address1line1", contact.addresses[0]['address1'], "Address line 1",
-          (String newVal) { contact.addresses[0]['address1'] = newVal; }),
-      _renderFieldEditor("address1line2", contact.addresses[0]['address2'], "Address line 2",
-          (String newVal) { contact.addresses[0]['address2'] = newVal; }),
-      _renderFieldEditor("address1city", contact.addresses[0]['city'], "City",
-          (String newVal) { contact.addresses[0]['city'] = newVal; }),
+      _renderFieldEditor("address1line1", contact.addresses![0]['address1'], "Address line 1",
+          (String newVal) { contact.addresses![0]['address1'] = newVal; }),
+      _renderFieldEditor("address1line2", contact.addresses![0]['address2'], "Address line 2",
+          (String newVal) { contact.addresses![0]['address2'] = newVal; }),
+      _renderFieldEditor("address1city", contact.addresses![0]['city'], "City",
+          (String newVal) { contact.addresses![0]['city'] = newVal; }),
       Row(
         children: [
           Expanded(
-              child: _renderField("address1state", contact.addresses[0]['state'], "State",
-                      (String newVal) { contact.addresses[0]['state'] = newVal; },
+              child: _renderField("address1state", contact.addresses![0]['state'], "State",
+                      (String newVal) { contact.addresses![0]['state'] = newVal; },
                   margin: EdgeInsets.only(top: 12, bottom: 4, right: 12))),
           Expanded(
-              child: _renderField("address1zip", contact.addresses[0]['zip'], "Zip code",
-                      (String newVal) { contact.addresses[0]['zip'] = newVal; },
+              child: _renderField("address1zip", contact.addresses![0]['zip'], "Zip code",
+                      (String newVal) { contact.addresses![0]['zip'] = newVal; },
                   margin: EdgeInsets.only(top: 12, bottom: 4))),
         ]
       ),
-      _renderFieldEditor("address1country", contact.addresses[0]['country'], "Country",
-          (String newVal) { contact.addresses[0]['country'] = newVal; }),
+      _renderFieldEditor("address1country", contact.addresses![0]['country'], "Country",
+          (String newVal) { contact.addresses![0]['country'] = newVal; }),
     ]));
 
-    if (contact.socials == null || contact.socials.length == 0)
+    if (contact.socials == null || contact.socials!.length == 0)
       contact.socials = [];
 
     List<Widget> socials = [];
@@ -353,7 +354,7 @@ class _EditContactViewState extends State<EditContactView> {
     }
     socials.add(_addButton("ADD SOCIAL", () {
       setState(() {
-        _edited.socials.add({"value": "", "type": "Work"});
+        _edited!.socials!.add({"value": "", "type": "Work"});
       });
     }));
 
@@ -455,20 +456,20 @@ class _EditContactViewState extends State<EditContactView> {
     setState(() {
       _saving = true;
     });
-    _edited.name = _edited.firstName + " " + _edited.lastName;
+    _edited!.name = _edited!.firstName! + " " + _edited!.lastName!;
     if(pickedImage != null){
-      _fusionConnection.contacts.uploadProfilePic("contact", pickedImage, _edited , (Contact updatedContact){
-        _fusionConnection.contacts.save(updatedContact, (){
+      _fusionConnection!.contacts.uploadProfilePic("contact", pickedImage!, _edited! , (Contact updatedContact){
+        _fusionConnection!.contacts.save(updatedContact, (){
           setState(() {
-            _contact.copy(updatedContact);
+            _contact!.copy(updatedContact);
             _saving = false;
             _edited = null;
           });
         });
       });
     } else {
-      _fusionConnection.contacts.save(_edited, ()=>{});
-      _contact.copy(_edited);
+      _fusionConnection!.contacts.save(_edited, ()=>{});
+      _contact!.copy(_edited!);
       widget._goBack();
     }
   }
@@ -478,22 +479,22 @@ class _EditContactViewState extends State<EditContactView> {
       _saving = true;
     });
     if(pickedImage != null){
-      _fusionConnection.contacts.createContact(_edited,(Contact newContact){
-        _fusionConnection.contacts.uploadProfilePic("contact", pickedImage, newContact, (Contact updatedContact){
-          _fusionConnection.contacts.save(updatedContact, (){
+      _fusionConnection!.contacts.createContact(_edited!,(Contact newContact){
+        _fusionConnection!.contacts.uploadProfilePic("contact", pickedImage!, newContact, (Contact updatedContact){
+          _fusionConnection!.contacts.save(updatedContact, (){
             setState(() {
               _saving = false;
-              _contact.copy(newContact);
-              _onCreate();
+              _contact!.copy(newContact);
+              _onCreate!();
               widget._goBack();
             });
           });
         });
       });
     } else {
-      _fusionConnection.contacts.createContact(_edited,(Contact newContact){
-        _contact.copy(newContact);
-        _onCreate();
+      _fusionConnection!.contacts.createContact(_edited!,(Contact newContact){
+        _contact!.copy(newContact);
+        _onCreate!();
         widget._goBack();
       });
     }
@@ -501,9 +502,9 @@ class _EditContactViewState extends State<EditContactView> {
 
   void _selectImage(String source){
     final ImagePicker _picker = ImagePicker();
-    Contact contact = _editingContact();
+    Contact? contact = _editingContact();
     if (source == "camera") {
-      _picker.pickImage(source: ImageSource.camera).then((XFile image) {
+      _picker.pickImage(source: ImageSource.camera).then((XFile? image) {
         setState(() {
           if(image == null) return;
           setState(() {
@@ -514,7 +515,7 @@ class _EditContactViewState extends State<EditContactView> {
         });
       });
     } else {
-      _picker.pickImage(source: ImageSource.gallery).then((XFile image) {
+      _picker.pickImage(source: ImageSource.gallery).then((XFile? image) {
         if(image == null) return;
         setState(() {
           pickedImage = image;
@@ -584,7 +585,7 @@ class _EditContactViewState extends State<EditContactView> {
 
   @override
   Widget build(BuildContext context) {
-    String pictureUrl = _contact.pictureUrl();
+    String? pictureUrl = _contact!.pictureUrl();
 
     return Column(children: [
       _header(),
@@ -603,10 +604,10 @@ class _EditContactViewState extends State<EditContactView> {
                         ColorFilter.mode(Colors.black.withOpacity(0.6), 
                         BlendMode.dstATop),
                       image: pickedImage != null
-                          ? FileImage(File(pickedImage.path))
-                          : pictureUrl != null
+                          ? FileImage(File(pickedImage!.path))
+                          : (pictureUrl != null
                             ? NetworkImage(pictureUrl)
-                            : AssetImage("assets/blank_avatar.png")))),
+                            : AssetImage("assets/blank_avatar.png")) as ImageProvider<Object>))),
             Expanded(
               child: Container(
                   decoration: BoxDecoration(color: Colors.white),

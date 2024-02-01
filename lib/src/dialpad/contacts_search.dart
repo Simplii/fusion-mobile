@@ -7,7 +7,7 @@ import 'package:fusion_mobile_revamped/src/calls/recent_calls.dart';
 import 'package:fusion_mobile_revamped/src/models/coworkers.dart';
 
 class ContactsSearch extends StatefulWidget {
-  ContactsSearch(this._fusionConnection, this._softphone, this._query, {Key key})
+  ContactsSearch(this._fusionConnection, this._softphone, this._query, {Key? key})
       : super(key: key);
 
   final FusionConnection _fusionConnection;
@@ -25,8 +25,8 @@ class _ContactsSearchState extends State<ContactsSearch> {
 
   List<CallHistory> _history = [];
   int lookupState = 0;
-  String _subscriptionKey;
-  Map<String, Coworker> _coworkers = {};
+  String? _subscriptionKey;
+  Map<String?, Coworker> _coworkers = {};
 
   @override
   void initState() {
@@ -65,8 +65,8 @@ class _ContactsSearchState extends State<ContactsSearch> {
 
   _historyList() {
     return _history.map((item) {
-      if (item.coworker != null && _coworkers[item.coworker.uid] != null) {
-        item.coworker = _coworkers[item.coworker.uid];
+      if (item.coworker != null && _coworkers[item.coworker!.uid] != null) {
+        item.coworker = _coworkers[item.coworker!.uid];
       }
       return CallHistorySummaryView(_fusionConnection, _softphone, item);
     }).toList();

@@ -4,9 +4,3 @@
 [submodule "callkeap"]
 	path = callkeap
 	url = git@bitbucket.org:john_brown/callkeap
-[submodule "flutter-incall-manager"]
-	path = flutter-incall-manager
-	url = git@bitbucket.org:john_brown/flutter-incall-manager
-[submodule "flutter-webrtc"]
-	path = flutter-webrtc
-	url = git@bitbucket.org:john_brown/flutter-webrtc

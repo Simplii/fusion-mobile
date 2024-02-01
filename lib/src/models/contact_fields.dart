@@ -4,29 +4,29 @@ import 'fusion_store.dart';
 import 'dart:convert' as convert;
 
 class ContactField extends FusionModel {
-  String id;
-  String type;
+  String? id;
+  String? type;
   List<String> options = [];
-  String fieldLabel;
-  String fieldName;
-  List<Map<String, dynamic>> crmFields;
+  String? fieldLabel;
+  String? fieldName;
+  List<Map<String, dynamic>>? crmFields;
 
   ContactField(Map<String, dynamic> obj) {
     id = obj['id'].toString();
     type = obj['type'];
-    if (type.substring(0, 4).toLowerCase() == 'enum') {
-      List<dynamic> optionsList = convert.jsonDecode(type.substring(4));
+    if (type!.substring(0, 4).toLowerCase() == 'enum') {
+      List<dynamic> optionsList = convert.jsonDecode(type!.substring(4));
       options = optionsList.cast<String>();
-      type = type.substring(0, 4);
+      type = type!.substring(0, 4);
     }
-    type = type.toLowerCase();
+    type = type!.toLowerCase();
     fieldLabel = obj['field_label'];
     fieldName = obj['field_name'];
     crmFields = (obj['crm_fields'] as List<dynamic>).cast<Map<String, dynamic>>();
   }
 
   @override
-  String getId() => this.id;
+  String? getId() => this.id;
 }
 
 class ContactFieldStore extends FusionStore<ContactField> {

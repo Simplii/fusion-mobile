@@ -104,11 +104,7 @@ import Foundation
         
         setupCallkitFlutterLink()
         providerDelegate = ProviderDelegate(channel: callkitChannel)
-        if #available(iOS 13.0.0, *) {
-            ContactsProvider(channel: contactsChannel)
-        } else {
-            // Fallback on earlier versions
-        }
+        ContactsProvider(channel: contactsChannel)
         FirebaseApp.configure() //add this before the code below
 
         GeneratedPluginRegistrant.register(with: self)
@@ -140,7 +136,7 @@ import Foundation
         } catch let error {
             print("\(error)")
         }*/
-        
+        UIApplication.shared.applicationIconBadgeNumber = 0
       return super.application(application, didFinishLaunchingWithOptions: launchOptions)
     }
     

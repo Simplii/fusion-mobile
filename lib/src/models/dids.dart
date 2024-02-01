@@ -4,13 +4,13 @@ import 'fusion_model.dart';
 import 'fusion_store.dart';
 
 class Did extends FusionModel {
-  String callRoutingUser;
-  String did;
+  String? callRoutingUser;
+  String? did;
   // bool mmsCapable;
-  String notes;
-  String groupName;
-  bool favorite;
-  String id;
+  String? notes;
+  String? groupName;
+  bool? favorite;
+  String? id;
   // smsRouting: null OR {groupId, type} OR {uid, type}
 
   Did(Map<String, dynamic> obj) {

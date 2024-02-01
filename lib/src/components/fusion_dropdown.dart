@@ -7,28 +7,28 @@ import '../styles.dart';
 import 'popup_menu.dart';
 
 class FusionDropdown extends StatefulWidget {
-  final List<Widget> children;
-  final String label;
-  final List<List<String>> options;
-  final String value;
-  final TextStyle style;
+  final List<Widget>? children;
+  final String? label;
+  List<List<String>> options = [[]];
+  final String? value;
+  final TextStyle? style;
   final Function(String value) onChange;
-  final Widget button;
-  List<SMSDepartment> departments;
+  final Widget? button;
+  List<SMSDepartment>? departments;
   final String selectedNumber;
-  final Function(String value) onNumberTap;
+  final Function(String value)? onNumberTap;
   final bool disabled;
   FusionDropdown(
-      {Key key,
-      this.onChange,
+      {Key? key,
+      required this.onChange,
       this.button,
       this.children,
       this.label,
       this.value,
       this.style,
-      this.options,
+      required this.options,
       this.departments,
-      this.selectedNumber,
+      required this.selectedNumber,
       this.onNumberTap,
       this.disabled = false})
       : super(key: key);
@@ -38,25 +38,25 @@ class FusionDropdown extends StatefulWidget {
 }
 
 class _FusionDropdownState extends State<FusionDropdown> {
-  List<Widget> get _children => widget.children;
+  List<Widget>? get _children => widget.children;
 
-  String get _label => widget.label;
+  String? get _label => widget.label;
 
-  TextStyle get _style => widget.style;
+  TextStyle? get _style => widget.style;
 
   List<List<String>> get _options => widget.options;
 
-  String get _value => widget.value;
+  String? get _value => widget.value;
 
   Function(String value) get _onChange => widget.onChange;
 
-  Widget get _button => widget.button;
+  Widget? get _button => widget.button;
 
-  List<SMSDepartment> get _allDepartments => widget.departments;
+  List<SMSDepartment>? get _allDepartments => widget.departments;
 
   String get _selectedNumber => widget.selectedNumber;
 
-  Function(String value) get _onNumberTap => widget.onNumberTap;
+  Function(String value)? get _onNumberTap => widget.onNumberTap;
 
   bool get _disabled => widget.disabled;
   _dismissKeyboard() {
@@ -70,7 +70,7 @@ class _FusionDropdownState extends State<FusionDropdown> {
     if (_allDepartments != null) {
       List<String> deptNUmbers = [];
 
-      _allDepartments.forEach((element) {
+      _allDepartments!.forEach((element) {
         if (element.id == option[1]) {
           deptNUmbers = element.numbers;
         }
@@ -87,7 +87,7 @@ class _FusionDropdownState extends State<FusionDropdown> {
               GestureDetector(
                 behavior: HitTestBehavior.translucent,
                 onTap: () {
-                  _onChange(option[1]);
+                  _onChange!(option[1]);
                   Navigator.pop(context);
                 },
                 child: Row(children: [
@@ -113,7 +113,7 @@ class _FusionDropdownState extends State<FusionDropdown> {
                     return GestureDetector(
                        behavior: HitTestBehavior.translucent,
                         onTap: () {
-                          _onNumberTap(option);
+                          _onNumberTap!(option);
                           Navigator.pop(context);
                         },
                       child: Container(
@@ -223,7 +223,7 @@ class _FusionDropdownState extends State<FusionDropdown> {
 
   _openPopup() {
     double maxHeight = MediaQuery.of(context).size.height * 0.5;
-    double contentHeight = _options.length * 60.0;
+    double contentHeight = _options!.length * 60.0;
     if (contentHeight > 0 && contentHeight < maxHeight)
       maxHeight = contentHeight;
 
@@ -250,7 +250,7 @@ class _FusionDropdownState extends State<FusionDropdown> {
 
   @override
   Widget build(BuildContext context) {
-    String selected = this._value;
+    String? selected = this._value;
     for (List<String> opt in _options) {
       if (opt[1] == this._value) {
         selected = opt[0];
@@ -268,14 +268,14 @@ class _FusionDropdownState extends State<FusionDropdown> {
                     maxWidth:  MediaQuery.of(context).size.width - 250,),
                   child: Text(selected == DepartmentIds.FusionChats 
                     ? "Fusion Chats" 
-                    : selected,
+                    : selected!,
                     overflow: TextOverflow.ellipsis,
                     softWrap: false,
                     style: _style != null ? _style : subHeaderTextStyle,
                   ),
                 ),
                 Container(
-                  child: Text(" " + mDash + " " + _selectedNumber.formatPhone()),
+                  child: Text(" " + mDash + " " + _selectedNumber!.formatPhone()),
                 ),
                 Container(
                     margin: EdgeInsets.only(left: 3, right: 12),

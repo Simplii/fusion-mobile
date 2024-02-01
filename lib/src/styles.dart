@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 
 Color fusionRed = Color.fromARGB(255, 255, 51, 74);
 Color crimsonLight = fusionRed;
-Color crimsonDark = Color.fromARGB(255,229,3,42);
-Color crimsonDarker = Color.fromARGB(255,217,3,40);
+Color crimsonDark = Color.fromARGB(255, 229, 3, 42);
+Color crimsonDarker = Color.fromARGB(255, 217, 3, 40);
 Color darkGrey = Color.fromARGB(255, 51, 45, 46);
 Color coal = Color.fromARGB(255, 51, 45, 45);
 Color bgBlend = Color.fromARGB((255 * 0.75).round(), 51, 45, 45);
@@ -19,8 +19,8 @@ Color lightDivider = Color.fromARGB(255, 102, 94, 96);
 Color offWhite = Color.fromARGB(255, 229, 227, 228);
 Color offBlack = Color.fromARGB(255, 27, 24, 24);
 Color ash = Color.fromARGB(255, 229, 227, 227);
-Color halfGray = Color.fromARGB(255,112,112,122);
-Color informationBlue = Color.fromARGB(255,0,170,255);
+Color halfGray = Color.fromARGB(255, 112, 112, 122);
+Color informationBlue = Color.fromARGB(255, 0, 170, 255);
 Color successGreen = Color.fromARGB(255, 0, 204, 136);
 Color fusionChatsBg = Color.fromARGB((255 * 0.05).round(), 217, 3, 40);
 Color personalChatBg = Color.fromARGB((255 * 0.10).round(), 255, 128, 0);
@@ -78,7 +78,7 @@ BoxDecoration dropdownDecoration = BoxDecoration(
     color: translucentSmoke,
     borderRadius: BorderRadius.all(Radius.circular(4)));
 
-horizontalLine(double margin, {Color color}) {
+horizontalLine(double margin, {Color? color}) {
   return Expanded(
       child: Container(
           margin: EdgeInsets.only(top: margin, bottom: margin),
@@ -106,11 +106,12 @@ bottomRedBar(bool clear) {
 }
 
 actionButton(
-    String label, String icon, double width, double height, Function onTap, {double opacity, bool isLoading, int flex = 1}) {
+    String label, String icon, double width, double height, Function onTap,
+    {double? opacity, bool isLoading = false, int flex = 1}) {
   return Expanded(
       flex: flex,
       child: GestureDetector(
-          onTap: onTap,
+          onTap: onTap as void Function()?,
           child: Opacity(
               opacity: opacity != null ? opacity : 0.66,
               child: Container(
@@ -120,10 +121,10 @@ actionButton(
                     Container(
                         width: width,
                         height: height,
-                        child: isLoading != null && isLoading 
-                          ? CircularProgressIndicator()
-                          : Image.asset("assets/icons/" + icon + ".png",
-                            width: width, height: height)),
+                        child: isLoading != null && isLoading
+                            ? CircularProgressIndicator()
+                            : Image.asset("assets/icons/" + icon + ".png",
+                                width: width, height: height)),
                     Text(" " + label,
                         style: TextStyle(
                             color: coal,
@@ -145,9 +146,7 @@ whiteForegroundBox() {
 
 thinShadowBorder() {
   return BoxShadow(
-      color: translucentBlack(0.05),
-      spreadRadius: 0.5,
-      blurRadius: 0.5);
+      color: translucentBlack(0.05), spreadRadius: 0.5, blurRadius: 0.5);
 }
 
 // for gesture detectors, containers need a decoration to be
@@ -167,25 +166,26 @@ darken(Color color, int amount) {
   return lighten(color, 0 - amount);
 }
 
-raisedButtonBorder(Color color, {int lightenAmount, int darkenAmount}) {
+raisedButtonBorder(Color color, {int? lightenAmount, int? darkenAmount}) {
   return BoxDecoration(
-            boxShadow: [
-              BoxShadow(
-                  color: translucentBlack(0.06),
-                  offset: Offset(0, 1),
-                  blurRadius: 1.93),
-              BoxShadow(
-                  color: translucentBlack(0.1),
-                  offset: Offset(0, 3.5),
-                  blurRadius: 6.48)
-            ],
-            borderRadius: BorderRadius.all(Radius.circular(50)),
-            color: color,
-            gradient: LinearGradient(
-              colors: [
-                lighten(color, lightenAmount == null ? 80 : lightenAmount),
-                darken(color, darkenAmount == null ? 30 : darkenAmount)],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ));
+      boxShadow: [
+        BoxShadow(
+            color: translucentBlack(0.06),
+            offset: Offset(0, 1),
+            blurRadius: 1.93),
+        BoxShadow(
+            color: translucentBlack(0.1),
+            offset: Offset(0, 3.5),
+            blurRadius: 6.48)
+      ],
+      borderRadius: BorderRadius.all(Radius.circular(50)),
+      color: color,
+      gradient: LinearGradient(
+        colors: [
+          lighten(color, lightenAmount == null ? 80 : lightenAmount),
+          darken(color, darkenAmount == null ? 30 : darkenAmount)
+        ],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      ));
 }

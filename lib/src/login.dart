@@ -9,34 +9,35 @@ import 'backend/fusion_connection.dart';
 import 'styles.dart';
 
 class LoginView extends StatefulWidget {
-  final FusionConnection _fusionConnection;
-  final Function(String username, String password) _onLogin;
+  final FusionConnection? _fusionConnection;
+  final Function(String username, String? password) _onLogin;
 
-  LoginView(this._onLogin, this._fusionConnection, {Key key}) : super(key: key);
+  LoginView(this._onLogin, this._fusionConnection, {Key? key}) : super(key: key);
 
   @override
   State<StatefulWidget> createState() => _LoginViewState();
 }
 
 class _LoginViewState extends State<LoginView> {
-  FusionConnection get _fusionConnection => widget._fusionConnection;
+  FusionConnection? get _fusionConnection => widget._fusionConnection;
 
-  Function(String username, String password) get _onLogin => widget._onLogin;
+  Function(String username, String? password) get _onLogin => widget._onLogin;
   final _usernameController =
       TextEditingController.fromValue(TextEditingValue(text: ""));
   final _passwordController =
       TextEditingController.fromValue(TextEditingValue(text: ""));
-  bool _wasSuccessful = null;
+  bool? _wasSuccessful = null;
   bool _isPending = false;
 
   @override
   initState() {
+    super.initState();
     SharedPreferences.getInstance().then((SharedPreferences prefs) {
-      String username = prefs.getString("username");
+      String? username = prefs.getString("username");
       if (username != null) {
         _usernameController.text = username;
 
-        _fusionConnection
+        _fusionConnection!
             .login(username, null,
                 (bool success) {
                   if (success) {
@@ -121,7 +122,7 @@ class _LoginViewState extends State<LoginView> {
   _login() {
     SharedPreferences.getInstance().then((SharedPreferences prefs) {
       prefs.setString("username", _usernameController.value.text); });
-
+    
     this.setState(() {
       _isPending = true;
     });
@@ -132,7 +133,7 @@ class _LoginViewState extends State<LoginView> {
       });
     });
 
-    _fusionConnection
+    _fusionConnection!
         .login(_usernameController.value.text, _passwordController.value.text,
             (bool success) {
       if (success) {

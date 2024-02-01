@@ -11,11 +11,11 @@ class IntegratedContactsStore extends FusionStore<Contact> {
       : super(fusionConnection);
 
   search(
-      String query, int limit, int offset, Function(List<Contact>, bool, bool) callback) {
+      String query, int limit, int offset, Function(List<Contact>, bool, bool?) callback) {
     query = query.toLowerCase();
     List<Contact> matched = getRecords()
         .where((Contact c) {
-          return (c.name + " " + c.company).toLowerCase().contains(query);
+          return (c.name! + " " + c.company!).toLowerCase().contains(query);
         })
         .toList()
         .cast<Contact>();
@@ -43,7 +43,7 @@ class IntegratedContactsStore extends FusionStore<Contact> {
         storeRecord(contact);
       });
 
-      bool hasMore = datas['agg']['count'] > (limit + offset);
+      bool? hasMore = datas['agg']['count'] > (limit + offset);
 
       callback(response, true, hasMore);
     });

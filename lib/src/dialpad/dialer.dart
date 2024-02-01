@@ -5,7 +5,7 @@ import 'package:fusion_mobile_revamped/src/dialpad/contacts_search.dart';
 import 'package:fusion_mobile_revamped/src/dialpad/dialpad.dart';
 
 class Dialer extends StatefulWidget {
-  Dialer(this._fusionConnection, this._softphone, {Key key}) : super(key: key);
+  Dialer(this._fusionConnection, this._softphone, {Key? key}) : super(key: key);
 
   final FusionConnection _fusionConnection;
   final Softphone _softphone;

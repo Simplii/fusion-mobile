@@ -29,7 +29,7 @@ class TransferCallPopup extends StatefulWidget {
 
   TransferCallPopup(
       this._fusionConnection, this._softphone, this._goBack, this._onTransfer,
-      {Key key})
+      {Key? key})
       : super(key: key);
 
   @override
@@ -40,7 +40,7 @@ class _TransferCallpopState extends State<TransferCallPopup> with TickerProvider
   FusionConnection get _fusionConnection => widget._fusionConnection;
   Softphone get _softphone => widget._softphone;
   String _query = "";
-  TabController _tabController;
+  TabController? _tabController;
   bool v2Domain = false;
 
   final List<Tab> tabs = [
@@ -53,7 +53,7 @@ class _TransferCallpopState extends State<TransferCallPopup> with TickerProvider
   initState(){
     super.initState();
     _tabController = TabController(length: tabs.length, vsync: this);
-    v2Domain = _fusionConnection.settings.isV2User();
+    v2Domain = _fusionConnection!.settings!.isV2User();
   }
 
   _directTransfer(String to) {
@@ -64,16 +64,16 @@ class _TransferCallpopState extends State<TransferCallPopup> with TickerProvider
     widget._onTransfer(to, "assisted");
   }
 
-  _selectTransferType(Contact contact, CrmContact crmContact, String number) {
+  _selectTransferType(Contact? contact, CrmContact? crmContact, String number) {
     void _selectTransfer(String transferType) {
       if (contact != null) {
         transferType == "direct" 
-        ? _directTransfer(contact.firstNumber()) 
-        : _assistedTransfer(contact.firstNumber());
+        ? _directTransfer(contact.firstNumber() ?? "") 
+        : _assistedTransfer(contact.firstNumber() ?? "");
       } else if (crmContact != null) {
          transferType == "direct" 
-        ? _directTransfer(crmContact.firstNumber())
-        : _assistedTransfer(crmContact.firstNumber());
+        ? _directTransfer(crmContact.firstNumber() ?? "")
+        : _assistedTransfer(crmContact.firstNumber() ?? "");
       } else {
          transferType == "direct" 
         ? _directTransfer(number)
@@ -194,7 +194,7 @@ class _TransferCallpopState extends State<TransferCallPopup> with TickerProvider
                         "all",
                         query: _query,
                         fromDialpad: true,
-                        onSelect: (Contact contact, CrmContact crmContact){
+                        onSelect: (Contact? contact, CrmContact? crmContact){
                           if (contact != null && contact.firstNumber() != null) {
                             _selectTransferType(contact, null, '');
                           } else if (crmContact != null && crmContact.firstNumber() != null) {
@@ -203,10 +203,10 @@ class _TransferCallpopState extends State<TransferCallPopup> with TickerProvider
                         },
                       );
                     } else {
-                      return ContactsSearchList(_fusionConnection, _softphone, _query, tab.text.toLowerCase(),
+                      return ContactsSearchList(_fusionConnection, _softphone, _query, tab.text!.toLowerCase(),
                         v2Domain,
                         embedded: true,
-                        onSelect: (Contact contact, CrmContact crmContact) {
+                        onSelect: (Contact? contact, CrmContact? crmContact) {
                           if (contact != null && contact.firstNumber() != null) {
                             _selectTransferType(contact, null, '');
                           } else if (crmContact != null && crmContact.firstNumber() != null) {

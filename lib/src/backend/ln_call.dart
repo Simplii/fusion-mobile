@@ -1,31 +1,31 @@
-import 'dart:async';
-import 'dart:io';
-
 import 'package:flutter/services.dart';
 import 'package:sip_ua/sip_ua.dart';
 import 'package:sip_ua/src/rtc_session.dart';
 import 'package:sip_ua/src/ua.dart';
-import 'package:flutter_webrtc/flutter_webrtc.dart';
 
 class LnSession extends RTCSession {
-  LnSession(UA ua) : super(ua);
+  LnSession(UA? ua) : super(ua);
 }
 
 
 class LnCall extends Call {
-  RTCSession _session;
+  late RTCSession _session;
 
   RTCSession get session => _session;
-  CallStateEnum state;
-  String remote_identity;
-  String remote_display_name;
-  String direction;
+  CallStateEnum state = CallStateEnum.NONE;
+  late String remote_identity;
+  late String remote_display_name;
+  late String direction;
 
-  String uuid;
-  MethodChannel nativeChannel;
+  late String uuid;
+  late MethodChannel nativeChannel;
 
-  LnCall(String id, RTCSession session, CallStateEnum state) : super(id, session, state);
-  LnCall.makeLnCall(String callId, String remoteAddress): super(callId, LnSession(null), CallStateEnum.NONE);
+  LnCall(
+    String id, 
+    RTCSession session, 
+    CallStateEnum state
+  ) : super(id, session, state);
+  LnCall.makeLnCall(String callId, String? remoteAddress): super(callId, LnSession(null), CallStateEnum.NONE);
 
   setIdentities(number, callerid, direction) {
     remote_identity = number;
@@ -39,11 +39,11 @@ class LnCall extends Call {
   }
 
   setHold(bool hold) {
-    nativeChannel.invokeMethod("lpSetHold", [uuid, hold]);
+    nativeChannel!.invokeMethod("lpSetHold", [uuid, hold]);
   }
 
-  sendDTMF(String digits, [Map<String, dynamic> arg]) {
-    nativeChannel.invokeMethod("lpSendDtmf", [uuid, digits]);
+  sendDTMF(String digits, [Map<String, dynamic>? arg]) {
+    nativeChannel!.invokeMethod("lpSendDtmf", [uuid, digits]);
   }
 
   hold() {
@@ -54,24 +54,24 @@ class LnCall extends Call {
     setHold(false);
   }
 
-  answer(Map<String, dynamic> s, {MediaStream mediaStream = null}) {
+  answer(Map<String, dynamic> s, {mediaStream = null}) {
     print("answer call here");
     print(uuid);
     nativeChannel.invokeMethod("lpAnswer", [uuid]);
   }
-  hangup([Map<String, dynamic> x = null]) {
-    nativeChannel.invokeMethod("lpEndCall", [uuid]);
+  hangup([Map<String, dynamic>? x = null]) {
+    nativeChannel!.invokeMethod("lpEndCall", [uuid]);
   }
 
-  mute([bool x, bool y]) {
-    nativeChannel.invokeMethod("lpMuteCall", [uuid]);
+  mute([bool? x, bool? y]) {
+    nativeChannel!.invokeMethod("lpMuteCall", [uuid]);
   }
-  unmute([bool x, bool y]) {
-    nativeChannel.invokeMethod("lpUnmuteCall", [uuid]);
+  unmute([bool? x, bool? y]) {
+    nativeChannel!.invokeMethod("lpUnmuteCall", [uuid]);
   }
 
   refer(String destination) {
-    nativeChannel.invokeMethod("lpRefer", [uuid, destination]);
+    nativeChannel!.invokeMethod("lpRefer", [uuid, destination]);
   }
 
   void setState(CallState newState) {print("1");

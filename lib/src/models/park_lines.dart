@@ -6,14 +6,14 @@ import 'fusion_model.dart';
 import 'fusion_store.dart';
 
 class ParkLine extends FusionModel {
-  int parkLine;
+  int? parkLine;
   String phone = "";
   String notes = "";
   String disposition = "";
-  DateTime timeParked;
+  late DateTime timeParked;
   String parkedBy = "";
-  bool isActive;
-  List<Contact> contacts;
+  bool isActive = false;
+  List<Contact> contacts = [];
 
   ParkLine(Map<String, dynamic> obj) {
     parkLine = obj['parkLine'];
@@ -27,10 +27,10 @@ class ParkLine extends FusionModel {
       isActive = obj['isActive'];
     else
       isActive = false;
-    this.contacts = obj['contacts'] == null
+    if(obj.containsKey('contacts'))// need to fix this on the backend obj['contacts'] return an array of null
+    this.contacts = (obj['contacts'].length == 0 || obj['contacts'][0] == null)
         ? []
         : (obj['contacts'] as List<dynamic>).cast<Map<String, dynamic>>()
-            .where((item) => item != null)
             .map((item) {
               return Contact(item);
             })

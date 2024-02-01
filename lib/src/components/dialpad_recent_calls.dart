@@ -8,17 +8,17 @@ import 'package:intl/intl.dart';
 import '../styles.dart';
 
 class DialpadRecentCalls extends StatefulWidget {
-  final Contact contact;
-  final CrmContact crmContact;
-  final Softphone softphone;
-  final DateTime date;
-  final Function(Contact contact,CrmContact crmContact) onSelect;
+  final Contact? contact;
+  final CrmContact? crmContact;
+  final Softphone? softphone;
+  final DateTime? date;
+  final Function(Contact? contact,CrmContact? crmContact)? onSelect;
   const DialpadRecentCalls({
-    Key key,
-    @required this.contact,
-    @required this.crmContact, 
-    @required this.softphone,
-    @required this.date,
+    Key? key,
+    required this.contact,
+    required this.crmContact, 
+    required this.softphone,
+    required this.date,
     this.onSelect
   }) : super(key: key);
 
@@ -27,11 +27,11 @@ class DialpadRecentCalls extends StatefulWidget {
 }
 
 class _DialpadRecentCallsState extends State<DialpadRecentCalls> {
-  Contact get _contact => widget.contact;
-  CrmContact get _crmContact => widget.crmContact;
-  Softphone get _softphone => widget.softphone;
-  DateTime get _date => widget.date;
-  Function(Contact contact,CrmContact crmContact) get _onSelect => widget.onSelect;
+  Contact? get _contact => widget.contact;
+  CrmContact? get _crmContact => widget.crmContact;
+  Softphone? get _softphone => widget.softphone;
+  DateTime? get _date => widget.date;
+  Function(Contact? contact,CrmContact? crmContact)? get _onSelect => widget.onSelect;
 
   _relativeDateFormatted(DateTime calcDate) {
     final todayAndYesterdayFmt = new DateFormat("h:mm a");
@@ -54,15 +54,15 @@ class _DialpadRecentCallsState extends State<DialpadRecentCalls> {
       onTap: (){
         if(_onSelect != null){
           if(_contact != null){
-            _onSelect(_contact,null);
+            _onSelect!(_contact,null);
           }else if(_crmContact != null){
-            _onSelect(null,_crmContact);
+            _onSelect!(null,_crmContact);
           }
         } else {
           if(_contact != null){
-            _softphone.makeCall(_contact.firstNumber());
+            _softphone!.makeCall(_contact!.firstNumber());
           } else if(_crmContact != null){
-            _softphone.makeCall(_crmContact.firstNumber());
+            _softphone!.makeCall(_crmContact!.firstNumber());
           }
           Navigator.of(context).pop();
         }
@@ -95,11 +95,11 @@ class _DialpadRecentCallsState extends State<DialpadRecentCalls> {
                     children: [
                       Image.asset("assets/icons/phone_outgoing.png", width: 10, height: 10),
                       Text(
-                        _contact.firstNumber().toString().formatPhone() 
+                        _contact!.firstNumber().toString().formatPhone() 
                         + " " + 
                         mDash 
                         + " " +
-                        _relativeDateFormatted(_date),
+                        _relativeDateFormatted(_date!),
                         style: TextStyle(
                           color: coal,
                           fontSize: 12,

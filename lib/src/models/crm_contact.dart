@@ -6,19 +6,19 @@ import 'fusion_model.dart';
 import 'fusion_store.dart';
 
 class CrmContact extends FusionModel {
-  List<Map<String, String>> additions;
-  Contact contact;
-  String crm;
-  List<String> emails;
-  String icon;
-  String id;
-  String nid;
-  String label;
-  String module;
-  String name;
-  String url;
-  String phone_number;
-  String company = "";
+  List<Map<String, String>>? additions;
+  Contact? contact;
+  String? crm;
+  List<String?>? emails;
+  String? icon;
+  String? id;
+  String? nid;
+  String? label;
+  String? module;
+  String? name;
+  String? url;
+  String? phone_number;
+  String? company = "";
 
   String serialize() {
     return convert.jsonEncode({
@@ -68,8 +68,8 @@ class CrmContact extends FusionModel {
       'domain': "",
       'emails': [],
       'first_contact_diate': '',
-      'first_name': this.name.split(' ')[0],
-      'last_name': this.name.split(' ')[1],
+      'first_name': this.name!.split(' ')[0],
+      'last_name': this.name!.split(' ')[1],
       'groups': [],
       'id': this.id,
       'job_title': '',
@@ -97,12 +97,12 @@ class CrmContact extends FusionModel {
     this.crm = contactObject['network'];
     this.emails = [];
     if (contactObject['email'] != null && contactObject['email'].trim() != '') {
-      this.emails.add(contactObject['email']);
+      this.emails!.add(contactObject['email']);
     }
 
     if (contactObject['email2'] != null &&
         contactObject['email2'].trim() != '') {
-      this.emails.add(contactObject['email2']);
+      this.emails!.add(contactObject['email2']);
     }
 
     if (contactObject['network'] == null) {
@@ -174,24 +174,24 @@ class CrmContact extends FusionModel {
     this.company = contactObject['company'];
   }
 
-  String getId() {
+  String? getId() {
     return this.nid;
   }
 
-   List<String> numbersAsStrings() {
-    List<String> numbers = [];
-    if (phone_number != null && phone_number.trim().length > 2)
+   List<String?> numbersAsStrings() {
+    List<String?> numbers = [];
+    if (phone_number != null && phone_number!.trim().length > 2)
         numbers.add(phone_number);
-    if (phone_number != null && phone_number.trim().length > 2)
+    if (phone_number != null && phone_number!.trim().length > 2)
         numbers.add(phone_number);
-    if (phone_number != null && phone_number.trim().length > 2)
+    if (phone_number != null && phone_number!.trim().length > 2)
         numbers.add(phone_number);
 
     return numbers;
   }
 
-  String firstNumber() {
-    List<String> numbers = numbersAsStrings();
+  String? firstNumber() {
+    List<String?> numbers = numbersAsStrings();
     if (numbers.length > 0)
       return numbers[0];
     else

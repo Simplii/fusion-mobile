@@ -1,9 +1,9 @@
 import 'dart:convert' as convert;
 
 class CarbonDate {
-  String date;
-  String timezone;
-  int timezone_type;
+  String? date;
+  String? timezone;
+  int? timezone_type;
 
   serialize() {
     return convert.jsonEncode({
@@ -13,7 +13,7 @@ class CarbonDate {
     });
   }
 
-  CarbonDate.fromDate(String date) {
+  CarbonDate.fromDate(String? date) {
     this.date = date;
     this.timezone = 'UTC';
     this.timezone_type = 1;

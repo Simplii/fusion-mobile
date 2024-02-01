@@ -15,23 +15,23 @@ import '../utils.dart';
 import '../styles.dart';
 
 class ParkedCalls extends StatefulWidget {
-  ParkedCalls(this._fusionConnection, this._softphone, {Key key})
+  ParkedCalls(this._fusionConnection, this._softphone, {Key? key})
       : super(key: key);
 
-  final FusionConnection _fusionConnection;
-  final Softphone _softphone;
+  final FusionConnection? _fusionConnection;
+  final Softphone? _softphone;
 
   @override
   State<StatefulWidget> createState() => _ParkedCallsState();
 }
 
 class _ParkedCallsState extends State<ParkedCalls> {
-  FusionConnection get _fusionConnection => widget._fusionConnection;
-  Call get _activeCall => _softphone.activeCall;
-  Softphone get _softphone => widget._softphone;
+  FusionConnection? get _fusionConnection => widget._fusionConnection;
+  Call? get _activeCall => _softphone!.activeCall;
+  Softphone? get _softphone => widget._softphone;
   List<ParkLine> _parkLines = [];
   int _lookupState = 0;
-  Timer _timer;
+  late Timer _timer;
 
   initState() {
     super.initState();
@@ -62,7 +62,7 @@ class _ParkedCallsState extends State<ParkedCalls> {
   _lookup() {
     if (_lookupState == 1) return;
     _lookupState = 1;
-    _fusionConnection.parkLines
+    _fusionConnection!.parkLines
         .getParks((List<ParkLine> lines, bool fromServer) {
       if (!mounted) return;
       setState(() {
@@ -77,14 +77,14 @@ class _ParkedCallsState extends State<ParkedCalls> {
   }
 
   Widget _parkRow(ParkLine line, int index) {
-    if (!line.isActive)
+    if (!line.isActive!)
       return _emptyParkRow(line, index);
     else
       return _activeParkRow(line, index);
   }
 
   Widget _callView() {
-    CallpopInfo info = _softphone.getCallpopInfo(_activeCall.id);
+    CallpopInfo info = _softphone!.getCallpopInfo(_activeCall!.id)!;
     return Container(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -94,22 +94,22 @@ class _ParkedCallsState extends State<ParkedCalls> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  if (info.getCompany(defaul: "").trim() != "")
-                    Text(info.getCompany(),
+                  if (info.getCompany(defaul: "")!.trim() != "")
+                    Text(info.getCompany()!,
                     style: TextStyle(
                       color: translucentWhite(0.66),
                       fontWeight: FontWeight.w700,
                       fontSize: 14
                     )),
                   Text(
-                    info.getName(defaul: "Unknown"),
+                    info.getName(defaul: "Unknown")!,
                     style: TextStyle(
                         color: Colors.white,
                         fontSize: 21,
                         fontWeight: FontWeight.w900)
                   ),
                   Text(
-                    info.phoneNumber.formatPhone(),
+                    info.phoneNumber!.formatPhone(),
                     style: TextStyle(
                       color: translucentWhite(0.66),
                       fontSize: 12,
@@ -119,7 +119,7 @@ class _ParkedCallsState extends State<ParkedCalls> {
                 ]
               )),
           Text(
-            _softphone.getCallRunTimeString(_activeCall),
+            _softphone!.getCallRunTimeString(_activeCall!),
             style: TextStyle(
               color: Colors.white,
               fontSize: 21,
@@ -135,9 +135,9 @@ class _ParkedCallsState extends State<ParkedCalls> {
     return GestureDetector(
         onTap: () {
           if (_activeCall != null) {
-            _softphone.transfer(
-                _activeCall,
-                "sip:park_" + line.parkLine.toString() + "@" + _fusionConnection.getDomain());
+            _softphone!.transfer(
+                _activeCall!,
+                "sip:park_" + line.parkLine.toString() + "@" + _fusionConnection!.getDomain());
             _refresh();
           }
 
@@ -186,8 +186,8 @@ class _ParkedCallsState extends State<ParkedCalls> {
   }
 
   Widget _activeParkRow(ParkLine line, int index) {
-    Coworker parkedBy =
-        _fusionConnection.coworkers.lookupCoworker(line.parkedBy);
+    Coworker? parkedBy =
+        _fusionConnection!.coworkers.lookupCoworker(line.parkedBy!);
     return Container(
         margin: EdgeInsets.only(bottom: 16),
         child: Column(children: [
@@ -212,8 +212,8 @@ class _ParkedCallsState extends State<ParkedCalls> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                                 mainAxisAlignment: MainAxisAlignment.start,
                                 children: [
-                              if (line.contacts.length > 0 && line.contacts[0].company != "")
-                                Text(line.contacts[0].company,
+                              if (line.contacts!.length > 0 && line.contacts![0].company != "")
+                                Text(line.contacts![0].company!,
                                     style: TextStyle(
                                         color:
                                             coal.withAlpha((256 / 3).round()),
@@ -224,7 +224,7 @@ class _ParkedCallsState extends State<ParkedCalls> {
                                       color: coal,
                                       fontWeight: FontWeight.w900,
                                       fontSize: 18)),
-                              Text(line.phone.formatPhone(),
+                              Text(line.phone!.formatPhone(),
                                   style: TextStyle(
                                       color: coal.withAlpha((256 / 3).round()),
                                       fontSize: 10,
@@ -273,10 +273,10 @@ class _ParkedCallsState extends State<ParkedCalls> {
                                         fontWeight: FontWeight.w400))
                               ]),
                             if (line.notes != null &&
-                                line.notes.trim().length > 0)
+                                line.notes!.trim().length > 0)
                               Container(
                                   padding: EdgeInsets.only(top: 6, left: 30),
-                                  child: Text(line.notes,
+                                  child: Text(line.notes!,
                                       maxLines: 10,
                                       style: TextStyle(
                                           color: char,
@@ -287,7 +287,7 @@ class _ParkedCallsState extends State<ParkedCalls> {
                               Spacer(),
                               GestureDetector(
                                   onTap: () {
-                                    _fusionConnection.apiV2Call(
+                                    _fusionConnection!.apiV2Call(
                                         "get",
                                         "/calls/parkLines/" + line.parkLine.toString() + "/pickUp", {});
                                     Navigator.pop(context);
