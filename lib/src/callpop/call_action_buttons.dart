@@ -107,7 +107,7 @@ class _CallActionButtonsState extends State<CallActionButtons> {
                 disabled: onHold),
             CallActionButton(
                 onPressed: widget.actions!['onMuteBtnPress'],
-                title: widget.callIsMuted! ? 'Unute' : 'Mute',
+                title: widget.callIsMuted! ? 'Unmute' : 'Mute',
                 icon: Image.asset(
                     widget.callIsMuted!
                         ? "assets/icons/muted.png"
