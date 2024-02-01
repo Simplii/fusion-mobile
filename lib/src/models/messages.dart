@@ -45,6 +45,7 @@ class SMSMessage extends FusionModel {
   late String type;
   late int unixtime;
   String? user;
+  String? errorMessage;
   int broadcastConvoId = 0;
 
   SMSMessage(Map<String, dynamic> map) {
@@ -75,6 +76,7 @@ class SMSMessage extends FusionModel {
   }
 
   SMSMessage.fromV2(Map<String, dynamic> map) {
+    print("MDBM message m ${map}");
     String time = map.containsKey('scheduledAt') && map['scheduledAt'] != null
         ? map['scheduledAt']
         : map['time'];
@@ -104,6 +106,7 @@ class SMSMessage extends FusionModel {
         ? map['user'].toString().replaceFirst(RegExp("@.*"), "")
         : null;
     this.broadcastConvoId = map['broadcastConversationId'] ?? 0;
+    this.errorMessage = map['errorMessage'];
   }
 
   serialize() {

@@ -1782,35 +1782,54 @@ class _SMSMessageViewState extends State<SMSMessageView> {
           child: Column(children: [
         Align(
           alignment: Alignment.bottomRight,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            crossAxisAlignment: CrossAxisAlignment.center,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _message!.messageStatus == 'delivered'
-                  ? Icon(Icons.check, size: 10, color: smoke)
-                  : (_message!.messageStatus == 'failed' ||
-                          _message!.messageStatus == 'offline')
-                      ? Icon(
-                          Icons.clear,
-                          size: 10,
-                          color: smoke,
-                        )
-                      : Container(),
-              Container(
-                constraints: BoxConstraints(
-                    maxWidth: MediaQuery.of(context).size.width - 90),
-                padding: EdgeInsets.symmetric(horizontal: 4),
-                child: Text(
-                  myContact?.name ?? "",
-                  style: TextStyle(
-                      fontSize: 10, fontWeight: FontWeight.w800, color: smoke),
-                  textWidthBasis: TextWidthBasis.longestLine,
-                  overflow: TextOverflow.ellipsis,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  _message.messageStatus == 'delivered'
+                      ? Icon(Icons.check, size: 15, color: smoke)
+                      : (_message.messageStatus == 'failed' ||
+                              _message.messageStatus == 'offline')
+                          ? Container(
+                            padding: EdgeInsets.only(bottom: 1),
+                            child: Icon(
+                                Icons.clear,
+                                size: 15,
+                                color: crimsonDark,
+                              ),
+                          )
+                          : Container(),
+                  Container(
+                    constraints: BoxConstraints(
+                        maxWidth: MediaQuery.of(context).size.width - 90),
+                    padding: EdgeInsets.symmetric(horizontal: 4),
+                    child: Text(
+                      myContact?.name?.toUpperCase() ?? "",
+                      style: TextStyle(
+                          fontSize: 11, fontWeight: FontWeight.w800, color: char),
+                      textWidthBasis: TextWidthBasis.longestLine,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Text(DateFormat.jm().format(date),
+                      style: TextStyle(
+                          fontSize: 11, fontWeight: FontWeight.w800, color: smoke)),
+                ],
               ),
-              Text(DateFormat.jm().format(date),
-                  style: TextStyle(
-                      fontSize: 10, fontWeight: FontWeight.w800, color: smoke)),
+              if (_message.errorMessage != null) 
+                Padding(
+                  padding: const EdgeInsets.only(top:1, bottom: 2),
+                  child: Text(
+                    _message.errorMessage!,
+                    textAlign: TextAlign.end, 
+                    style: TextStyle(
+                      fontSize: 11, 
+                      color: smoke, 
+                      fontWeight: FontWeight.w500
+                    ),),
+                )
             ],
           ),
         ),

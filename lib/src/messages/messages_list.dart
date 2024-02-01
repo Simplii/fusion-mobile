@@ -249,7 +249,6 @@ class _MessagesListState extends State<MessagesList> {
           for (SMSConversation s in convos) allconvos[s.getId()] = s;
           _convos = allconvos.values.toList().cast<SMSConversation>();
         }
-        print("MDBM resort");
         _convos.sort((SMSConversation a, SMSConversation b) {
           return DateTime.parse(a.lastContactTime)
                   .isAfter(DateTime.parse(b.lastContactTime))
