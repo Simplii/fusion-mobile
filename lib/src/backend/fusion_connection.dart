@@ -659,6 +659,8 @@ class FusionConnection {
     coworkers.getCoworkers((data) {});
     await smsDepartments.getDepartments((List<SMSDepartment> lis) {});
     dids.getDids((p0, p1) => {});
+    contacts.searchV2("", 100, 0, false, (p0, p1, fromPhoneBook) => null);
+    contacts.search("", 100, 0, (p0, p1, fromPhoneBook) => null);
     conversations.getConversations(
         "-2", 100, 0, (convos, fromServer, departmentId) {});
     refreshUnreads();
