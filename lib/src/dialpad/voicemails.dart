@@ -54,6 +54,7 @@ class _VoicemailsState extends State<Voicemails> {
       if (event.processingState == ProcessingState.completed) {
         setState(() {
           _isPlaying = false;
+          _playingUrl = null;
         });
       }
     });
@@ -105,7 +106,9 @@ class _VoicemailsState extends State<Voicemails> {
   _play(url) {
     if (_playingUrl != url) {
       _audioPlayer.setUrl(url);
-      _playingUrl = url;
+      setState(() {
+        _playingUrl = url;
+      });
     }
     _audioPlayer.play();
   }
@@ -130,6 +133,11 @@ class _VoicemailsState extends State<Voicemails> {
 
   void _deleteVoicemail(Voicemail vm) async {
     setState(() {
+      if (_playingUrl != null) {
+        _audioPlayer.stop();
+        _playingUrl = null;
+        _isPlaying = false;
+      }
       _deletingVm = true;
     });
     bool res = await _fusionConnection.voicemails.deleteVoicemail(vm);
@@ -332,7 +340,7 @@ class _VoicemailsState extends State<Voicemails> {
                                               width: 22,
                                               height: 22,
                                               alignment: Alignment.center,
-                                              child: _isPlaying
+                                              child: _isPlaying && _playingUrl == vm.path
                                                   ? Icon(CupertinoIcons.pause,
                                                       size: 12, color: smoke)
                                                   : Image.asset(
@@ -373,7 +381,9 @@ class _VoicemailsState extends State<Voicemails> {
                                             ])),
                                         Container(
                                             alignment: FractionalOffset(
-                                                (_audioPosition / vm.duration!),
+                                                _playingUrl == vm.path 
+                                                ? (_audioPosition / vm.duration!)
+                                                : 0,
                                                 0),
                                             child: Container(
                                                 margin: EdgeInsets.only(
