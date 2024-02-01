@@ -208,7 +208,7 @@ class FusionConnection {
       });
     });
   }
-
+  // need to change this in the future to use database versioning and run migrations
   getDatabase() {
     getDatabasesPath().then((String path) {
       openDatabase(p.join(path, "fusion.db"), version: 1, onOpen: (db) {
@@ -867,6 +867,9 @@ class FusionConnection {
     String? _pass = await prefs.getString('fusion-data1');
     settings.usesV2 = prefs.getBool("v2User") ?? false;
     if (_pass != null && _pass.isNotEmpty && user != null) {
+      if (Platform.isIOS) {
+        await FirebaseMessaging.instance.getAPNSToken();
+      }
       final String deviceToken =
           await FirebaseMessaging.instance.getToken() ?? "";
       final String hash = generateMd5(

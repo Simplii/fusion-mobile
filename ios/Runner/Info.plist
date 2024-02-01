@@ -28,10 +28,14 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Camera access is needed for sending MMS messages from your camera</string>
+	<key>NSContactsUsageDescription</key>
+	<string>Allow access to contacts</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Microphone access is needed to make and receive calls</string>
 	<key>NSPhotoLibraryUsageDescription</key>
@@ -41,6 +45,7 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>
+		<string>fetch</string>
 		<string>processing</string>
 		<string>remote-notification</string>
 		<string>voip</string>
@@ -63,11 +68,7 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
-	<key>flutter_apns.disable_swizzling</key>
-	<true/>
-	<key>ITSAppUsesNonExemptEncryption</key>
-	<false/>
-	<key>NSContactsUsageDescription</key>
- 		<string>Allow access to contacts</string>
+	<!-- <key>flutter_apns.disable_swizzling</key>
+	<true/> -->
 </dict>
 </plist>
