@@ -226,7 +226,6 @@ class CallHistoryStore extends FusionStore<CallHistory> {
           if (datas.containsKey('items')) {
             for (Map<String, dynamic> item in datas['items']) {
               CallHistory obj = CallHistory(item);
-              print("MDBM dir ${obj.direction}");
               obj.coworker = fusionConnection.coworkers.lookupCoworker(
                   obj.direction == 'inbound' ? obj.from! : obj.to!);
               if (phoneContacts.isNotEmpty) {

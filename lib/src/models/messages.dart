@@ -237,42 +237,26 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
     fusionConnection.db.delete('sms_message', where: 'id = ?', whereArgs: [id]);
   }
 
-  notifyMessage(SMSMessage message) async {
+  notifyMessage(SMSMessage message) {
     if (!notifiedMessages.containsKey(message.id)) {
       notifiedMessages[message.id] = true;
-
-      // fusionConnection.callpopInfos.lookupPhone(message.from, (callpopInfo) {
-      //     String? name = message.from.toString().formatPhone();
-      //     callpopInfo!.contacts!.map((e) {
-      //       name = e.name;
-      //     });
-      //     // showSimpleNotification(
-      //     //       Text(name! + " says: " + message.message!),
-      //     //       background: smoke);
-      // });
+      
       List<SMSConversation> convos =
           fusionConnection.conversations.getRecords();
-      SMSConversation lastMessage = (await checkExistingConversation(
-          DepartmentIds.AllMessages, message.from, [message.to], []));
-      if (lastMessage.conversationId != null) {
-        List<SMSConversation> convoToUpdateList = convos
-            .where((element) =>
-                element.conversationId == lastMessage.conversationId)
-            .toList();
-        SMSConversation? convoToUpdate =
-            convoToUpdateList.isEmpty ? null : convoToUpdateList.first;
-        if (convoToUpdate != null) {
-          convoToUpdate.message = message;
-          convoToUpdate.unread = convoToUpdate.unread + 1;
-          convoToUpdate.lastContactTime =
+      
+      SMSConversation? convo = convos.where((element) => element.isGroup 
+        ? element.number == message.to
+        : element.myNumber == message.to).firstOrNull;
+      
+      if (convo != null) {
+          convo.message = message;
+          convo.unread = convo.unread + 1;
+          convo.lastContactTime =
               DateTime.parse(message.time.date ?? "")
                   .toLocal()
                   .toIso8601String();
-          fusionConnection.conversations.storeRecord(convoToUpdate);
-          notification.update(convoToUpdate);
-        } else {
-          print("MDBM add new convo ");
-        }
+          fusionConnection.conversations.storeRecord(convo);
+          notification.update(convo);
       }
 
       new Future.delayed(Duration(minutes: 2), () {

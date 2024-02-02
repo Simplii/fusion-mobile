@@ -342,7 +342,6 @@ class _MyHomePageState extends State<MyHomePage> {
           }
         }
       }
-      print("MDBM res here group");
       showModalBottomSheet(
         context: context,
         backgroundColor: Colors.transparent,

@@ -1511,9 +1511,7 @@ class Softphone implements SipUaHelperListener {
       }
 
       if (Platform.isAndroid) {
-        print("MDBM callKeepPhoneAccount");
         final bool hasPhoneAccount = await _callKeep.hasPhoneAccount();
-        print("MDBM callKeepPhoneAccount $hasPhoneAccount");
         if (!hasPhoneAccount) {
           await _callKeep.hasDefaultPhoneAccount(_context!, <String, dynamic>{
             'alertTitle': 'Permissions required',

@@ -845,7 +845,7 @@ class FusionConnection {
           });
           if (!numbers.contains(newMessage.from)) {
             refreshUnreads();
-            await messages.notifyMessage(newMessage);
+            messages.notifyMessage(newMessage);
             messages.storeRecord(newMessage);
             unreadMessages.getRecords();
           }
