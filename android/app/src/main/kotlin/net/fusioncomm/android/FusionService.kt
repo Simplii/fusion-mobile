@@ -4,9 +4,7 @@ import android.app.Service
 import android.content.Intent
 import android.os.IBinder
 import android.util.Log
-import io.flutter.plugin.common.MethodChannel
 import org.linphone.core.Call
-import org.linphone.core.Factory
 import org.linphone.core.tools.service.CoreManager
 
 
