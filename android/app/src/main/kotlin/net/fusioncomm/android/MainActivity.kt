@@ -6,46 +6,34 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.PackageManager.FEATURE_TELEPHONY_SUBSCRIPTION
-import android.media.AudioDeviceInfo
 import android.media.AudioManager
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
-import com.google.gson.Gson
 import android.telephony.PhoneStateListener
+import android.telephony.SubscriptionManager
+import android.telephony.SubscriptionManager.DEFAULT_SUBSCRIPTION_ID
 import android.telephony.TelephonyCallback
 import android.telephony.TelephonyManager
-
+import android.util.Log
+import android.view.KeyEvent
 import androidx.core.content.ContextCompat
+import com.google.gson.Gson
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugins.GeneratedPluginRegistrant
 import org.linphone.core.*
-import org.linphone.core.CoreListenerStub
-import java.math.BigInteger
-import java.security.MessageDigest
-import android.media.RingtoneManager
-import android.net.Uri
-import android.telephony.SubscriptionManager
-import android.telephony.SubscriptionManager.DEFAULT_SUBSCRIPTION_ID
-import android.view.KeyEvent
 
 class MainActivity : FlutterFragmentActivity() {
-    private lateinit var core: Core
-    // private lateinit var channel: MethodChannel
-    // switched it to companion obj to be able to invoke flutter methods from
-    // native boradcastRecivers and services
+    private val core: Core = FMCore.core
     companion object {
-        lateinit var channel: MethodChannel
+        var channel: MethodChannel = FusionMobileApplication.callingChannel
     }
     private var username: String = ""
     private var password: String = ""
     private var domain: String = ""
     private var server: String = "services.fusioncom.co"
-    private var uuidCalls: MutableMap<String, Call> = mutableMapOf()
 
-    //    lateinit var volumeReceiver : VolumeReceiver
     private val versionName = BuildConfig.VERSION_NAME
     private var appOpenedFromBackground : Boolean = false
 
@@ -56,8 +44,14 @@ class MainActivity : FlutterFragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         telephonyManager = getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
-        setupCore()
-//        setupBroadcastReciver()
+
+        Log.d("MDBM ", "core started ${FMCore.coreStarted}")
+        core.addListener(coreListener)
+        checkPushIncomingCall()
+
+        audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        Log.d("MDBM ", "MainActivity on create")
+
         val incomingCallId : String? = intent.getStringExtra("payload")
         if(incomingCallId != null){
             appOpenedFromBackground = true
@@ -84,20 +78,53 @@ class MainActivity : FlutterFragmentActivity() {
         }
     }
 
-    // override fun onDestroy() {
-    //     super.onDestroy()
-    //     // terminating call here not reliable, this function sometimes won't fire if
-    //     // app is closed from recent apps list or killed by android system.
-    //     // core?.currentCall?.terminate()
-    //    unregisterReceiver(volumeReceiver)
-    // }
+    private  fun checkPushIncomingCall(){
+        sendDevices()
+        getAppVersion()
+        getMyPhoneNumber()
+        val activeCalls: Array<Call> = core.calls
 
-//    private fun setupBroadcastReciver(){
-//        volumeReceiver = VolumeReceiver()
-//        val filter = IntentFilter()
-//        filter.addAction("android.media.VOLUME_CHANGED_ACTION")
-//        registerReceiver(volumeReceiver, filter)
-//    }
+        if(!activeCalls.isEmpty()){
+            for (call in activeCalls){
+                val uuid: String = FMCore.findUuidByCall(call)
+                Log.d("MDBM CallState", "${Call.State.fromInt(call.state.ordinal)}")
+                if(call.state == Call.State.IncomingReceived){
+                    channel.invokeMethod(
+                        "lnIncomingReceived",
+                        mapOf(
+                            Pair("uuid", uuid),
+                            Pair("callId", call.callLog?.callId),
+                            Pair("remoteContact", call.remoteContact),
+                            Pair("remoteAddress", call.remoteAddressAsString),
+                            Pair("displayName", call.remoteAddress.displayName)
+                        )
+                    )
+                } else if( call.state == Call.State.StreamsRunning){
+                    channel.invokeMethod(
+                        "answeredFromNotification",
+                        mapOf(
+                            Pair("uuid", uuid),
+                            Pair("callId", call.callLog?.callId),
+                            Pair("remoteContact", call.remoteContact),
+                            Pair("remoteAddress", call.remoteAddressAsString),
+                            Pair("displayName", call.remoteAddress.displayName)
+                        )
+                    )
+                } else if( call.state == Call.State.Paused){
+                    channel.invokeMethod(
+                        "answeredWhileOnCallFromNotification",
+                        mapOf(
+                            Pair("uuid", uuid),
+                            Pair("callId", call.callLog?.callId),
+                            Pair("remoteContact", call.remoteContact),
+                            Pair("remoteAddress", call.remoteAddressAsString),
+                            Pair("displayName", call.remoteAddress.displayName)
+                        )
+                    )
+                }
+            }
+        }
+    }
 
    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
        if ((keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)){
@@ -152,9 +179,9 @@ class MainActivity : FlutterFragmentActivity() {
                             Pair("defaultMic", core.defaultOutputAudioDevice.id))
                     )
            }
-            
+
         }
-    
+
         override fun onAudioDevicesListUpdated(core: Core) {
             // This callback will be triggered when the available devices list has changed,
             // for example after a bluetooth headset has been connected/disconnected.
@@ -181,11 +208,9 @@ class MainActivity : FlutterFragmentActivity() {
             state: Call.State?,
             message: String
         ) {
-            val uuid = findUuidByCall(call)
-            print("call state changed")
-            print(uuid)
-            print(state)
-            print(call)
+            Log.d("MDBM", "callLogID  ${call.callLog.callId}")
+            val uuid = FMCore.findUuidByCall(call)
+
             when (state) {
                 Call.State.Idle -> {
                     channel.invokeMethod(
@@ -195,7 +220,6 @@ class MainActivity : FlutterFragmentActivity() {
                 }
                 Call.State.IncomingReceived -> {
                     audioManager.mode = AudioManager.MODE_NORMAL
-                    @SuppressWarnings("deprecation")
                     audioManager.isSpeakerphoneOn = true
                     channel.invokeMethod(
                         "lnIncomingReceived",
@@ -223,7 +247,7 @@ class MainActivity : FlutterFragmentActivity() {
                 Call.State.OutgoingProgress -> {
                     audioManager.mode = AudioManager.MODE_IN_COMMUNICATION
                     audioManager.isSpeakerphoneOn = false
-                    uuidCalls[uuid] = call
+                    FMCore.uuidCalls[uuid] = call
                     channel.invokeMethod(
                         "lnOutgoingInit",
                         mapOf(
@@ -355,94 +379,6 @@ class MainActivity : FlutterFragmentActivity() {
 
     }
 
-    private fun setupCore() {
-        audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
-        val factory = Factory.instance()
-        factory.setDebugMode(true, "Hello fusion")
-        core = factory.createCore(null, null, this)
-        core.enableIpv6(false)
-        core.stunServer = "turn:$server"
-        core.natPolicy?.stunServerUsername = "fuser"
-        core.addAuthInfo(
-            factory.createAuthInfo(
-                "fuser", "fuser", "fpassword", null, null, null
-            )
-        )
-        core.natPolicy?.enableTurn(true)
-        core.enableEchoLimiter(true)
-        core.enableEchoCancellation(true)
-
-        if (core.hasBuiltinEchoCanceller()) {
-            print("Device has built in echo canceler, disabling software echo canceler")
-            core.enableEchoCancellation(false)
-        }
-        else {
-            print("Device has no echo canceler, enabling software echo canceler")
-            core.enableEchoCancellation(true)
-        }
-
-        core.natPolicy?.stunServer = server
-        core.remoteRingbackTone = "android.resource://net.fusioncomm.android/" + R.raw.outgoing
-        val ringtonePath:Uri? = RingtoneManager.getActualDefaultRingtoneUri(this, RingtoneManager.TYPE_RINGTONE)
-        if(ringtonePath != null){
-            core.ring = RingtoneManager.getActualDefaultRingtoneUri(this, RingtoneManager.TYPE_RINGTONE).toString()
-        } else {
-            core.isNativeRingingEnabled = true
-        }
-        core.config.setBool("audio", "android_pause_calls_when_audio_focus_lost", false)
-    }
-
-    private fun register() {
-        val transportType = TransportType.Tcp
-        val authInfo =
-            Factory.instance().createAuthInfo(username, null, password, null, null, domain, null)
-        val accountParams = core.createAccountParams()
-        val identity = Factory.instance().createAddress("sip:$username@$domain")
-        accountParams.identityAddress = identity
-
-        val address = Factory.instance().createAddress("sip:${server}:5060")
-        address?.transport = transportType
-        accountParams.serverAddress = address
-        accountParams.registerEnabled = true
-        accountParams.setRoutesAddresses(arrayOf(address))
-        accountParams.avpfMode = AVPFMode.Disabled
-        accountParams.dialEscapePlusEnabled = false
-        accountParams.publishEnabled = false
-        accountParams.identityAddress = core.createAddress("sip:$username@$domain")
-
-        print("register")
-        print(address)
-
-        val account = core.createAccount(accountParams)
-
-        core.addAuthInfo(authInfo)
-        core.addAccount(account)
-        core.loadConfigFromXml("android.resource://net.fusioncomm.net/" + R.raw.fusion_config)
-
-        var proxyConfig = core.defaultProxyConfig
-        if (proxyConfig == null) {
-            proxyConfig = core.createProxyConfig()
-        }
-
-        val newProxyConfig = createProxyConfig(
-            proxyConfig,
-                "sip:$username@$domain",
-            authInfo
-        )
-        print("proxyconfig")
-        print(newProxyConfig)
-        core.addProxyConfig(newProxyConfig)
-        core.defaultProxyConfig = newProxyConfig
-        core.defaultAccount = account
-        core.addListener(coreListener)
-        account.addListener { _, _, _ ->
-        }
-        core.start()
-        sendDevices()
-        getAppVersion()
-        getMyPhoneNumber()
-    }
-
     private fun handleCallStateChange(state: Int){
         when (state){
             TelephonyManager.CALL_STATE_OFFHOOK -> {
@@ -549,262 +485,8 @@ class MainActivity : FlutterFragmentActivity() {
         channel.invokeMethod("setMyPhoneNumber",  gson.toJson(myPhoneNumber) )
     }
 
-    private fun createProxyConfig(
-        proxyConfig: ProxyConfig,
-        aor: String,
-        authInfo: AuthInfo
-    ): ProxyConfig {
-        val address = core.createAddress(aor)
-        proxyConfig.identityAddress = address
-
-        proxyConfig.serverAddr = "<sip:${server}:5060;transport=tcp>"
-        proxyConfig.setRoute("<sip:${server}:5060;transport=tcp>")
-
-        proxyConfig.realm = authInfo.realm
-        proxyConfig.enableRegister(true)
-        proxyConfig.avpfMode = AVPFMode.Disabled
-        proxyConfig.enablePublish(false)
-        proxyConfig.dialEscapePlus = false
-        return proxyConfig
-    }
-
-
-    private fun unregister() {
-        val account = core.defaultAccount
-        account ?: return
-        val params = account.params
-        val clonedParams = params.clone()
-
-        clonedParams.registerEnabled = false
-
-        account.params = clonedParams
-        finishAndRemoveTask()
-    }
-
-    private fun findUuidByCall(call: Call): String {
-        val callId = call.callLog.callId
-        val md = MessageDigest.getInstance("MD5")
-        val md5 = BigInteger(1, md.digest(callId.toByteArray()))
-            .toString(16)
-            .padStart(32, '0')
-        var numbers: Array<String> = arrayOf()
-
-        for (i in 0..15) {
-            numbers = numbers.plusElement(md5[i].code.toString(16))
-        }
-
-        var r: String = numbers[0] + numbers[1] + numbers[2] + numbers[3] + "-"
-        r += numbers[4] + numbers[5] + "-"
-        r += numbers[6] + numbers[7] + "-"
-        r += numbers[8] + numbers[9] + "-"
-        r += numbers[10] + numbers[11] + numbers[12] + numbers[13] + numbers[14] + numbers[15]
-
-        uuidCalls[r] = call
-        return r
-    }
-
-
-    private fun outgoingCall(destination: String) {
-        val remoteAddress = core.interpretUrl(destination)
-        val params = core.createCallParams(null)
-        if (remoteAddress != null && params != null) {
-            params.mediaEncryption = MediaEncryption.None
-            params.enableVideo(false)
-            core.inviteAddressWithParams(remoteAddress, params)
-        }
-    }
-
-
-    private fun findCallByUuid(uuid: String): Call? {
-        return uuidCalls[uuid]
-    }
-
-    override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
-        GeneratedPluginRegistrant.registerWith(flutterEngine)
-        channel = MethodChannel(
-            flutterEngine.dartExecutor.binaryMessenger,
-            "net.fusioncomm.android/calling"
-        )
-
-        // Contacts Provider Channel
-        ContactsProvider(MethodChannel(
-            flutterEngine.dartExecutor.binaryMessenger,
-            "net.fusioncomm.ios/contacts"
-        ), this)
-
-        channel.setMethodCallHandler { call, _ ->
-            print("gotflmethod")
-            print(call.method)
-            print(call.arguments)
-            if (call.method == "setSpeaker") {
-                Log.d("TAG", "setspeaker")
-
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    val devices = audioManager.availableCommunicationDevices
-                    for (device in devices) {
-                        if (device.type == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER) {
-                            Log.d("TAG", "setspeakernew")
-                            audioManager.setCommunicationDevice(device)
-                        }
-                    }
-                } else {
-                    Log.d("TAG", "setspeakerold")
-                    audioManager.isSpeakerphoneOn = true
-                }
-            } else if (call.method == "setEarpiece") {
-                audioManager.isSpeakerphoneOn = false
-            } else if (call.method == "lpAnswer") {
-                val args = call.arguments as List<*>
-                val lpCall = findCallByUuid(args[0] as String)
-                print("answering...")
-                lpCall?.accept()
-            } else if (call.method == "lpSendDtmf") {
-                val args = call.arguments as List<*>
-                val lpCall = findCallByUuid(args[0] as String)
-                lpCall?.sendDtmfs(args[1] as String)
-            } else if (call.method == "lpSetHold") {
-                val args = call.arguments as List<*>
-                val lpCall = findCallByUuid(args[0] as String)
-                if (lpCall != null) {
-                    if (!(args[1] as Boolean)) {
-                        lpCall.resume()
-                    } else {
-                        lpCall.pause()
-                    }
-                }
-            } else if (call.method == "lpSetEchoCancellationEnabled") {
-                val args = call.arguments as List<*>
-                core.enableEchoCancellation(args[0] as Boolean)
-                sendDevices()
-            } else if (call.method == "lpCalibrateEcho") {
-                core.startEchoCancellerCalibration()
-            } else if (call.method == "lpTestEcho") {
-                core.startEchoTester(10)
-            } else if (call.method == "lpStopTestEcho") {
-                core.stopEchoTester()
-                sendDevices()
-            } else if (call.method == "lpSetEchoLimiterEnabled") {
-                val args = call.arguments as List<*>
-                core.enableEchoLimiter(args[0] as Boolean)
-                sendDevices()
-            } else if (call.method == "lpSetDefaultInput") {
-                val args = call.arguments as List<*>
-                Log.d("setinput", "gonna set default input")
-                for (audioDevice in core.extendedAudioDevices) {
-                    Log.d("setinput", "checking audio device" + audioDevice.id)
-                    Log.d("setinput", "checking against" + args[0])
-                    if (audioDevice.id == args[0]) {
-                        Log.d("setinput", "found the default input")
-                        core.defaultInputAudioDevice = audioDevice
-                        for  (coreCall in core.calls) {
-                            Log.d("setinput", "setting the default input for a call")
-                            coreCall.inputAudioDevice = audioDevice
-                            Log.d("setinput", audioDevice.id)
-                        }
-                    }
-                }
-//                 sendDevices()
-            } else if (call.method == "lpSetDefaultOutput") {
-                val args = call.arguments as List<*>
-                for (audioDevice in core.extendedAudioDevices) {
-                    Log.d("setou8tput", "out checking audio device" + audioDevice.id)
-                    Log.d("output", "out checking against" + args[0])
-
-                    if (audioDevice.id == args[0]) {
-                        core.defaultOutputAudioDevice = audioDevice
-                        for  (coreCall in core.calls) {
-                    Log.d("setinput", "setting the default input for a call")
-
-                            coreCall.outputAudioDevice = audioDevice
-                        }
-                    }
-                }
-//                 sendDevices()
-            } else if(call.method == "lpSetActiveCallOutput") {
-                val args = call.arguments as List<*>
-
-                for (audioDevice in core.audioDevices) {
-                    if (audioDevice.id == args[0]) {
-                        Log.d("lpSetActiveCallOutput", "args" +args[0])
-                        Log.d("lpSetActiveCallOutput", "audio device" +audioDevice.id)
-
-                        core.currentCall?.outputAudioDevice = audioDevice
-                    }
-                }
-            }
-            else if (call.method == "lpSetSpeaker") {
-                val args = call.arguments as List<*>
-                val enableSpeaker = args[0] as Boolean
-                val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
-//                audioManager.mode = AudioManager.MODE_IN_COMMUNICATION this line causing older
-//                android version to get audio stuck in ear
-
-                Log.d("lpSetActiveCallOutput" , "set speaker")
-                for (audioDevice in core.extendedAudioDevices) {
-                    if (!enableSpeaker && audioDevice.type == AudioDevice.Type.Earpiece
-                            && audioDevice.id.contains("openSLES")) {
-                        for  (coreCall in core.calls) {
-                            coreCall.outputAudioDevice = audioDevice
-                        }
-                        audioManager.isSpeakerphoneOn = false
-                    } else if (enableSpeaker && audioDevice.type == AudioDevice.Type.Speaker) {
-                        for  (coreCall in core.calls) {
-                            coreCall.outputAudioDevice = audioDevice
-                        }
-                        audioManager.isSpeakerphoneOn = true
-                    }
-                }
-//                sendDevices()
-            } else if (call.method == "lpSetBluetooth"){
-                for (audioDevice in core.audioDevices) {
-                    if (audioDevice.type == AudioDevice.Type.Bluetooth) {
-                        for  (coreCall in core.calls) {
-                            coreCall.outputAudioDevice = audioDevice
-                        }
-                    }
-                }
-//                sendDevices()
-            } else if (call.method == "lpMuteCall") {
-                val args = call.arguments as List<*>
-                val lpCall = findCallByUuid(args[0] as String)
-                if (lpCall != null) {
-                    lpCall.microphoneMuted = true
-                }
-            } else if (call.method == "lpUnmuteCall") {
-                val args = call.arguments as List<*>
-                val lpCall = findCallByUuid(args[0] as String)
-                if (lpCall != null) {
-                    lpCall.microphoneMuted = false
-                }
-            } else if (call.method == "lpRefer") {
-                val args = call.arguments as List<*>
-                val lpCall = findCallByUuid(args[0] as String)
-                lpCall?.transfer(args[1] as String)
-            } else if (call.method == "lpStartCall") {
-                val args = call.arguments as List<*>
-                outgoingCall(args[0] as String)
-            } else if (call.method == "lpEndCall") {
-                val args = call.arguments as List<*>
-                val lpCall = findCallByUuid(args[0] as String)
-                lpCall?.terminate()
-            } else if (call.method == "lpAssistedTransfer") {
-                val args = call.arguments as List<*>
-                val lpCallToTransfer = findCallByUuid(args[0] as String)
-                val activeCall = findCallByUuid(args[1] as String)
-
-                if(lpCallToTransfer != null && activeCall != null){
-                    lpCallToTransfer.transferToAnother(activeCall)
-                }
-
-            } else if (call.method == "lpRegister") {
-                val args = call.arguments as List<*>
-                username = args[0] as String
-                password = args[1] as String
-                domain = args[2] as String
-                register()
-            } else if (call.method == "lpUnregister") {
-                unregister()
-            }
-        }
+    override fun provideFlutterEngine(context: Context): FlutterEngine? {
+        GeneratedPluginRegistrant.registerWith(FusionMobileApplication.engine);
+        return FusionMobileApplication.engine
     }
 }

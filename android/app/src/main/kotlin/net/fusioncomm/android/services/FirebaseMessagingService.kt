@@ -3,6 +3,7 @@ package net.fusioncomm.android.services
 import android.util.Log
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import org.linphone.core.tools.service.CoreManager
 
 class FirebaseMessagingService : FirebaseMessagingService() {
     private val TAG = "MDBM FirebsaseMS"
@@ -26,7 +27,6 @@ class FirebaseMessagingService : FirebaseMessagingService() {
                 val callerName = remoteMessage.data["caller_id"] ?: "NoName"
                 val callerAvatar = remoteMessage.data["avatar"] ?: ""
                 val id = remoteMessage.data["call_id"] ?: ""
-
                 Log.d(TAG, "$callerNumber $callerName $callerAvatar $id")
             }
         }

@@ -12,7 +12,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 // import 'package:flutter_apns/flutter_apns.dart';
-import 'package:flutter_background/flutter_background.dart';
+// import 'package:flutter_background/flutter_background.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:fusion_mobile_revamped/src/callpop/call_view.dart';
 import 'package:fusion_mobile_revamped/src/callpop/disposition.dart';
@@ -255,8 +255,8 @@ class _MyHomePageState extends State<MyHomePage> {
     softphone.onUpdate(() {
       setState(() {});
     });
-    _setupPermissions();
     _autoLogin();
+    _setupPermissions();
 
     // final connector = createPushConnector();
     // connector.configure(
@@ -570,28 +570,28 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  void initBackgroundExec() async {
-    final androidConfig = FlutterBackgroundAndroidConfig(
-      enableWifiLock: true,
-      notificationTitle: "Fusion Mobile",
-      notificationText: "Active call with Fusion Mobile.",
-      notificationImportance: AndroidNotificationImportance.Default,
-      notificationIcon: AndroidResource(
-          name: 'app_icon',
-          defType: 'drawable'), // Default is ic_launcher from folder mipmap
-    );
-    if (!flutterBackgroundInitialized) {
-      bool success =
-          await FlutterBackground.initialize(androidConfig: androidConfig);
-      setState(() {
-        flutterBackgroundInitialized = success;
-      });
-    }
-  }
+  // void initBackgroundExec() async {
+  //   final androidConfig = FlutterBackgroundAndroidConfig(
+  //     enableWifiLock: true,
+  //     notificationTitle: "Fusion Mobile",
+  //     notificationText: "Active call with Fusion Mobile.",
+  //     notificationImportance: AndroidNotificationImportance.Default,
+  //     notificationIcon: AndroidResource(
+  //         name: 'app_icon',
+  //         defType: 'drawable'), // Default is ic_launcher from folder mipmap
+  //   );
+  //   if (!flutterBackgroundInitialized) {
+  //     bool success =
+  //         await FlutterBackground.initialize(androidConfig: androidConfig);
+  //     setState(() {
+  //       flutterBackgroundInitialized = success;
+  //     });
+  //   }
+  // }
 
   Future<void> _register() async {
     if (Platform.isAndroid) {
-      initBackgroundExec();
+      // initBackgroundExec();
     }
     if (_isRegistering) {
       return;
@@ -712,21 +712,21 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    if (softphone.activeCall != null &&
-        softphone.isConnected(softphone.activeCall!) != null &&
-        !FlutterBackground.isBackgroundExecutionEnabled &&
-        Platform.isAndroid) {
-      if (!flutterBackgroundInitialized) {
-        initBackgroundExec();
-      }
-      FlutterBackground.enableBackgroundExecution()
-          .then((value) => print("enablebgexecutionvalue" + value.toString()));
-    } else if (FlutterBackground.isBackgroundExecutionEnabled &&
-        Platform.isAndroid &&
-        softphone.activeCall == null) {
-      FlutterBackground.disableBackgroundExecution()
-          .then((value) => print("disablebgexecutionvalue" + value.toString()));
-    }
+    // if (softphone.activeCall != null &&
+    //     softphone.isConnected(softphone.activeCall!) != null &&
+    //     !FlutterBackground.isBackgroundExecutionEnabled &&
+    //     Platform.isAndroid) {
+    //   if (!flutterBackgroundInitialized) {
+    //     // initBackgroundExec();
+    //   }
+    //   // FlutterBackground.enableBackgroundExecution()
+    //   //     .then((value) => print("enablebgexecutionvalue" + value.toString()));
+    // } else if (FlutterBackground.isBackgroundExecutionEnabled &&
+    //     Platform.isAndroid &&
+    //     softphone.activeCall == null) {
+    //   FlutterBackground.disableBackgroundExecution()
+    //       .then((value) => print("disablebgexecutionvalue" + value.toString()));
+    // }
     if (softphone.activeCall != null &&
         softphone.isConnected(softphone.activeCall!) != null &&
         !softphone.getHoldState(softphone.activeCall) &&

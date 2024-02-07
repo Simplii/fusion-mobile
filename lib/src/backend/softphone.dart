@@ -432,6 +432,24 @@ class Softphone implements SipUaHelperListener {
             args['displayName']
           ];
           break;
+        case "answeredFromNotification":
+          args = [
+            args['callId'],
+            args['remoteContact'],
+            args['remoteAddress'],
+            args['uuid'],
+            args['displayName']
+          ];
+          break;
+        case "answeredWhileOnCallFromNotification":
+          args = [
+            args['callId'],
+            args['remoteContact'],
+            args['remoteAddress'],
+            args['uuid'],
+            args['displayName']
+          ];
+          break;
         case "stopRinger":
           //not needed any more we can stop ringer from linphone
           RingtonePlayer.stop();
@@ -566,6 +584,73 @@ class Softphone implements SipUaHelperListener {
         print("incoming");
         print(call);
         _addCall(call);
+        break;
+      case "answeredFromNotification":
+        if (!Platform.isAndroid) return;
+        print("MDBM answeredFromNotification ${calls.length}");
+        var toAddress = args[2] as String;
+        toAddress = _cleanToAddress(toAddress);
+        var callerId = args[4] as String? ?? "Unknown";
+        var domainPrefixes = _fusionConnection!.settings.domainPrefixes();
+        if (domainPrefixes != null) {
+          domainPrefixes.forEach((prefix) {
+            if (callerId.startsWith(prefix)) {
+              callerId = callerId.replaceAll(prefix + "_", "") != "" 
+                ? callerId.replaceAll(prefix + "_", "")
+                : "Unknown";
+              linePrefix = prefix;
+            }
+          });
+        }
+        LnCall call = _linkLnCallWithUuid(toAddress, args[0] as String,
+            args[3] as String, callerId, "INCOMING");
+        print("incoming");
+        print(call);
+        _addCall(call);
+        answerCall(call);
+        break;
+      case "answeredWhileOnCallFromNotification":
+        if(!Platform.isAndroid)return;
+        print("MDBM answeredWhileOnCallFromNotification");
+        var toAddress = args[2] as String;
+        toAddress = _cleanToAddress(toAddress);
+        var callerId = args[4] as String? ?? "Unknown";
+        var domainPrefixes = _fusionConnection!.settings.domainPrefixes();
+        if (domainPrefixes != null) {
+          domainPrefixes.forEach((prefix) {
+            if (callerId.startsWith(prefix)) {
+              callerId = callerId.replaceAll(prefix + "_", "") != "" 
+                ? callerId.replaceAll(prefix + "_", "")
+                : "Unknown";
+              linePrefix = prefix;
+            }
+          });
+        }
+        LnCall call = _linkLnCallWithUuid(toAddress, args[0] as String,
+            args[3] as String, callerId, "INCOMING");
+        calls.add(call);
+        print("MDBM answeredWhileOnCallFromNotification ${call} ${calls.length}");
+        setCallOutput(call, outputDevice.toLowerCase());
+        if (bluetoothDeviceId != '') {
+          setActiveCallOutputDevice(bluetoothDeviceId);
+        }
+
+        _linkUuidFor(call);
+        _fusionConnection.callpopInfos.lookupPhone(call.remote_identity,
+            (CallpopInfo? data) {
+          if (Platform.isAndroid) {
+            _callKeep.updateDisplay(_uuidFor(call),
+                displayName: data!.getName(defaul: call.remote_display_name!),
+                handle: call.remote_identity!);
+          }
+          if (call.direction == "outbound" || call.direction == "OUTGOING" || call.direction == "INCOMING")
+            _setCallDataValue(call.id, "callPopInfo", data);
+        });
+        _setCallDataValue(call.id, "answerTime", DateTime.now());
+        _setCallDataValue(call.id, "onHold", true);
+        call.hold();
+        _callKeep.setOnHold(_uuidFor(call), true);
+
         break;
       case "lnError":
       case "lnCallError":
