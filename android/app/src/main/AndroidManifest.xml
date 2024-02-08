@@ -15,7 +15,10 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
-    <uses-permission android:name="android.permission.BLUETOOTH" tools:replace="android:maxSdkVersion"  android:maxSdkVersion="50" />
+    <uses-permission
+        android:name="android.permission.BLUETOOTH"
+        tools:replace="android:maxSdkVersion"
+        android:maxSdkVersion="50" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
@@ -53,8 +56,6 @@
             android:hardwareAccelerated="true"
             android:launchMode="singleTop"
             android:theme="@style/LaunchTheme"
-            android:showWhenLocked="true"
-            android:turnScreenOn="true"
             android:exported="true"
             android:windowSoftInputMode="adjustResize">
             <!-- Specifies an Android theme to apply to this Activity as soon as
@@ -90,15 +91,6 @@
             android:exported="true"
             android:value="2" />
 
-<!--                <service android:name="io.wazo.callkeep.VoiceConnectionService"-->
-<!--          android:label="Wazo"-->
-<!--                    android:exported="false"-->
-<!--          android:foregroundServiceType="camera|microphone"-->
-<!--          android:permission="android.permission.BIND_TELECOM_CONNECTION_SERVICE">-->
-<!--          <intent-filter>-->
-<!--              <action android:name="android.telecom.ConnectionService" />-->
-<!--          </intent-filter>-->
-<!--        </service>-->
         <service android:name=".telecom.TelecomConnectionService"
             android:permission="android.permission.BIND_TELECOM_CONNECTION_SERVICE"
             android:exported="true">
@@ -106,6 +98,7 @@
                 <action android:name="android.telecom.ConnectionService" />
             </intent-filter>
         </service>
+
         <service
             android:name=".services.FirebaseMessagingService"
             android:exported="false">
@@ -113,23 +106,12 @@
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
+
         <service
             android:enabled="true"
             android:name=".FusionService"
             android:exported="false"
             android:stopWithTask="false" />
-        <!--<service android:name="com.example.flutter_voip_kit.VoipConnectionService"-->
-        <!--android:label="VoipConnectionService"-->
-        <!--android:permission="android.permission.BIND_TELECOM_CONNECTION_SERVICE">-->
-        <!--<intent-filter>-->
-        <!--<action android:name="android.telecom.ConnectionService" />-->
-        <!--</intent-filter>-->
-        <!--</service>-->
-<!--        <service android:name="net.fusioncomm.android.FlutterMessagingService">-->
-<!--            <intent-filter>-->
-<!--                <action android:name="com.google.firebase.MESSAGING_EVENT" />-->
-<!--            </intent-filter>-->
-<!--        </service>-->
 
     </application>
 </manifest>

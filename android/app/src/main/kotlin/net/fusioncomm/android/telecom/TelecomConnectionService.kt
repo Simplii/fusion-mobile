@@ -1,8 +1,6 @@
 package net.fusioncomm.android.telecom
 
-import android.app.ActivityManager
 import android.content.ComponentName
-import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.telecom.Connection
@@ -50,7 +48,7 @@ class TelecomConnectionService : ConnectionService() {
         val accountHandle = request?.accountHandle
         val componentName = ComponentName(applicationContext, this.javaClass)
         return if (accountHandle != null && componentName == accountHandle.componentName) {
-            makeOutgoingCall(request, false)
+            makeOutgoingCall(request)
         } else {
             Log.d(debugTag,"Error: $accountHandle $componentName")
             Connection.createFailedConnection(
@@ -76,7 +74,7 @@ class TelecomConnectionService : ConnectionService() {
         val accountHandle = request?.accountHandle
         val componentName = ComponentName(applicationContext, this.javaClass)
         return if (accountHandle != null && componentName == accountHandle.componentName) {
-            makeIncomingConnection(request, false)
+            makeIncomingConnection(request)
         } else {
             Log.d(debugTag,"Error: $accountHandle $componentName")
             Connection.createFailedConnection(
@@ -90,14 +88,14 @@ class TelecomConnectionService : ConnectionService() {
 
     }
 
-    private fun makeOutgoingCall(request: ConnectionRequest, forceWakeUp: Boolean): Connection {
+    private fun makeOutgoingCall(request: ConnectionRequest): Connection {
         val extras: Bundle = request.extras
         val number: String = request.address.schemeSpecificPart
 //        val extrasNumber: String = extras.getString(CallsManager.EXTRA_CALL_NUMBER) ?: "Unknown"
         val displayName:String = extras.getString(CallsManager.EXTRA_CALLER_NAME) ?: number
         var callId = extras.getString(CallsManager.EXTRA_CALL_UUID)
 
-        Log.d(debugTag, "Creating outgoing connection callid:$callId, number: $number, displayName:$displayName");
+        Log.d(debugTag, "Creating outgoing connection callid:$callId, number: $number, displayName:$displayName")
 
         if (callId == null) {
             callId = FMCore.core.currentCall?.callLog?.callId ?: ""
@@ -107,7 +105,7 @@ class TelecomConnectionService : ConnectionService() {
         )
 
         // Prevents user dialing back from native dialer app history
-        if (callId.isEmpty() && displayName.isNullOrEmpty()) {
+        if (callId.isEmpty() && displayName.isEmpty()) {
             Log.d(debugTag,
                 "Looks like a call was made from native dialer history, aborting"
             )
@@ -148,16 +146,16 @@ class TelecomConnectionService : ConnectionService() {
         return  connection
     }
 
-    private fun makeIncomingConnection(request: ConnectionRequest, forceWakeUp: Boolean): Connection {
+    private fun makeIncomingConnection(request: ConnectionRequest): Connection {
         val extras: Bundle = request.extras
         val number: String = request.address.schemeSpecificPart
         val displayName: String = extras.getString(CallsManager.EXTRA_CALLER_NAME) ?: number
         var callId = extras.getString(CallsManager.EXTRA_CALL_UUID)
 
-        Log.d(debugTag, "makeOutgoingCall:$callId, number: $number, displayName:$displayName");
+        Log.d(debugTag, "makeOutgoingCall:$callId, number: $number, displayName:$displayName")
 
         Log.d(debugTag, "Creating incoming connection")
-        val incomingExtras = extras.getBundle(TelecomManager.EXTRA_INCOMING_CALL_EXTRAS)
+//        val incomingExtras = extras.getBundle(TelecomManager.EXTRA_INCOMING_CALL_EXTRAS)
 
         if (callId == null) {
             callId = FMCore.core.currentCall?.callLog?.callId ?: ""

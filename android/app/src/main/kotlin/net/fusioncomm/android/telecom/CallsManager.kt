@@ -7,16 +7,12 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
-import android.telecom.Connection
 import android.telecom.PhoneAccount
 import android.telecom.PhoneAccountHandle
 import android.telecom.TelecomManager
-import android.telephony.TelephonyManager
 import android.util.Log
 import androidx.core.app.ActivityCompat
-import androidx.core.content.getSystemService
 import net.fusioncomm.android.FMCore
-import net.fusioncomm.android.MainActivity
 import org.linphone.core.Call
 import org.linphone.core.CallParams
 import org.linphone.core.Core
@@ -34,7 +30,7 @@ class CallsManager(private val context: Context) {
     init {
         val cName = ComponentName(context, TelecomConnectionService::class.java)
         val appName: String = FMCore.getApplicationName(context)
-        phoneAccountHandle = PhoneAccountHandle(cName, appName);
+        phoneAccountHandle = PhoneAccountHandle(cName, appName)
         val builder: PhoneAccount.Builder =
             PhoneAccount.builder(phoneAccountHandle,appName)
                 .setCapabilities(PhoneAccount.CAPABILITY_SELF_MANAGED)
@@ -78,15 +74,15 @@ class CallsManager(private val context: Context) {
     }
 
     fun incomingCall (callId: String, number: String, callerName:String) {
-        Log.d(debugTag, "report incoming to telecom callid = ${callId}")
+        Log.d(debugTag, "report incoming to telecom callid = $callId")
         val extras = Bundle()
         val uri = Uri.fromParts(PhoneAccount.SCHEME_TEL,number,null)
-        extras.putParcelable(TelecomManager.EXTRA_INCOMING_CALL_ADDRESS, uri);
-        extras.putString(EXTRA_CALLER_NAME, callerName);
-        extras.putString(EXTRA_CALL_UUID, callId);
+        extras.putParcelable(TelecomManager.EXTRA_INCOMING_CALL_ADDRESS, uri)
+        extras.putString(EXTRA_CALLER_NAME, callerName)
+        extras.putString(EXTRA_CALL_UUID, callId)
         Log.d(debugTag, "report incoming to telecom callid = $callId callerName = $callerName ")
 
-        telecomManager.addNewIncomingCall(phoneAccountHandle, extras);
+        telecomManager.addNewIncomingCall(phoneAccountHandle, extras)
     }
 
     fun findCallByUuid(uuid: String): Call? {
@@ -100,12 +96,12 @@ class CallsManager(private val context: Context) {
 
         val extras = Bundle()
         val callExtras = Bundle()
-        callExtras.putString(EXTRA_CALLER_NAME, "test caller");
-        callExtras.putString(EXTRA_CALL_UUID, FMCore.core.currentCall?.callLog?.callId);
-        callExtras.putString(EXTRA_CALL_NUMBER, dest);
+        callExtras.putString(EXTRA_CALLER_NAME, "test caller")
+        callExtras.putString(EXTRA_CALL_UUID, FMCore.core.currentCall?.callLog?.callId)
+        callExtras.putString(EXTRA_CALL_NUMBER, dest)
 
-        extras.putParcelable(TelecomManager.EXTRA_PHONE_ACCOUNT_HANDLE, phoneAccountHandle);
-        extras.putParcelable(TelecomManager.EXTRA_OUTGOING_CALL_EXTRAS, callExtras);
+        extras.putParcelable(TelecomManager.EXTRA_PHONE_ACCOUNT_HANDLE, phoneAccountHandle)
+        extras.putParcelable(TelecomManager.EXTRA_OUTGOING_CALL_EXTRAS, callExtras)
 
         if (ActivityCompat.checkSelfPermission(
                 context,

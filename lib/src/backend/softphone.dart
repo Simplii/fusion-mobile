@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:audioplayers/audioplayers.dart' as Aps;
-// import 'package:callkeep/callkeep.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -20,16 +19,12 @@ import 'package:overlay_support/overlay_support.dart';
 import 'package:ringtone_player/ringtone_player.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-//import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:sip_ua/sip_ua.dart';
-// import 'package:flutter_audio_manager/flutter_audio_manager.dart';
 import '../../main.dart';
 import '../models/contact.dart';
 import '../models/coworkers.dart';
 import '../utils.dart';
 import 'fusion_connection.dart';
-// import 'package:flutter_incall_manager/flutter_incall_manager.dart';
-//import 'package:bluetoothadapter/bluetoothadapter.dart';
 import 'package:uuid/uuid.dart';
 
 class Softphone implements SipUaHelperListener {
@@ -53,7 +48,6 @@ class Softphone implements SipUaHelperListener {
   bool _settingupcallkeep = false;
   String couldGetAudioSession = "";
 
-  // late FlutterCallkeep _callKeep;
   Map<String?, Map<String, dynamic>> callData = {};
   List<Call> calls = [];
   Call? activeCall;
@@ -84,12 +78,9 @@ class Softphone implements SipUaHelperListener {
   String? bluetoothDeviceId = "";
 
   String? devicePhoneNumber = "";
-  //IncallManager incallManager = new IncallManager();
 
   bool assistedTransferInit = false;
-  // final Aps.AudioCache _audioCache = Aps.AudioCache(
-  //   fixedPlayer: Aps.AudioPlayer()..setPlayerMode(Aps.ReleaseMode.LOOP),
-  // );
+  
   final _outboundAudioPath = "audio/outgoing.wav";
   final _callWaitingAudioPath = "audio/call_waiting.mp3";
   final _inboundAudioPath = "audio/inbound.mp3";
@@ -102,7 +93,7 @@ class Softphone implements SipUaHelperListener {
   String btConnectionStatus = "NONE";
   String? btReceivedMessage;
   String? appVersion = "";
-  // List<BtDevice> devices = [];
+
   String? _savedLogin;
   late String _savedAor;
   String? _savedPassword;
@@ -117,34 +108,6 @@ class Softphone implements SipUaHelperListener {
       _android = MethodChannel('net.fusioncomm.android/calling');
       _telecom = MethodChannel('net.fusioncomm.android/telecom');
     }
-
-    // _audioCache.load(_outboundAudioPath);
-    // _audioCache.load(_inboundAudioPath);
-
-    _initBluetooth();
-  }
-
-  _initBluetooth() {
-    /*  flutterbluetoothadapter
-        .initBlutoothConnection(Uuid().toString());
-    flutterbluetoothadapter.initBlutoothConnection(Uuid().toString());
-    print("initing bluetooth");
-    flutterbluetoothadapter
-        .checkBluetooth()
-        .then((value) => print("bluetooth value: " + value.toString()));
-    _btConnectionStatusListener =
-        flutterbluetoothadapter.connectionStatus().listen((dynamic status) {
-      btConnectionStatus = status.toString();
-      _updateListeners();
-      print("bluetooth: " + btConnectionStatus + " : " + btReceivedMessage);
-    });
-    _btReceivedMessageListener =
-        flutterbluetoothadapter.receiveMessages().listen((dynamic newMessage) {
-      btReceivedMessage = newMessage.toString();
-      _updateListeners();
-      print("bluetooth msg: " + btConnectionStatus + " : " + btReceivedMessage);
-    });
-    flutterbluetoothadapter.startServer();*/
   }
 
   close() async {
@@ -196,10 +159,7 @@ class Softphone implements SipUaHelperListener {
             activeCall!.state != CallStateEnum.CONNECTING &&
             activeCall!.state != CallStateEnum.PROGRESS)) {
           _ringingInbound = true;
-          //flutter_audio_manager pkg is outdated need to see if we can trigger change to speaker
-          //form linphone instead, so we can get rid of it, to not mess too much with audio routing
-          //and let linphone handle it.
-          // FlutterAudioManager.changeToSpeaker();
+
           if (Platform.isIOS) {
             // I don't think we need this pkg, linphone triggers device default ringtone on android
             // and callkit should trigger it on ios too. need to test that
@@ -211,36 +171,11 @@ class Softphone implements SipUaHelperListener {
           }
         } else {
           _inboundPlayer = Aps.AudioPlayer();
-          // cache.loop(_callWaitingAudioPath).then((Aps.AudioPlayer playing) {
-          //   _inboundPlayer = playing;
-          //   _inboundPlayer.earpieceOrSpeakersToggle();
-          // });
         }
       } else if (path == _callWaitingAudioPath) {
-        _inboundPlayer = Aps.AudioPlayer();
-        // cache.loop(_callWaitingAudioPath).then((Aps.AudioPlayer playing) {
-        //   _inboundPlayer = playing;
-        //   _inboundPlayer.earpieceOrSpeakersToggle();
-        // });
+        _inboundPlayer = Aps.AudioPlayer();;
       }
     }
-  }
-
-  _attemptToRegainAudioSession() async {
-    return;
-    _attemptingToRegainAudio = true;
-    try {
-      await _callKit!.invokeMethod('attemptAudioSessionActive');
-    } on PlatformException catch (e) {
-      print("error callkit invoke attempt audio session");
-    }
-    var future = new Future.delayed(const Duration(milliseconds: 10000), () {
-      if (couldGetAudioSession != "") {
-        _attemptToRegainAudioSession();
-      } else {
-        _attemptingToRegainAudio = false;
-      }
-    });
   }
 
   stopOutbound() {
@@ -270,23 +205,7 @@ class Softphone implements SipUaHelperListener {
     if (Platform.isIOS)
       _setupCallKit();
     else if (Platform.isAndroid) {
-      // _callKeep = FlutterCallkeep();
-      // _setupCallKeep();
       _android?.setMethodCallHandler(_callKitHandler);
-
-      // FlutterPhoneState.rawPhoneEvents.forEach((element) {
-      //   print("rawphonevent");
-      //   print(element.type);
-      //   print(element);
-      //   if (element.type == RawEventType.connected &&
-      //       activeCall != null &&
-      //       !_blockingEvent) {
-      //     isCellPhoneCallActive = true;
-      //     activeCall.hold();
-      //   } else if (element.type == RawEventType.disconnected) {
-      //     isCellPhoneCallActive = false;
-      //   }
-      // });
     }
   }
 
@@ -307,56 +226,6 @@ class Softphone implements SipUaHelperListener {
   _setupCallKit() {
     _callKit!.setMethodCallHandler(_callKitHandler);
   }
-
-  // _setupCallKeep() {
-  //   _callKeep.on(
-  //       CallKeepDidDisplayIncomingCall(), _callKeepDidDisplayIncomingCall);
-  //   _callKeep.on(CallKeepPerformAnswerCallAction(), _callKeepAnswerCall);
-  //   _callKeep.on(CallKeepDidPerformDTMFAction(), _callKeepDTMFPerformed);
-  //   _callKeep.on(CallKeepDidToggleHoldAction(), _callKeepDidToggleHold);
-  //   _callKeep.on(
-  //       CallKeepDidPerformSetMutedCallAction(), _callKeepDidPerformSetMuted);
-  //   _callKeep.on(CallKeepPerformEndCallAction(), _callKeepPerformEndCall);
-  //   _callKeep.on(CallKeepPushKitToken(), _callKeepPushkitToken);
-
-  //   final callSetup = <String, dynamic>{
-  //     'ios': {
-  //       'appName': 'Fusion Mobile',
-  //     },
-  //     'android': {
-  //       'alertTitle': 'Permissions required',
-  //       'alertDescription':
-  //           'This application needs to access your phone accounts',
-  //       'cancelButton': 'Cancel',
-  //       'okButton': 'ok',
-  //       'foregroundService': {
-  //         'channelId': 'net.fusioncomm.android',
-  //         'channelName': 'Foreground service for my app',
-  //         'notificationTitle': 'My app is running on background',
-  //         'notificationIcon': 'Path to the resource icon of the notification',
-  //       },
-  //     },
-  //   };
-
-  //   if (!_settingupcallkeep) {
-  //     _settingupcallkeep = true;
-  //     _callKeep.setup(_context, callSetup);
-  //   }
-
-  //   if (Platform.isAndroid) {
-  //     //if (isIOS) iOS_Permission();
-  //     //_firebaseMessaging.requestNotificationPermissions();
-  //     print("audiofocusaddlistener");
-
-  //     FirebaseMessaging.instance.getToken().then((token) {
-  //       print('[FCM] token => ' + token!);
-  //     });
-
-  //     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-  //       RemoteNotification? notification = message.notification;
-  //     });
-  //   }
-  // }
 
   void _setLpCallState(LnCall call, CallStateEnum stateEnum) {
     print("setting state");

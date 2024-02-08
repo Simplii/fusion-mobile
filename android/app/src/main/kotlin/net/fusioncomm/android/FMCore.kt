@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package net.fusioncomm.android
 
 import android.content.Context
@@ -14,7 +16,6 @@ import io.flutter.plugin.common.MethodChannel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import net.fusioncomm.android.telecom.CallsManager
 import org.linphone.core.AVPFMode
 import org.linphone.core.AudioDevice
@@ -380,9 +381,9 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
     }
 
     //ToDo: implement stop core method
-    fun stop() {
-        Log.d(debugTag,"Stopping...")
-        coroutineScope.cancel()
+//    fun stop() {
+//        Log.d(debugTag,"Stopping...")
+//        coroutineScope.cancel()
 
 //        if (::phoneStateListener.isInitialized) {
 //            phoneStateListener.destroy()
@@ -397,12 +398,12 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
 //        val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
 //        audioManager.unregisterAudioDeviceCallback(audioDeviceCallback)
 
-        core.stop()
+//        core.stop()
 //        core.removeListener(MainActivity)
-        coreStarted = false
-        _lifecycleRegistry.currentState = Lifecycle.State.DESTROYED
+//        coreStarted = false
+//        _lifecycleRegistry.currentState = Lifecycle.State.DESTROYED
 //        loggingService.removeListener(loggingServiceListener)
 
 //        (context as Application).unregisterActivityLifecycleCallbacks(activityMonitor)
-    }
+//    }
 }

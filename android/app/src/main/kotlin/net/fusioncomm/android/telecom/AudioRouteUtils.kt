@@ -5,8 +5,8 @@ import net.fusioncomm.android.FMCore
 import org.linphone.core.AudioDevice
 import org.linphone.core.Call
 import org.linphone.core.tools.Log
-import org.linphone.mediastream.Version
 
+//Audio routing helper class for Linphone
 class AudioRouteUtils {
     companion object {
         private fun applyAudioRouteChange(
