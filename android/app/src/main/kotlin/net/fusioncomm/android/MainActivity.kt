@@ -22,34 +22,30 @@ import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugins.GeneratedPluginRegistrant
+import net.fusioncomm.android.telecom.CallsManager
 import org.linphone.core.*
 
 class MainActivity : FlutterFragmentActivity() {
     private val core: Core = FMCore.core
-    companion object {
-        var channel: MethodChannel = FusionMobileApplication.callingChannel
-    }
-    private var username: String = ""
-    private var password: String = ""
-    private var domain: String = ""
-    private var server: String = "services.fusioncom.co"
-
+    private val channel: MethodChannel = FusionMobileApplication.callingChannel
     private val versionName = BuildConfig.VERSION_NAME
     private var appOpenedFromBackground : Boolean = false
-
-    lateinit var audioManager:AudioManager
-    private lateinit var telephonyManager: TelephonyManager
+    private val callsManager: CallsManager = CallsManager.getInstance(this)
     private var myPhoneNumber:String = ""
+
+    private lateinit var audioManager:AudioManager
+    private lateinit var telephonyManager: TelephonyManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
         telephonyManager = getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
-
+        // Create Contacts Provider Channel
+        ContactsProvider(this)
         Log.d("MDBM ", "core started ${FMCore.coreStarted}")
         core.addListener(coreListener)
         checkPushIncomingCall()
 
-        audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
         Log.d("MDBM ", "MainActivity on create")
 
         val incomingCallId : String? = intent.getStringExtra("payload")
@@ -59,15 +55,15 @@ class MainActivity : FlutterFragmentActivity() {
         }
     }
 
-    override fun onStart() {
-        super.onStart()
-        phoneStateListener()
-    }
+//    override fun onStart() {
+//        super.onStart()
+////        phoneStateListener()
+//    }
 
-    override fun onPause() {
-        super.onPause()
-        phoneStateListener()
-    }
+//    override fun onPause() {
+//        super.onPause()
+////        phoneStateListener()
+//    }
 
     override fun onResume() {
         super.onResume()
@@ -86,7 +82,7 @@ class MainActivity : FlutterFragmentActivity() {
 
         if(!activeCalls.isEmpty()){
             for (call in activeCalls){
-                val uuid: String = FMCore.findUuidByCall(call)
+                val uuid: String = callsManager.findUuidByCall(call)
                 Log.d("MDBM CallState", "${Call.State.fromInt(call.state.ordinal)}")
                 if(call.state == Call.State.IncomingReceived){
                     channel.invokeMethod(
@@ -209,7 +205,7 @@ class MainActivity : FlutterFragmentActivity() {
             message: String
         ) {
             Log.d("MDBM", "callLogID  ${call.callLog.callId}")
-            val uuid = FMCore.findUuidByCall(call)
+            val uuid = callsManager.findUuidByCall(call)
 
             when (state) {
                 Call.State.Idle -> {
@@ -219,6 +215,11 @@ class MainActivity : FlutterFragmentActivity() {
                     )
                 }
                 Call.State.IncomingReceived -> {
+                    callsManager.incomingCall(
+                        call.callLog.callId,
+                        "8018976133",
+                        FMUtils.getDisplayName(call.remoteAddress)
+                    )
                     audioManager.mode = AudioManager.MODE_NORMAL
                     audioManager.isSpeakerphoneOn = true
                     channel.invokeMethod(
@@ -247,7 +248,7 @@ class MainActivity : FlutterFragmentActivity() {
                 Call.State.OutgoingProgress -> {
                     audioManager.mode = AudioManager.MODE_IN_COMMUNICATION
                     audioManager.isSpeakerphoneOn = false
-                    FMCore.uuidCalls[uuid] = call
+                    CallsManager.uuidCalls[uuid] = call
                     channel.invokeMethod(
                         "lnOutgoingInit",
                         mapOf(
@@ -379,75 +380,70 @@ class MainActivity : FlutterFragmentActivity() {
 
     }
 
-    private fun handleCallStateChange(state: Int){
-        when (state){
-            TelephonyManager.CALL_STATE_OFFHOOK -> {
-                channel.invokeMethod("setPhoneState",
-                    mapOf(Pair("onCellPhoneCall", true)))
-                val calls : Array<Call> = core.calls
-                for(call in calls){
-                    call.pause()
-                }
-                Log.d("phoneStateListener",
-                    "Busy: At least one call exists that is dialing, active, or on hold, " +
-                            "and no calls are ringing or waiting")
-            }
-            TelephonyManager.CALL_STATE_IDLE ->{
-                channel.invokeMethod("setPhoneState",
-                    mapOf(Pair("onCellPhoneCall", false)))
-                Log.d("phoneStateListener",
-                    "Not Available:: Neither Ringing nor in a Call")
-            }
-            else -> Log.d("phoneStateListener", "callState $state")
-        }
-    }
+//    private fun handleCallStateChange(state: Int){
+//        when (state){
+//            TelephonyManager.CALL_STATE_OFFHOOK -> {
+//                channel.invokeMethod("setPhoneState",
+//                    mapOf(Pair("onCellPhoneCall", true)))
+//                val calls : Array<Call> = core.calls
+//                for(call in calls){
+//                    call.pause()
+//                }
+//                Log.d("phoneStateListener",
+//                    "Busy: At least one call exists that is dialing, active, or on hold, " +
+//                            "and no calls are ringing or waiting")
+//            }
+//            TelephonyManager.CALL_STATE_IDLE ->{
+//                channel.invokeMethod("setPhoneState",
+//                    mapOf(Pair("onCellPhoneCall", false)))
+//                Log.d("phoneStateListener",
+//                    "Not Available:: Neither Ringing nor in a Call")
+//            }
+//            else -> Log.d("phoneStateListener", "callState $state")
+//        }
+//    }
 
-    @SuppressLint("HardwareIds")
-    private fun phoneStateListener() {
-        Log.d("phoneStateListener","starting phone state listener")
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            Log.d("phoneStateListener","android >= 12")
-            val permission = ContextCompat.checkSelfPermission(this,
-                    Manifest.permission.READ_PHONE_STATE)
-
-            if (permission == PackageManager.PERMISSION_GRANTED){
-                telephonyManager =
-                        getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
-                myPhoneNumber = if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-                        packageManager.hasSystemFeature(FEATURE_TELEPHONY_SUBSCRIPTION)){
-                    val subscriptionManager: SubscriptionManager =
-                            getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE) as SubscriptionManager
-//                    Log.d("MBDM", "${subscriptionManager.getPhoneNumber(DEFAULT_SUBSCRIPTION_ID)}")
-                    subscriptionManager.getPhoneNumber(DEFAULT_SUBSCRIPTION_ID)
-                } else {
-                    telephonyManager.line1Number ?: ""
-                }
-
-                telephonyManager.registerTelephonyCallback(
-                        mainExecutor,
-                        object : TelephonyCallback(), TelephonyCallback.CallStateListener {
-                            override fun onCallStateChanged(state: Int) {
-                                handleCallStateChange(state)
-                            }
-                        })
-            }
-
-        } else {
-            Log.d("phoneStateListener","android < 12")
-            telephonyManager =
-                    getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
-            val callStateListener: PhoneStateListener = object : PhoneStateListener() {
-                @Deprecated("Deprecated in Java")
-                override fun onCallStateChanged(state: Int, incomingNumber: String?) {
-                    handleCallStateChange(state)
-                }
-            }
-            // stopping old listener
-            telephonyManager.listen(callStateListener, PhoneStateListener.LISTEN_NONE)
-            // starting new listener
-            telephonyManager.listen(callStateListener, PhoneStateListener.LISTEN_CALL_STATE)
-        }
-    }
+//    private fun phoneStateListener() {
+//        Log.d("phoneStateListener","starting phone state listener")
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+//            Log.d("phoneStateListener","android >= 12")
+//            val permission = ContextCompat.checkSelfPermission(this,
+//                    Manifest.permission.READ_PHONE_STATE)
+//
+//            if (permission == PackageManager.PERMISSION_GRANTED){
+//                myPhoneNumber = if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+//                        packageManager.hasSystemFeature(FEATURE_TELEPHONY_SUBSCRIPTION)){
+//                    val subscriptionManager: SubscriptionManager =
+//                            getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE) as SubscriptionManager
+////                    Log.d("MBDM", "${subscriptionManager.getPhoneNumber(DEFAULT_SUBSCRIPTION_ID)}")
+//                    subscriptionManager.getPhoneNumber(DEFAULT_SUBSCRIPTION_ID)
+//                } else {
+//                    telephonyManager.line1Number ?: ""
+//                }
+//
+//                telephonyManager.registerTelephonyCallback(
+//                        mainExecutor,
+//                        object : TelephonyCallback(), TelephonyCallback.CallStateListener {
+//                            override fun onCallStateChanged(state: Int) {
+//                                handleCallStateChange(state)
+//                            }
+//                        })
+//            }
+//
+//        } else {
+//            Log.d("phoneStateListener","android < 12")
+//            val callStateListener: PhoneStateListener = object : PhoneStateListener() {
+//                @Deprecated("Deprecated in Java")
+//                override fun onCallStateChanged(state: Int, incomingNumber: String?) {
+//                    handleCallStateChange(state)
+//                }
+//            }
+//            // stopping old listener
+//            telephonyManager.listen(callStateListener, PhoneStateListener.LISTEN_NONE)
+//            // starting new listener
+//            telephonyManager.listen(callStateListener, PhoneStateListener.LISTEN_CALL_STATE)
+//        }
+//    }
 
     private fun sendDevices() {
         var devicesList: Array<Array<String>> = arrayOf()

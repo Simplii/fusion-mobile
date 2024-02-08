@@ -7,67 +7,61 @@ import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
 import android.util.Log
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LifecycleRegistry
 import io.flutter.plugin.common.MethodChannel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import net.fusioncomm.android.telecom.CallsManager
 import org.linphone.core.AVPFMode
 import org.linphone.core.AudioDevice
 import org.linphone.core.AuthInfo
-import org.linphone.core.Call
 import org.linphone.core.Core
 import org.linphone.core.Factory
-import org.linphone.core.MediaEncryption
 import org.linphone.core.ProxyConfig
 import org.linphone.core.TransportType
-import java.math.BigInteger
-import java.security.MessageDigest
 
-class FMCore(private val context: Context, private val channel:MethodChannel) {
 
-    private val DebugTag = "MDBM FMCORE"
+class FMCore(private val context: Context, private val channel:MethodChannel): LifecycleOwner {
+
+    private val _lifecycleRegistry = LifecycleRegistry(this)
+    override val lifecycle: Lifecycle
+        get() = _lifecycleRegistry
+
     private val factory: Factory = Factory.instance()
     private val server: String = "services.fusioncom.co"
     private val audioManager:AudioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-
+    private var callsManager: CallsManager
+    private val coroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     companion object{
+        private const val debugTag = "MDBM FMCore"
         lateinit var core:Core
-        var coreStarted = false
-        var uuidCalls: MutableMap<String, Call> = mutableMapOf()
+        var coreStarted: Boolean = false
 
-        private fun findCallByUuid(uuid: String): Call? {
-            return uuidCalls[uuid]
-        }
-
-
-        fun findUuidByCall(call: Call?): String {
-            if (call == null) return ""
-
-            val callId = call.callLog.callId
-            val md = MessageDigest.getInstance("MD5")
-            val md5 = BigInteger(1, md.digest(callId.toByteArray()))
-                .toString(16)
-                .padStart(32, '0')
-            var numbers: Array<String> = arrayOf()
-
-            for (i in 0..15) {
-                numbers = numbers.plusElement(md5[i].code.toString(16))
-            }
-
-            var r: String = numbers[0] + numbers[1] + numbers[2] + numbers[3] + "-"
-            r += numbers[4] + numbers[5] + "-"
-            r += numbers[6] + numbers[7] + "-"
-            r += numbers[8] + numbers[9] + "-"
-            r += numbers[10] + numbers[11] + numbers[12] + numbers[13] + numbers[14] + numbers[15]
-
-            uuidCalls[r] = call
-            return r
+        fun getApplicationName(appContext: Context): String {
+            val applicationInfo = appContext.applicationInfo
+            val stringId = applicationInfo.labelRes
+            return if (stringId == 0) applicationInfo.nonLocalizedLabel.toString()
+                else "Fusion Mobile"
         }
     }
 
 
     init {
+        _lifecycleRegistry.currentState = Lifecycle.State.INITIALIZED
+        Log.d(debugTag, "Init ${this.lifecycle.currentState}")
         setupCore()
         setFlutterActionsHandler()
         val started: Int = core.start()
         coreStarted = started == 0
+        if (coreStarted) {
+            _lifecycleRegistry.currentState = Lifecycle.State.STARTED
+        }
+        callsManager = CallsManager.getInstance(context)
+        Log.d(debugTag, "started ${this.lifecycle.currentState}")
     }
 
     private fun setupCore() {
@@ -110,17 +104,18 @@ class FMCore(private val context: Context, private val channel:MethodChannel) {
             core.isNativeRingingEnabled = true
         }
         core.config.setBool("audio", "android_pause_calls_when_audio_focus_lost", false)
+        _lifecycleRegistry.currentState = Lifecycle.State.CREATED
     }
 
-    private fun outgoingCall(destination: String) {
-        val remoteAddress = core.interpretUrl(destination)
-        val params = core.createCallParams(null)
-        if (remoteAddress != null && params != null) {
-            params.mediaEncryption = MediaEncryption.None
-            params.enableVideo(false)
-            core.inviteAddressWithParams(remoteAddress, params)
-        }
-    }
+//    private fun outgoingCall(destination: String) {
+//        val remoteAddress = core.interpretUrl(destination)
+//        val params = core.createCallParams(null)
+//        if (remoteAddress != null && params != null) {
+//            params.mediaEncryption = MediaEncryption.None
+//            params.enableVideo(false)
+//            core.inviteAddressWithParams(remoteAddress, params)
+//        }
+//    }
 
     private fun unregister() {
         val account = core.defaultAccount
@@ -152,16 +147,16 @@ class FMCore(private val context: Context, private val channel:MethodChannel) {
                 audioManager.isSpeakerphoneOn = false
             } else if (call.method == "lpAnswer") {
                 val args = call.arguments as List<*>
-                val lpCall = findCallByUuid(args[0] as String)
+                val lpCall = callsManager.findCallByUuid(args[0] as String)
                 Log.d("MDBM", "LpAnswer")
                 lpCall?.accept()
             } else if (call.method == "lpSendDtmf") {
                 val args = call.arguments as List<*>
-                val lpCall = findCallByUuid(args[0] as String)
+                val lpCall = callsManager.findCallByUuid(args[0] as String)
                 lpCall?.sendDtmfs(args[1] as String)
             } else if (call.method == "lpSetHold") {
                 val args = call.arguments as List<*>
-                val lpCall = findCallByUuid(args[0] as String)
+                val lpCall = callsManager.findCallByUuid(args[0] as String)
                 if (lpCall != null) {
                     if (!(args[1] as Boolean)) {
                         lpCall.resume()
@@ -169,17 +164,21 @@ class FMCore(private val context: Context, private val channel:MethodChannel) {
                         lpCall.pause()
                     }
                 }
+            } else if (call.method == "setUnhold") {
+                //this was missing not sure if it's needed
+//                val args = call.arguments as List<*>
+//                val lpCall = callsManager.findCallByUuid(args[0] as String)
+//                lpCall?.resume()
+                Log.d(debugTag, "setUnhold")
             } else if (call.method == "lpSetEchoCancellationEnabled") {
                 val args = call.arguments as List<*>
                 core.enableEchoCancellation(args[0] as Boolean)
-//                sendDevices()
             } else if (call.method == "lpCalibrateEcho") {
                 core.startEchoCancellerCalibration()
             } else if (call.method == "lpTestEcho") {
                 core.startEchoTester(10)
             } else if (call.method == "lpStopTestEcho") {
                 core.stopEchoTester()
-//                sendDevices()
             }
             else if (call.method == "lpSetDefaultInput") {
                 val args = call.arguments as List<*>
@@ -258,31 +257,32 @@ class FMCore(private val context: Context, private val channel:MethodChannel) {
 //                sendDevices()
             } else if (call.method == "lpMuteCall") {
                 val args = call.arguments as List<*>
-                val lpCall = findCallByUuid(args[0] as String)
+                val lpCall = callsManager.findCallByUuid(args[0] as String)
                 if (lpCall != null) {
                     lpCall.microphoneMuted = true
                 }
             } else if (call.method == "lpUnmuteCall") {
                 val args = call.arguments as List<*>
-                val lpCall = findCallByUuid(args[0] as String)
+                val lpCall = callsManager.findCallByUuid(args[0] as String)
                 if (lpCall != null) {
                     lpCall.microphoneMuted = false
                 }
             } else if (call.method == "lpRefer") {
                 val args = call.arguments as List<*>
-                val lpCall = findCallByUuid(args[0] as String)
+                val lpCall = callsManager.findCallByUuid(args[0] as String)
                 lpCall?.transfer(args[1] as String)
             } else if (call.method == "lpStartCall") {
                 val args = call.arguments as List<*>
-                outgoingCall(args[0] as String)
+                callsManager.outgoingCall(args[0] as String)
+//                outgoingCall(args[0] as String)
             } else if (call.method == "lpEndCall") {
                 val args = call.arguments as List<*>
-                val lpCall = findCallByUuid(args[0] as String)
+                val lpCall = callsManager.findCallByUuid(args[0] as String)
                 lpCall?.terminate()
             } else if (call.method == "lpAssistedTransfer") {
                 val args = call.arguments as List<*>
-                val lpCallToTransfer = findCallByUuid(args[0] as String)
-                val activeCall = findCallByUuid(args[1] as String)
+                val lpCallToTransfer = callsManager.findCallByUuid(args[0] as String)
+                val activeCall = callsManager.findCallByUuid(args[1] as String)
 
                 if(lpCallToTransfer != null && activeCall != null){
                     lpCallToTransfer.transferToAnother(activeCall)
@@ -297,7 +297,7 @@ class FMCore(private val context: Context, private val channel:MethodChannel) {
             } else if (call.method == "lpUnregister") {
                 unregister()
             } else {
-                Log.d(DebugTag,"setFlutterActionHandler call = $call")
+                Log.d(debugTag,"setFlutterActionHandler call = ${call.method}")
                 results.notImplemented()
             }
         }
@@ -379,5 +379,30 @@ class FMCore(private val context: Context, private val channel:MethodChannel) {
         return proxyConfig
     }
 
+    //ToDo: implement stop core method
+    fun stop() {
+        Log.d(debugTag,"Stopping...")
+        coroutineScope.cancel()
 
+//        if (::phoneStateListener.isInitialized) {
+//            phoneStateListener.destroy()
+//        }
+//        notificationsManager.destroy()
+//        if (CallsManager.exists()) {
+//            Log.i("[Context] Destroying telecom helper")
+//            TelecomHelper.get().destroy()
+//            TelecomHelper.destroy()
+//        }
+
+//        val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+//        audioManager.unregisterAudioDeviceCallback(audioDeviceCallback)
+
+        core.stop()
+//        core.removeListener(MainActivity)
+        coreStarted = false
+        _lifecycleRegistry.currentState = Lifecycle.State.DESTROYED
+//        loggingService.removeListener(loggingServiceListener)
+
+//        (context as Application).unregisterActivityLifecycleCallbacks(activityMonitor)
+    }
 }

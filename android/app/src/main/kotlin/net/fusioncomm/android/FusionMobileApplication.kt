@@ -9,33 +9,65 @@ import io.flutter.embedding.engine.dart.DartExecutor
 import io.flutter.plugin.common.MethodChannel
 
 class FusionMobileApplication : Application() {
+
     companion object {
+        private const val debugTag = "MDBM FMApplication"
+        lateinit var fmCore: FMCore
         lateinit var engine : FlutterEngine
         lateinit var callingChannel: MethodChannel
+
+        fun ensureCoreExists(
+            context: Context,
+            skipCoreStart: Boolean = false
+        ): Boolean {
+            // this func will return whether core was created not no
+
+            if (::fmCore.isInitialized && FMCore.coreStarted) {
+                Log.d( debugTag, "Skipping Core creation")
+                return false
+            }
+
+            Log.d(
+                "MDBM FMApplication",
+                "Core context is being created..."
+            )
+            fmCore = FMCore(
+                context,
+                callingChannel
+            )
+//            if (!skipCoreStart) {
+//                coreContext.start()
+//            }
+            return true
+        }
+
+        fun contextExists(): Boolean {
+            return ::fmCore.isInitialized
+        }
 
     }
     override fun onCreate() {
         super.onCreate()
-        Log.d("MDBM Application", "Application is being created")
+        Log.d(debugTag, "Application is being created")
+
         // Instantiate a FlutterEngine.
         engine = FlutterEngine(this)
+
         // Start executing Dart code to pre-warm the FlutterEngine.
         callingChannel = MethodChannel(
             engine.dartExecutor.binaryMessenger,
             "net.fusioncomm.android/calling"
         );
-        FMCore(applicationContext, callingChannel)
+
+        fmCore = FMCore(applicationContext, callingChannel)
+
         engine.dartExecutor.executeDartEntrypoint(
             DartExecutor.DartEntrypoint.createDefault()
         )
 
         FlutterEngineCache
             .getInstance()
-            .put("my_engine_id", engine)
+            .put("fusion_flutter_engine", engine)
 
-        // here we can initialize linphoneCore to make sure it is running if aap was launched
-        // form a service or activity
     }
-
-//    private fun set()
 }

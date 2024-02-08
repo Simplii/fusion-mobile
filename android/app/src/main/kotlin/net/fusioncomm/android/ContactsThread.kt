@@ -18,7 +18,7 @@ import java.io.IOException
 import java.io.InputStream
 
 @SuppressLint("Range")
-class ContactsThread constructor(private var channel: MethodChannel, private var contentResolver: ContentResolver): Thread() {
+class ContactsThread (private var channel: MethodChannel, private var contentResolver: ContentResolver): Thread() {
     private val gson = Gson();
     private val displayNameCol: String =
             if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)

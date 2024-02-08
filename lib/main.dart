@@ -256,6 +256,9 @@ class _MyHomePageState extends State<MyHomePage> {
       setState(() {});
     });
     _autoLogin();
+    // need to move _setupPermissions away from initState
+    // or will have error when dart execute in the background
+    // specially phone.request
     _setupPermissions();
 
     // final connector = createPushConnector();
