@@ -16,6 +16,7 @@ import io.flutter.plugin.common.MethodChannel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import net.fusioncomm.android.notifications.NotificationsManager
 import net.fusioncomm.android.telecom.CallsManager
 import org.linphone.core.AVPFMode
 import org.linphone.core.AudioDevice
@@ -35,12 +36,14 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
     private val factory: Factory = Factory.instance()
     private val server: String = "services.fusioncom.co"
     private val audioManager:AudioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-    private var callsManager: CallsManager
     private val coroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+
     companion object{
         private const val debugTag = "MDBM FMCore"
         lateinit var core:Core
         var coreStarted: Boolean = false
+        lateinit var callsManager: CallsManager
+        lateinit var notificationsManager: NotificationsManager
 
         fun getApplicationName(appContext: Context): String {
             val applicationInfo = appContext.applicationInfo
@@ -62,11 +65,13 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
             _lifecycleRegistry.currentState = Lifecycle.State.STARTED
         }
         callsManager = CallsManager.getInstance(context)
+        notificationsManager = NotificationsManager(context, callsManager)
+        notificationsManager.onCoreReady()
         Log.d(debugTag, "started ${this.lifecycle.currentState}")
     }
 
     private fun setupCore() {
-        Log.d("MDBM", "setup core")
+        Log.d(debugTag, "setup core")
         core = factory.createCore(null, null, context)
         core.enableIpv6(false)
         core.stunServer = "turn:$server"
@@ -149,7 +154,7 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
             } else if (call.method == "lpAnswer") {
                 val args = call.arguments as List<*>
                 val lpCall = callsManager.findCallByUuid(args[0] as String)
-                Log.d("MDBM", "LpAnswer")
+                Log.d(debugTag, "LpAnswer")
                 lpCall?.accept()
             } else if (call.method == "lpSendDtmf") {
                 val args = call.arguments as List<*>
@@ -294,6 +299,7 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
                 val username = args[0] as String
                 val password = args[1] as String
                 val domain = args[2] as String
+                // this is taking forever for different users
                 register(username,password,domain)
             } else if (call.method == "lpUnregister") {
                 unregister()
@@ -309,7 +315,7 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
         password:String,
         domain:String,
     ) {
-        Log.d("MDBM", "LPRegister FMCOre $username $password $domain ")
+        Log.d(debugTag, "LPRegister FMCOre $username $password $domain ")
         val transportType = TransportType.Tcp
         val authInfo =
             factory.createAuthInfo(

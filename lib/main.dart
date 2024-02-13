@@ -88,33 +88,33 @@ Future<dynamic> backgroundMessageHandler(RemoteMessage message) async {
   }
 
   if (data.containsKey("fusion_call") && data['fusion_call'] == "true") {
-    var callerName = data['caller_id'] as String;
-    var callerNumber = data['caller_number'] as String;
-    final callUUID = uuidFromString(data['call_id']);
-    var id = intIdForString(data['call_id']);
-    FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-        registerNotifications();
+    // var callerName = data['caller_id'] as String;
+    // var callerNumber = data['caller_number'] as String;
+    // final callUUID = uuidFromString(data['call_id']);
+    // var id = intIdForString(data['call_id']);
+    // FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    //     registerNotifications();
 
-    const AndroidNotificationDetails androidPlatformChannelSpecifics =
-        AndroidNotificationDetails('fusion', 'Fusion calls',
-            channelDescription: 'Fusion incoming calls',
-            importance: Importance.max,
-            fullScreenIntent: true,
-            priority: Priority.high,
-            ticker: 'ticker');
-    const NotificationDetails platformChannelSpecifics =
-        NotificationDetails(android: androidPlatformChannelSpecifics);
+    // const AndroidNotificationDetails androidPlatformChannelSpecifics =
+    //     AndroidNotificationDetails('fusion', 'Fusion calls',
+    //         channelDescription: 'Fusion incoming calls',
+    //         importance: Importance.max,
+    //         fullScreenIntent: true,
+    //         priority: Priority.high,
+    //         ticker: 'ticker');
+    // const NotificationDetails platformChannelSpecifics =
+    //     NotificationDetails(android: androidPlatformChannelSpecifics);
 
-    flutterLocalNotificationsPlugin.show(
-        id,
-        callerName,
-        callerNumber.formatPhone() + ' incoming phone call',
-        platformChannelSpecifics,
-        payload: callUUID.toString());
+    // flutterLocalNotificationsPlugin.show(
+    //     id,
+    //     callerName,
+    //     callerNumber.formatPhone() + ' incoming phone call',
+    //     platformChannelSpecifics,
+    //     payload: callUUID.toString());
 
-    var timer = Timer(Duration(seconds: 40), () {
-      flutterLocalNotificationsPlugin.cancel(id);
-    });
+    // var timer = Timer(Duration(seconds: 40), () {
+    //   flutterLocalNotificationsPlugin.cancel(id);
+    // });
   }
 }
 
@@ -250,11 +250,13 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   initState() {
     super.initState();
+
     receivedMsg = "";
     fusionConnection.onLogOut(_logOut);
     softphone.onUpdate(() {
       setState(() {});
     });
+    print("MDBM INITSTATE DART MAIN");
     _autoLogin();
     // need to move _setupPermissions away from initState
     // or will have error when dart execute in the background
@@ -536,8 +538,8 @@ class _MyHomePageState extends State<MyHomePage> {
             _logged_in = true;
             _isRegistering = true;
           });
-          await fusionConnection.autoLogin(username, domain);
           softphone.register(sub_login, auth_key, aor.replaceAll('sip:', ''));
+          await fusionConnection.autoLogin(username, domain);
           softphone.onUnregister(() {
             fusionConnection.nsApiCall('device', 'read', {
               'domain': fusionConnection.getDomain(),

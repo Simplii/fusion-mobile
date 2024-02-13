@@ -4,15 +4,21 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.pm.ServiceInfo
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.telecom.PhoneAccount
 import android.telecom.PhoneAccountHandle
 import android.telecom.TelecomManager
 import android.util.Log
 import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationCompat
 import net.fusioncomm.android.FMCore
+import net.fusioncomm.android.notifications.NotificationsManager
+import net.fusioncomm.android.services.FusionCallService
 import org.linphone.core.Call
 import org.linphone.core.CallParams
 import org.linphone.core.Core
@@ -135,7 +141,7 @@ class CallsManager(private val context: Context) {
         r += numbers[8] + numbers[9] + "-"
         r += numbers[10] + numbers[11] + numbers[12] + numbers[13] + numbers[14] + numbers[15]
 
-        uuidCalls[r] = call
+        uuidCalls.put(r, call)
         return r
     }
 

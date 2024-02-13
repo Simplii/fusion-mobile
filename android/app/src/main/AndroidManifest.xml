@@ -25,7 +25,6 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
 
@@ -41,6 +40,13 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+
+    <!-- Needed for Android 14 -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_PHONE_CALL" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
     <application
         android:name=".FusionMobileApplication"
@@ -107,11 +113,23 @@
             </intent-filter>
         </service>
 
+        <!-- Needed for Android 14 to keep mic active while app is in the background -->
         <service
+            android:name=".services.FusionCallService"
             android:enabled="true"
+            android:exported="true"
+            android:foregroundServiceType="microphone|phoneCall|camera"
+            android:stopWithTask="true" />
+
+        <service
             android:name=".FusionService"
             android:exported="false"
             android:stopWithTask="false" />
+
+        <receiver
+            android:name=".notifications.NotificationsBroadcastReceiver"
+            android:enabled="true"
+            android:exported="false" />
 
     </application>
 </manifest>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE resources [
+    <!ENTITY appName "Fusion Mobile">
+    ]>
+
+<resources>
+    <string name="notification_channel_call_service_id" translatable="false">fusion_mobile_notification_service_id</string>
+    <string name="notification_channel_call_service_name">&appName; call service notification</string>
+    <string name="notification_channel_missed_call_id" translatable="false">fusion_notification_missed_call_id</string>
+    <string name="notification_channel_incoming_call_id" translatable="false">fusion_notification_call_id</string>
+    <string name="notification_channel_missed_call_name">&appName; missed calls notifications</string>
+    <string name="notification_channel_incoming_call_name">&appName; incoming calls notifications</string>
+
+<!--    TODO: Chats Notifications -->
+<!--    <string name="notification_channel_chat_id" translatable="false">fusion_notification_chat_id</string>-->
+<!--    <string name="notification_channel_chat_name">&appName; instant messages notifications</string>-->
+</resources>

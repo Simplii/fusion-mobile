@@ -3,6 +3,8 @@ package net.fusioncomm.android.services
 import android.util.Log
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import net.fusioncomm.android.notifications.Contact
+import net.fusioncomm.android.notifications.NotificationsManager
 
 class FirebaseMessagingService : FirebaseMessagingService() {
     private val TAG = "MDBM FirebsaseMS"
@@ -25,8 +27,12 @@ class FirebaseMessagingService : FirebaseMessagingService() {
                 val callerNumber = remoteMessage.data["caller_number"] ?: ""
                 val callerName = remoteMessage.data["caller_id"] ?: "NoName"
                 val callerAvatar = remoteMessage.data["avatar"] ?: ""
-                val id = remoteMessage.data["call_id"] ?: ""
-                Log.d(TAG, "$callerNumber $callerName $callerAvatar $id")
+                val callId = remoteMessage.data["call_id"] ?: ""
+
+                val contact = Contact(callerName, callerNumber, callerAvatar)
+                NotificationsManager.contact = contact
+                NotificationsManager.incomingNotification = true
+                Log.d(TAG, "$callerNumber $callerName $callerAvatar $callId")
             }
         }
 
@@ -35,10 +41,5 @@ class FirebaseMessagingService : FirebaseMessagingService() {
         remoteMessage.notification?.let {
             Log.d(TAG, "Message Notification Body: ${it.body}")
         }
-    }
-
-    override fun onCreate() {
-        super.onCreate()
-        Log.d(TAG, "FirebaseMessaginfService created")
     }
 }

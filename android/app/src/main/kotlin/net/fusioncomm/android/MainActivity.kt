@@ -1,31 +1,23 @@
 package net.fusioncomm.android
 
-import android.Manifest
-import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
-import android.content.pm.PackageManager.FEATURE_TELEPHONY_SUBSCRIPTION
 import android.media.AudioManager
-import android.os.Build
 import android.os.Bundle
-import android.telephony.PhoneStateListener
-import android.telephony.SubscriptionManager
-import android.telephony.SubscriptionManager.DEFAULT_SUBSCRIPTION_ID
-import android.telephony.TelephonyCallback
 import android.telephony.TelephonyManager
 import android.util.Log
 import android.view.KeyEvent
-import androidx.core.content.ContextCompat
 import com.google.gson.Gson
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
-import io.flutter.plugins.GeneratedPluginRegistrant
+import net.fusioncomm.android.FusionMobileApplication.Companion.engine
 import net.fusioncomm.android.telecom.CallsManager
 import org.linphone.core.*
 
 class MainActivity : FlutterFragmentActivity() {
+    private val debugTag = "MDBM MainActivity"
+
     private val core: Core = FMCore.core
     private val channel: MethodChannel = FusionMobileApplication.callingChannel
     private val versionName = BuildConfig.VERSION_NAME
@@ -42,11 +34,11 @@ class MainActivity : FlutterFragmentActivity() {
         telephonyManager = getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
         // Create Contacts Provider Channel
         ContactsProvider(this)
-        Log.d("MDBM ", "core started ${FMCore.coreStarted}")
+        Log.d(debugTag, "core started ${FMCore.coreStarted}")
         core.addListener(coreListener)
         checkPushIncomingCall()
 
-        Log.d("MDBM ", "MainActivity on create")
+        Log.d(debugTag, "MainActivity on create")
 
         val incomingCallId : String? = intent.getStringExtra("payload")
         if(incomingCallId != null){
@@ -73,7 +65,7 @@ class MainActivity : FlutterFragmentActivity() {
         if(!activeCalls.isEmpty()){
             for (call in activeCalls){
                 val uuid: String = callsManager.findUuidByCall(call)
-                Log.d("MDBM CallState", "${Call.State.fromInt(call.state.ordinal)}")
+                Log.d(debugTag, "call state = ${Call.State.fromInt(call.state.ordinal)}")
                 if(call.state == Call.State.IncomingReceived){
                     channel.invokeMethod(
                         "lnIncomingReceived",
@@ -194,7 +186,7 @@ class MainActivity : FlutterFragmentActivity() {
             state: Call.State?,
             message: String
         ) {
-            Log.d("MDBM", "callLogID  ${call.callLog.callId}")
+            Log.d(debugTag, "callLogID  ${call.callLog.callId}")
             val uuid = callsManager.findUuidByCall(call)
 
             when (state) {
@@ -407,7 +399,6 @@ class MainActivity : FlutterFragmentActivity() {
     }
 
     override fun provideFlutterEngine(context: Context): FlutterEngine? {
-        GeneratedPluginRegistrant.registerWith(FusionMobileApplication.engine);
-        return FusionMobileApplication.engine
+        return engine
     }
 }

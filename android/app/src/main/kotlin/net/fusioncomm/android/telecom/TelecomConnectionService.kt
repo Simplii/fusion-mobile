@@ -142,7 +142,6 @@ class TelecomConnectionService : ConnectionService() {
         Log.d( debugTag,"Address is $providedHandle")
 
         CallsManager.connections.add(connection)
-
         return  connection
     }
 
