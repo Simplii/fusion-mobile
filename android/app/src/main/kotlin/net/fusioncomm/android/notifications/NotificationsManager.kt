@@ -137,6 +137,13 @@ class NotificationsManager(private val context: Context, private val callsManage
             Log.d(debugTag," Call state changed [$state]")
             when (call.state) {
                 Call.State.IncomingEarlyMedia, Call.State.IncomingReceived -> {
+                    if(call != null && call.callLog.callId != null){
+                        callsManager.incomingCall(
+                            call.callLog.callId,
+                            contact?.number ?: "",
+                            contact?.name ?: "Unknown"
+                        )
+                    }
                     Log.d(debugTag, "incoming received")
                     if(!FMCore.core.isInBackground) return
                     // wait for the notification info to display fusion contact info
@@ -248,9 +255,19 @@ class NotificationsManager(private val context: Context, private val callsManage
             ) != PackageManager.PERMISSION_GRANTED) {
                 Log.e(debugTag, "missing POST_NOTIFICATIONS")
                 return
+            } else if (ActivityCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.READ_PHONE_STATE
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                Log.e(debugTag, "missing READ_PHONE_STATE")
+                return
             }
-            notify(notifiable.notificationId, notification!!)
-            Log.d(debugTag, "notified")
+            if(!callsManager.telecomManager.isInManagedCall){
+                notify(notifiable.notificationId, notification!!)
+                Log.d(debugTag, "notified")
+            }
+            Log.d(debugTag, "skipping call notification... ${callsManager.telecomManager.isInManagedCall}")
         }
     }
 

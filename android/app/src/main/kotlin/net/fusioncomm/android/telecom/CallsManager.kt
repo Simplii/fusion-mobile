@@ -28,7 +28,7 @@ import java.security.MessageDigest
 
 class CallsManager(private val context: Context) {
     private val debugTag = "MDBM CallsManager"
-    private val telecomManager: TelecomManager = context.getSystemService(Context.TELECOM_SERVICE) as TelecomManager
+    val telecomManager: TelecomManager = context.getSystemService(Context.TELECOM_SERVICE) as TelecomManager
     private val core: Core = FMCore.core
     private val phoneAccount:PhoneAccount
     private val phoneAccountHandle: PhoneAccountHandle

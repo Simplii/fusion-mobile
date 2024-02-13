@@ -47,7 +47,7 @@ class TelecomConnectionService : ConnectionService() {
 
         val accountHandle = request?.accountHandle
         val componentName = ComponentName(applicationContext, this.javaClass)
-        return if (accountHandle != null && componentName == accountHandle.componentName) {
+        return if (accountHandle != null && componentName == accountHandle.componentName && request != null) {
             makeOutgoingCall(request)
         } else {
             Log.d(debugTag,"Error: $accountHandle $componentName")
@@ -66,14 +66,14 @@ class TelecomConnectionService : ConnectionService() {
         connectionManagerPhoneAccount: PhoneAccountHandle?,
         request: ConnectionRequest?
     ): Connection {
-        Log.d(debugTag, "onCreateOutgoingConnection")
+        Log.d(debugTag, "onCreateIncomingConnection $request ${request?.address}")
         if (FMCore.core.callsNb == 0) {
-            Log.d(debugTag,"No call in Core, aborting outgoing connection!")
+            Log.d(debugTag,"No call in Core, aborting outgoing connection! ")
             return Connection.createCanceledConnection()
         }
         val accountHandle = request?.accountHandle
         val componentName = ComponentName(applicationContext, this.javaClass)
-        return if (accountHandle != null && componentName == accountHandle.componentName) {
+        return if (accountHandle != null && componentName == accountHandle.componentName && request != null) {
             makeIncomingConnection(request)
         } else {
             Log.d(debugTag,"Error: $accountHandle $componentName")
@@ -90,7 +90,7 @@ class TelecomConnectionService : ConnectionService() {
 
     private fun makeOutgoingCall(request: ConnectionRequest): Connection {
         val extras: Bundle = request.extras
-        val number: String = request.address.schemeSpecificPart
+        val number: String = request?.address?.schemeSpecificPart ?: "Unknown"
 //        val extrasNumber: String = extras.getString(CallsManager.EXTRA_CALL_NUMBER) ?: "Unknown"
         val displayName:String = extras.getString(CallsManager.EXTRA_CALLER_NAME) ?: number
         var callId = extras.getString(CallsManager.EXTRA_CALL_UUID)
@@ -145,9 +145,9 @@ class TelecomConnectionService : ConnectionService() {
         return  connection
     }
 
-    private fun makeIncomingConnection(request: ConnectionRequest): Connection {
-        val extras: Bundle = request.extras
-        val number: String = request.address.schemeSpecificPart
+    private fun makeIncomingConnection(request: ConnectionRequest?): Connection {
+        val extras: Bundle = request!!.extras
+        val number: String = request?.address?.schemeSpecificPart ?: "Unknown"
         val displayName: String = extras.getString(CallsManager.EXTRA_CALLER_NAME) ?: number
         var callId = extras.getString(CallsManager.EXTRA_CALL_UUID)
 

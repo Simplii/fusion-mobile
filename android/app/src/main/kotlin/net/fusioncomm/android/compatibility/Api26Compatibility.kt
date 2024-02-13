@@ -5,7 +5,11 @@ import android.app.*
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.media.AudioAttributes
+import android.media.AudioManager
+import android.media.RingtoneManager
 import android.util.Log
+import android.view.WindowManager
 import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -70,12 +74,21 @@ class Api26Compatibility {
             val id = context.getString(R.string.notification_channel_incoming_call_id)
             val name = context.getString(R.string.notification_channel_incoming_call_name)
             val description = context.getString(R.string.notification_channel_incoming_call_name)
+//            val audio :AudioAttributes = AudioAttributes.Builder()
+//                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+//                .setLegacyStreamType(AudioManager.STREAM_RING)
+//                .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
+//                .build()
             val channel = NotificationChannel(id, name, NotificationManager.IMPORTANCE_HIGH)
             channel.description = description
             channel.lightColor = context.getColor(R.color.notification_led_color)
             channel.enableVibration(true)
             channel.enableLights(true)
             channel.setShowBadge(true)
+//            channel.setSound(
+//                RingtoneManager.getActualDefaultRingtoneUri(context, RingtoneManager.TYPE_RINGTONE),
+//                audio
+//            )
             notificationManager.createNotificationChannel(channel)
             Log.d("MDBM API26", "incoming channel created")
         }
@@ -130,7 +143,7 @@ class Api26Compatibility {
                 )
                 .setStyle(NotificationCompat.DecoratedCustomViewStyle())
                 .addPerson(p)
-                .setSmallIcon(R.drawable.app_icon_background)
+                .setSmallIcon(R.drawable.phone_filled_white)
                 .setContentTitle(displayName)
                 .setContentText(notificationTitle)
                 .setCategory(NotificationCompat.CATEGORY_CALL)
@@ -140,7 +153,7 @@ class Api26Compatibility {
                 .setAutoCancel(false)
                 .setShowWhen(true)
                 .setOngoing(true)
-                .setColor(ContextCompat.getColor(context, R.color.common_google_signin_btn_text_dark))
+                .setColor(ContextCompat.getColor(context, R.color.notification_led_color))
                 .setFullScreenIntent(pendingIntent, true)
                 .addAction(notificationsManager.getCallDeclineAction(notifiable))
                 .addAction(notificationsManager.getCallAnswerAction(notifiable))
@@ -191,7 +204,7 @@ class Api26Compatibility {
                     )
                     .setContentTitle(title)
                     .setContentText("ongoing call")
-                    .setSmallIcon(R.drawable.app_icon_background)
+                    .setSmallIcon(R.drawable.phone_filled_white)
                     .setLargeIcon(icon)
                     .addPerson(person)
                     .setAutoCancel(false)

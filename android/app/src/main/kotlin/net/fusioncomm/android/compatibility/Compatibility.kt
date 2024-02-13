@@ -1,5 +1,6 @@
 package net.fusioncomm.android.compatibility
 
+import android.app.Activity
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.PendingIntent
@@ -92,6 +93,31 @@ class Compatibility {
                 contact
             )
         }
+
+        fun setShowWhenLocked(activity: Activity, enable: Boolean) {
+            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.O_MR1) {
+                Api23Compatibility.setShowWhenLocked(activity, enable)
+            } else {
+                Api27Compatibility.setShowWhenLocked(activity, enable)
+            }
+        }
+
+        fun setTurnScreenOn(activity: Activity, enable: Boolean) {
+            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.O_MR1) {
+                Api23Compatibility.setTurnScreenOn(activity, enable)
+            } else {
+                Api27Compatibility.setTurnScreenOn(activity, enable)
+            }
+        }
+
+        fun requestDismissKeyguard(activity: Activity) {
+            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.O_MR1) {
+                Api23Compatibility.requestDismissKeyguard(activity)
+            } else {
+                Api27Compatibility.requestDismissKeyguard(activity)
+            }
+        }
+
 
     }
 }

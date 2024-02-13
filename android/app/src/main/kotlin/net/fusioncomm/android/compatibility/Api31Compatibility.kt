@@ -64,7 +64,7 @@ class Api31Compatibility {
 
             val builder = NotificationCompat.Builder(context, context.getString(R.string.notification_channel_incoming_call_id))
                 .setContentIntent(pendingIntent)
-                .setSmallIcon(R.drawable.app_icon_background)
+                .setSmallIcon(R.drawable.phone_filled_white)
                 .setCategory(NotificationCompat.CATEGORY_CALL)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setWhen(System.currentTimeMillis())
@@ -119,7 +119,7 @@ class Api31Compatibility {
                 .setFullScreenIntent(pendingIntent, false)
                 .setCategory(NotificationCompat.CATEGORY_CALL)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                .setSmallIcon(R.drawable.app_icon_background)
+                .setSmallIcon(R.drawable.phone_filled_white)
                 .setAutoCancel(false)
                 .setWhen(System.currentTimeMillis())
                 .setShowWhen(true)

@@ -1,8 +1,10 @@
 package net.fusioncomm.android
 
+import android.app.KeyguardManager
 import android.content.Context
 import android.content.Intent
 import android.media.AudioManager
+import android.os.Build
 import android.os.Bundle
 import android.telephony.TelephonyManager
 import android.util.Log
@@ -12,6 +14,7 @@ import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import net.fusioncomm.android.FusionMobileApplication.Companion.engine
+import net.fusioncomm.android.compatibility.Compatibility
 import net.fusioncomm.android.telecom.CallsManager
 import org.linphone.core.*
 
@@ -29,7 +32,13 @@ class MainActivity : FlutterFragmentActivity() {
     private lateinit var telephonyManager: TelephonyManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            Compatibility.setShowWhenLocked(this, true)
+            Compatibility.setTurnScreenOn(this, true)
+            Compatibility.requestDismissKeyguard(this)
+        }
         super.onCreate(savedInstanceState)
+
         audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
         telephonyManager = getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
         // Create Contacts Provider Channel
@@ -198,7 +207,7 @@ class MainActivity : FlutterFragmentActivity() {
                 }
                 Call.State.IncomingReceived -> {
                     callsManager.incomingCall(
-                        call.callLog.callId,
+                        call.callLog.callId.orEmpty(),
                         "8018976133",
                         FMUtils.getDisplayName(call.remoteAddress)
                     )

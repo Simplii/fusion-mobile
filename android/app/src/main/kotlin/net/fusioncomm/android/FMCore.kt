@@ -113,16 +113,6 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
         _lifecycleRegistry.currentState = Lifecycle.State.CREATED
     }
 
-//    private fun outgoingCall(destination: String) {
-//        val remoteAddress = core.interpretUrl(destination)
-//        val params = core.createCallParams(null)
-//        if (remoteAddress != null && params != null) {
-//            params.mediaEncryption = MediaEncryption.None
-//            params.enableVideo(false)
-//            core.inviteAddressWithParams(remoteAddress, params)
-//        }
-//    }
-
     private fun unregister() {
         val account = core.defaultAccount
         account ?: return
