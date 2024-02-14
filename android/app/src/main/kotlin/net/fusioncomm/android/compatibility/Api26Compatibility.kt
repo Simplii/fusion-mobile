@@ -99,14 +99,14 @@ class Api26Compatibility {
             notifiable: Notifiable,
             pendingIntent: PendingIntent,
             notificationsManager: NotificationsManager,
-            contact: Contact?
         ) : Notification {
             val notificationLayoutHeadsUp = RemoteViews(
                 context.packageName,
                 R.layout.incoming_call_notification
             )
-            val cleanSip :String = notifiable.remoteAddress?.replace("sip:", "") ?: ""
+            val cleanSip :String = call.remoteAddress.asStringUriOnly().replace("sip:", "")
             val callerNumber = cleanSip.substring(0,cleanSip.indexOf("@"))
+            val contact:Contact? = NotificationsManager.contacts[callerNumber]
 
             val displayName: String = contact?.name ?: callerNumber
             val number = contact?.number
@@ -168,10 +168,10 @@ class Api26Compatibility {
             notifiable: Notifiable,
             pendingIntent: PendingIntent,
             notificationsManager: NotificationsManager,
-            contact: Contact?
         ) : Notification{
-            val cleanSip :String = notifiable.remoteAddress?.replace("sip:", "") ?: ""
+            val cleanSip :String = call.remoteAddress.asStringUriOnly().replace("sip:", "")
             val callerNumber = cleanSip.substring(0,cleanSip.indexOf("@"))
+            val contact:Contact? = NotificationsManager.contacts[callerNumber]
 
             val callerAvatar: String = contact?.avatar ?: ""
             val title= contact?.name ?: callerNumber

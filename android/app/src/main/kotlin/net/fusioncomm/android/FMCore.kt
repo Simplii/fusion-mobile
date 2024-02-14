@@ -3,6 +3,7 @@
 package net.fusioncomm.android
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.media.AudioDeviceInfo
 import android.media.AudioManager
 import android.media.RingtoneManager
@@ -36,7 +37,10 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
     private val factory: Factory = Factory.instance()
     private val server: String = "services.fusioncom.co"
     private val audioManager:AudioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-    private val coroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+    private val sharedPref:SharedPreferences = context.getSharedPreferences(
+        "net.fusioncomm.android.fusionValues",
+        Context.MODE_PRIVATE
+    )
 
     companion object{
         private const val debugTag = "MDBM FMCore"
@@ -63,6 +67,12 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
         coreStarted = started == 0
         if (coreStarted) {
             _lifecycleRegistry.currentState = Lifecycle.State.STARTED
+        }
+        val username: String? = sharedPref.getString("username", "")
+        val domain:String? = sharedPref.getString("domain", "")
+        val password:String? = sharedPref.getString("password", "")
+        if(!username.isNullOrEmpty() && !password.isNullOrEmpty() && !domain.isNullOrEmpty() ){
+            register(username, password, domain)
         }
         callsManager = CallsManager.getInstance(context)
         notificationsManager = NotificationsManager(context, callsManager)
@@ -122,6 +132,7 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
         clonedParams.registerEnabled = false
 
         account.params = clonedParams
+        sharedPref.edit().clear().commit()
 //        finishAndRemoveTask()
     }
 
@@ -289,9 +300,26 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
                 val username = args[0] as String
                 val password = args[1] as String
                 val domain = args[2] as String
-                // this is taking forever for different users
-                register(username,password,domain)
+
+                if (sharedPref.getString("username", null) == null ||
+                    sharedPref.getString("password", null) == null ||
+                    sharedPref.getString("domain", null) == null) {
+
+                    with (sharedPref.edit()) {
+                        putString("username", username)
+                        putString("password", password)
+                        putString("domain", domain)
+                        apply()
+                    }
+                    // first time user registration
+                    register(username,password,domain)
+                } else {
+                    // returned user
+                    Log.d(debugTag, "Linphone should be registered from sharedpref")
+                }
             } else if (call.method == "lpUnregister") {
+                //this is not being hit from flutter
+                Log.d(debugTag, "lpUnregister")
                 unregister()
             } else {
                 Log.d(debugTag,"setFlutterActionHandler call = ${call.method}")

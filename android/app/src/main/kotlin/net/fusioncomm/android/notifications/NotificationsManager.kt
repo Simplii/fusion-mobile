@@ -11,10 +11,12 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.os.Build
+import android.os.Bundle
 import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.app.ServiceCompat
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
@@ -35,7 +37,7 @@ class Notifiable(val notificationId: Int) {
     var remoteAddress: String? = null
     var uuid: String? = null
 
-//        TODO Chat Notification to be able to replay from notification
+//    TODO Chat Notification to be able to replay from notification
 //    val messages: ArrayList<NotifiableMessage> = arrayListOf()
 //
 //    var isGroup: Boolean = false
@@ -62,15 +64,17 @@ class Notifiable(val notificationId: Int) {
 class NotificationsManager(private val context: Context, private val callsManager: CallsManager) {
 
     private val debugTag = "MDBM NotificationManager"
+    private val callNotificationsMap: HashMap<String, Notifiable> = HashMap()
     private val notificationManager: NotificationManagerCompat by lazy {
         NotificationManagerCompat.from(context)
     }
-    private val callNotificationsMap: HashMap<String, Notifiable> = HashMap()
-
     private val scope = MainScope()
     private var job: Job? = null
 
     companion object {
+        val activeNotification : HashMap<Int, Notification> = HashMap()
+        var contacts : HashMap<String, Contact> = HashMap()
+
         var callService: FusionCallService? = null
         const val INTENT_NOTIF_ID = "NOTIFICATION_ID"
         const val INTENT_REPLY_NOTIF_ACTION = "fusion.REPLY_ACTION"
@@ -86,18 +90,16 @@ class NotificationsManager(private val context: Context, private val callsManage
 //        const val CHAT_NOTIFICATIONS_GROUP = "CHAT_NOTIF_GROUP"
 //        const val KEY_TEXT_REPLY = "key_text_reply"
 
-        var notification:Notification? = null
-
         fun onCallServiceStart (service: FusionCallService) {
             callService = service
         }
 
-        fun onCallServiceDestroied () {
+        fun onCallServiceDestroyed () {
             callService = null
         }
 
-        var contact: Contact? = null
         var incomingNotification: Boolean = false
+        var callServiceStartedFormBR :Boolean = false
     }
 
     init {
@@ -140,13 +142,17 @@ class NotificationsManager(private val context: Context, private val callsManage
                     if(call != null && call.callLog.callId != null){
                         callsManager.incomingCall(
                             call.callLog.callId,
-                            contact?.number ?: "",
-                            contact?.name ?: "Unknown"
+                             "",
+                             "Unknown"
                         )
                     }
                     Log.d(debugTag, "incoming received")
                     if(!FMCore.core.isInBackground) return
-                    // wait for the notification info to display fusion contact info
+                    /*
+                    TODO:: for now we are waiting for the notification info to display fusion
+                     contact info, this is an ugly work around, planning to get the contact info
+                     from the device instead
+                     */
                     stopUpdates()
                     job = scope.launch {
                         var t = true;
@@ -166,7 +172,13 @@ class NotificationsManager(private val context: Context, private val callsManage
 
                 Call.State.End, Call.State.Error -> dismissCallNotification(call)
                 Call.State.Released -> {
+//                    if (LinphoneUtils.isCallLogMissed(call.callLog)) {
+//                        displayMissedCallNotification(call.remoteAddress)
+//                    }
                     Log.d(debugTag, "Call released, show missed call notification if call was abandoned")
+                }
+                Call.State.OutgoingInit, Call.State.OutgoingProgress, Call.State.OutgoingRinging -> {
+                    displayCallNotification(call)
                 }
                 else -> {
                     Log.d(debugTag, "call state = ${call.state.name}")
@@ -239,13 +251,12 @@ class NotificationsManager(private val context: Context, private val callsManage
                     PendingIntent.FLAG_IMMUTABLE
         )
 
-        notification = Compatibility.createIncomingCallNotification(
+        val notification = Compatibility.createIncomingCallNotification(
             context ,
             call,
             notifiable,
             pendingIntent,
             this,
-            contact
         )
 
         with(NotificationManagerCompat.from(context)) {
@@ -265,6 +276,7 @@ class NotificationsManager(private val context: Context, private val callsManage
             }
             if(!callsManager.telecomManager.isInManagedCall){
                 notify(notifiable.notificationId, notification!!)
+                activeNotification[notifiable.notificationId] = notification
                 Log.d(debugTag, "notified")
             }
             Log.d(debugTag, "skipping call notification... ${callsManager.telecomManager.isInManagedCall}")
@@ -283,13 +295,12 @@ class NotificationsManager(private val context: Context, private val callsManage
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        notification = Compatibility.createCallNotification(
+        val notification = Compatibility.createCallNotification(
             context,
             call,
             notifiable,
             pendingIntent,
             this,
-            contact
         )
 
         with(NotificationManagerCompat.from(context)) {
@@ -306,7 +317,8 @@ class NotificationsManager(private val context: Context, private val callsManage
                 return
             }
             notify(notifiable.notificationId, notification!!)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            activeNotification[notifiable.notificationId] = notification
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !callServiceStartedFormBR) {
                 if(callService != null){
                     callService?.startForeground(
                         notifiable.notificationId,
@@ -324,6 +336,7 @@ class NotificationsManager(private val context: Context, private val callsManage
                     context.startForegroundService(intent)
                 }
             }
+
             Log.d(debugTag, "notified ongoing")
         }
         Log.d(debugTag,"Notifying call notification [${notifiable.notificationId}]")
@@ -337,8 +350,12 @@ class NotificationsManager(private val context: Context, private val callsManage
         if (notifiable != null) {
             notificationManager.cancel(notifiable.notificationId)
             callNotificationsMap.remove(uuid)
-            contact = null
-            callService?.stopForeground(Service.STOP_FOREGROUND_REMOVE)
+            activeNotification.remove(notifiable.notificationId)
+            val cleanSip:String = call.remoteAddress.asStringUriOnly().replace("sip:", "")
+            val callerNumber: String = cleanSip.substring(0,cleanSip.indexOf("@"))
+            contacts.remove(callerNumber)
+            //stop stopForeground service by its notification id
+            callService?.stopForeground(notifiable.notificationId)
         } else {
             Log.d(debugTag,"No notification found for call ${call.callLog.callId}")
         }

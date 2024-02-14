@@ -30,7 +30,7 @@ class FirebaseMessagingService : FirebaseMessagingService() {
                 val callId = remoteMessage.data["call_id"] ?: ""
 
                 val contact = Contact(callerName, callerNumber, callerAvatar)
-                NotificationsManager.contact = contact
+                NotificationsManager.contacts[callerNumber] = contact
                 NotificationsManager.incomingNotification = true
                 Log.d(TAG, "$callerNumber $callerName $callerAvatar $callId")
             }

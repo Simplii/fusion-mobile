@@ -68,6 +68,7 @@ class NotificationsBroadcastReceiver: BroadcastReceiver()  {
                 val intent = Intent(context, FusionCallService::class.java)
                 intent.putExtra(NotificationsManager.INTENT_NOTIF_ID, notificationId)
                 context.startForegroundService(intent)
+                NotificationsManager.callServiceStartedFormBR = true
             }
             call.accept()
         } else {

@@ -44,7 +44,6 @@ class Compatibility {
             notifiable: Notifiable,
             pendingIntent: PendingIntent,
             notificationsManager: NotificationsManager,
-            contact: Contact?
         ): Notification {
             if ( Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 return Api31Compatibility.createIncomingCallNotification(
@@ -53,7 +52,6 @@ class Compatibility {
                     notifiable,
                     pendingIntent,
                     notificationsManager,
-                    contact
                 )
             }
             return Api26Compatibility.createIncomingCallNotification(
@@ -62,7 +60,6 @@ class Compatibility {
                 notifiable,
                 pendingIntent,
                 notificationsManager,
-                contact
             )
         }
 
@@ -72,7 +69,6 @@ class Compatibility {
             notifiable: Notifiable,
             pendingIntent: PendingIntent,
             notificationsManager: NotificationsManager,
-            contact: Contact?
         ) : Notification {
             if ( Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 return Api31Compatibility.createCallNotification(
@@ -81,7 +77,6 @@ class Compatibility {
                     notifiable,
                     pendingIntent,
                     notificationsManager,
-                    contact,
                 )
             }
             return Api26Compatibility.createCallNotification(
@@ -90,7 +85,6 @@ class Compatibility {
                 notifiable,
                 pendingIntent,
                 notificationsManager,
-                contact
             )
         }
 

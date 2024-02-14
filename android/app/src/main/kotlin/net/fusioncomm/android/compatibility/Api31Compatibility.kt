@@ -37,11 +37,11 @@ class Api31Compatibility {
             notifiable: Notifiable,
             pendingIntent: PendingIntent,
             notificationsManager: NotificationsManager,
-            contact: Contact?
         ) : Notification {
             Log.d(debugTag, "creating incoming call notification ...")
             val cleanSip:String = call.remoteAddress.asStringUriOnly().replace("sip:", "")
-            val callerNumber = cleanSip.substring(0,cleanSip.indexOf("@"))
+            val callerNumber: String = cleanSip.substring(0,cleanSip.indexOf("@"))
+            val contact:Contact? = NotificationsManager.contacts[callerNumber]
 
             val avatarLink: String = contact?.avatar ?: ""
             if(avatarLink.isNotEmpty()){
@@ -94,11 +94,10 @@ class Api31Compatibility {
             notifiable: Notifiable,
             pendingIntent: PendingIntent,
             notificationsManager: NotificationsManager,
-            contact: Contact?
         ) :Notification {
             val cleanSip :String = call.remoteAddress.asStringUriOnly().replace("sip:", "")
             val callerNumber = cleanSip.substring(0,cleanSip.indexOf("@"))
-
+            val contact:Contact? = NotificationsManager.contacts[callerNumber]
             val avatarLink: String = contact?.avatar ?: ""
             if(avatarLink.isNotEmpty()){
                 runBlocking {
