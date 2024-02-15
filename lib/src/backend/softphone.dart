@@ -1767,46 +1767,8 @@ class Softphone implements SipUaHelperListener {
     return _getCallById(_getCallDataValue(call.id, "mergedWith"));
   }
 
-  mergeCalls(Call? call, Call call2) {
-    if (_isUsingUa) {
-      call2.peerConnection!.getLocalDescription().then((value) {});
-      call!.peerConnection!.getLocalDescription().then((value) {});
-      MediaStream? call2Remote = call2.peerConnection!.getRemoteStreams()[1];
-      call.peerConnection!.getRemoteStreams().map((MediaStream? m) {
-        call2.peerConnection!.addStream(m!);
-        m.getAudioTracks().map((MediaStreamTrack mt) {
-          call2.peerConnection!.addTrack(mt);
-        });
-      });
-      MediaStream? callRemote = call.peerConnection!.getRemoteStreams()[1];
-      call2.peerConnection!.getRemoteStreams().map((MediaStream? m) {
-        call.peerConnection!.addStream(m!);
-        m.getAudioTracks().map((MediaStreamTrack mt) {
-          call.peerConnection!.addTrack(mt);
-        });
-      });
-      _setCallDataValue(call.id, "mergedWith", call2.id);
-      _setCallDataValue(call2.id, "mergedWith", call.id);
-
-      createLocalMediaStream('local').then((MediaStream mergedStream) {
-        call.peerConnection!.getLocalStreams().map((MediaStream? m) {
-          m!.getAudioTracks().map((MediaStreamTrack mt) {
-            mergedStream.addTrack(mt);
-          });
-        });
-
-        call2.peerConnection!.getRemoteStreams().map((MediaStream? m) {
-          m!.getAudioTracks().map((MediaStreamTrack mt) {
-            mergedStream.addTrack(mt);
-          });
-        });
-
-        call.peerConnection!
-            .getLocalStreams()
-            .map((stream) => call.peerConnection!.removeStream(stream!));
-        call.peerConnection!.addStream(mergedStream);
-      });
-    }
+  mergeCalls() {
+    _getMethodChannel().invokeMethod("start3Way", []);
   }
 
   recordCall(Call call) {

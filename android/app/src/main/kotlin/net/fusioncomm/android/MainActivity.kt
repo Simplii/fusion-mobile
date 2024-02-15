@@ -266,7 +266,6 @@ class MainActivity : FlutterFragmentActivity() {
                     )
                 }
                 Call.State.Connected -> {
-                    startFusionService()
                     channel.invokeMethod(
                         "lnConnected",
                         mapOf(Pair("uuid", uuid))

@@ -19,6 +19,7 @@ import androidx.core.graphics.drawable.IconCompat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import net.fusioncomm.android.FMUtils
 import net.fusioncomm.android.R
 import net.fusioncomm.android.notifications.Contact
 import net.fusioncomm.android.notifications.Notifiable
@@ -29,6 +30,7 @@ import java.net.URL
 @TargetApi(26)
 class Api26Compatibility {
     companion object {
+        private const val debugTag = "MDBM API26"
         private var pic: Bitmap? = null
 
         private suspend fun getImage(url:URL): Bitmap? = run {
@@ -90,7 +92,7 @@ class Api26Compatibility {
 //                audio
 //            )
             notificationManager.createNotificationChannel(channel)
-            Log.d("MDBM API26", "incoming channel created")
+            Log.d(debugTag, "incoming channel created")
         }
 
         fun createIncomingCallNotification (
@@ -107,7 +109,7 @@ class Api26Compatibility {
             val cleanSip :String = call.remoteAddress.asStringUriOnly().replace("sip:", "")
             val callerNumber = cleanSip.substring(0,cleanSip.indexOf("@"))
             val contact:Contact? = NotificationsManager.contacts[callerNumber]
-
+            Log.d(debugTag,"$contact")
             val displayName: String = contact?.name ?: callerNumber
             val number = contact?.number
             val callerAvatar = contact?.avatar ?: ""
@@ -169,8 +171,7 @@ class Api26Compatibility {
             pendingIntent: PendingIntent,
             notificationsManager: NotificationsManager,
         ) : Notification{
-            val cleanSip :String = call.remoteAddress.asStringUriOnly().replace("sip:", "")
-            val callerNumber = cleanSip.substring(0,cleanSip.indexOf("@"))
+            val callerNumber = FMUtils.getPhoneNumber(call.remoteAddress)
             val contact:Contact? = NotificationsManager.contacts[callerNumber]
 
             val callerAvatar: String = contact?.avatar ?: ""
@@ -196,14 +197,21 @@ class Api26Compatibility {
                 .setName(title)
                 .setIcon(contactAvatar)
                 .build()
-
+            val notificationText:String = when (call.state) {
+                Call.State.Pausing, Call.State.Paused ->{
+                    "Call on hold"
+                }
+                else -> {
+                    "Call in progress"
+                }
+            }
             val notificationBuilder: NotificationCompat.Builder =
                 NotificationCompat.Builder(
                         context,
                         context.getString(R.string.notification_channel_call_service_id)
                     )
                     .setContentTitle(title)
-                    .setContentText("ongoing call")
+                    .setContentText(notificationText)
                     .setSmallIcon(R.drawable.phone_filled_white)
                     .setLargeIcon(icon)
                     .addPerson(person)
@@ -215,7 +223,7 @@ class Api26Compatibility {
                     .setShowWhen(true)
                     .setColor(ContextCompat.getColor(context, R.color.notification_led_color))
                     .addAction(notificationsManager.getCallDeclineAction(notifiable, true))
-
+            pic = null
             return  notificationBuilder.build()
         }
     }

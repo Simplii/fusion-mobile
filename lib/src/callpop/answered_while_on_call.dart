@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
@@ -57,11 +58,10 @@ class _AnsweredWhileOnCallState extends State<AnsweredWhileOnCall> {
             if (softphone!.getHoldState(call)) Text("Hold", style: textStyle),
             Text(" " + mDash + " " + softphone!.getCallRunTimeString(call),
                 style: textStyle),
-            if (!isMerged &&
-                false) // disabing until we can support conference calling
+            if (!isMerged && Platform.isAndroid) // disabing until we can support conference calling
               GestureDetector(
                   onTap: () {
-                    softphone!.mergeCalls(activeCall, call);
+                    softphone!.mergeCalls();
                   },
                   child: Container(
                       decoration: clearBg(),

@@ -113,9 +113,17 @@ class Api31Compatibility {
             }
             val incomingCaller = callPersonBuilder.build()
             val declineIntent = notificationsManager.getCallDeclinePendingIntent(notifiable)
-
+            val notificationText:String = when (call.state) {
+                Call.State.Pausing, Call.State.Paused ->{
+                    "Call on hold"
+                }
+                else -> {
+                    "Call in progress"
+                }
+            }
             val builder = NotificationCompat.Builder(context, context.getString(R.string.notification_channel_call_service_id))
                 .setFullScreenIntent(pendingIntent, false)
+                .setContentText(notificationText)
                 .setCategory(NotificationCompat.CATEGORY_CALL)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setSmallIcon(R.drawable.phone_filled_white)

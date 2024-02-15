@@ -17,10 +17,12 @@ import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import net.fusioncomm.android.FMCore
+import net.fusioncomm.android.FMUtils
 import net.fusioncomm.android.notifications.NotificationsManager
 import net.fusioncomm.android.services.FusionCallService
 import org.linphone.core.Call
 import org.linphone.core.CallParams
+import org.linphone.core.Conference
 import org.linphone.core.Core
 import org.linphone.core.MediaEncryption
 import java.math.BigInteger
@@ -32,7 +34,7 @@ class CallsManager(private val context: Context) {
     private val core: Core = FMCore.core
     private val phoneAccount:PhoneAccount
     private val phoneAccountHandle: PhoneAccountHandle
-
+    private var conferenceStarting: Boolean = false
     init {
         val cName = ComponentName(context, TelecomConnectionService::class.java)
         val appName: String = FMCore.getApplicationName(context)
@@ -89,6 +91,28 @@ class CallsManager(private val context: Context) {
         Log.d(debugTag, "report incoming to telecom callid = $callId callerName = $callerName ")
 
         telecomManager.addNewIncomingCall(phoneAccountHandle, extras)
+    }
+
+    fun startConference() {
+        if (conferenceStarting) return
+        conferenceStarting = true
+        if(core.conference == null){
+            val params = core.createConferenceParams()
+            params.isVideoEnabled = true
+            val conference: Conference? = core.createConferenceWithParams(params)
+            conference?.addParticipants(core.calls)
+        } else {
+            for (call in core.calls) {
+                if (call.conference == null) {
+                    core.conference?.addParticipant(call)
+                }
+            }
+            if (!core.conference!!.isIn) {
+                Log.d(debugTag,"[Conference] Conference was paused, resuming it")
+                core.conference!!.enter()
+            }
+        }
+        conferenceStarting = false
     }
 
     fun findCallByUuid(uuid: String): Call? {

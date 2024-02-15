@@ -295,6 +295,8 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
                     lpCallToTransfer.transferToAnother(activeCall)
                 }
 
+            } else if (call.method == "start3Way") {
+                callsManager.startConference()
             } else if (call.method == "lpRegister") {
                 val args = call.arguments as List<*>
                 val username = args[0] as String

@@ -17,7 +17,7 @@ import org.linphone.core.Core
 import org.linphone.core.CoreListenerStub
 
 class TelecomConnectionService : ConnectionService() {
-    private val debugTag = "MDBM ConnectionService"
+    private val debugTag = "MDBM TelecomConnectionService"
 
     override fun onCreate() {
         super.onCreate()
@@ -275,7 +275,7 @@ class TelecomConnectionService : ConnectionService() {
         val callId = call.callLog.callId
         val connection = CallsManager.findConnectionForCallId(callId.orEmpty())
         if (connection == null) {
-            Log.d( debugTag,"Failed to find connection for call id: $callId")
+            Log.d( debugTag,"Call Error Failed to find connection for call id: $callId")
             return
         }
 
@@ -291,7 +291,7 @@ class TelecomConnectionService : ConnectionService() {
         val callId = call.callLog.callId
         val connection = CallsManager.findConnectionForCallId(callId.orEmpty())
         if (connection == null) {
-            Log.d(debugTag,"Failed to find connection for call id: $callId")
+            Log.d(debugTag,"Call Ended Failed to find connection for call id: $callId")
             return
         }
 
@@ -309,7 +309,7 @@ class TelecomConnectionService : ConnectionService() {
         val callId = call.callLog.callId
         val connection = CallsManager.findConnectionForCallId(callId.orEmpty())
         if (connection == null) {
-            Log.d( debugTag,"Failed to find connection for call id: $callId")
+            Log.d( debugTag,"Call Hold Failed to find connection for call id: $callId")
             return
         }
         Log.d(
@@ -323,7 +323,7 @@ class TelecomConnectionService : ConnectionService() {
         val callId = call.callLog.callId
         val connection = CallsManager.findConnectionForCallId(callId.orEmpty())
         if (connection == null) {
-            Log.d(debugTag,"Failed to find connection for call id: $callId")
+            Log.d(debugTag,"Call Connected Failed to find connection for call id: $callId")
             return
         }
 

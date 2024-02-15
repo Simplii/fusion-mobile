@@ -2,6 +2,7 @@ package net.fusioncomm.android.services
 
 import android.app.Notification
 import android.app.Service
+import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
@@ -33,7 +34,7 @@ class FusionCallService : Service() {
                     0
                 },
             )
-            NotificationsManager.onCallServiceStart(this)
+            NotificationsManager.onCallServiceStart(this, startId,notificationId)
         }
         return super.onStartCommand(intent, flags, startId)
     }

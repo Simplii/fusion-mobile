@@ -1,6 +1,7 @@
 package net.fusioncomm.android
 
 import org.linphone.core.Address
+import org.linphone.core.Call
 
 class FMUtils {
     companion object {
@@ -18,6 +19,12 @@ class FMUtils {
             }
             // Do not return an empty display name
             return address.displayName ?: address.username ?: address.asString()
+        }
+
+        fun getPhoneNumber(address: Address?): String {
+            if(address == null) return ""
+            val cleanSip: String = address.asStringUriOnly().replace("sip:", "")
+            return cleanSip.substring(0, cleanSip.indexOf("@"))
         }
 
     }
