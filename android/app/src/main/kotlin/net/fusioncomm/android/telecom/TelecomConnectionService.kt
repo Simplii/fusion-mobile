@@ -91,7 +91,6 @@ class TelecomConnectionService : ConnectionService() {
     private fun makeOutgoingCall(request: ConnectionRequest): Connection {
         val extras: Bundle = request.extras
         val number: String = request?.address?.schemeSpecificPart ?: "Unknown"
-//        val extrasNumber: String = extras.getString(CallsManager.EXTRA_CALL_NUMBER) ?: "Unknown"
         val displayName:String = extras.getString(CallsManager.EXTRA_CALLER_NAME) ?: number
         var callId = extras.getString(CallsManager.EXTRA_CALL_UUID)
 
@@ -264,7 +263,8 @@ class TelecomConnectionService : ConnectionService() {
                         debugTag,
                         "Destroying zombie connection ${connection.callId}"
                     )
-                    connection.setDisconnected(DisconnectCause(DisconnectCause.OTHER))
+                    CallsManager.connections.remove(connection)
+                    connection.setDisconnected(DisconnectCause(DisconnectCause.UNKNOWN))
                     connection.destroy()
                 }
             }
@@ -301,7 +301,9 @@ class TelecomConnectionService : ConnectionService() {
             debugTag,
             "Call [$callId] ended with reason: $reason, destroying connection currently in ${connection.stateAsString()}"
         )
-        connection.setDisconnected(DisconnectCause(DisconnectCause.LOCAL))
+        connection.setDisconnected(
+            DisconnectCause(DisconnectCause.LOCAL)
+        )
         connection.destroy()
     }
 

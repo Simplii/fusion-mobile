@@ -64,7 +64,7 @@ class Notifiable(val notificationId: Int) {
 
 class NotificationsManager(private val context: Context, private val callsManager: CallsManager) {
 
-    private val debugTag = "MDBM NotificationManager"
+
     private val callNotificationsMap: HashMap<String, Notifiable> = HashMap()
     private val notificationManager: NotificationManagerCompat by lazy {
         NotificationManagerCompat.from(context)
@@ -73,6 +73,7 @@ class NotificationsManager(private val context: Context, private val callsManage
     private var job: Job? = null
 
     companion object {
+        private val debugTag = "MDBM NotificationManager"
         val activeNotification : HashMap<Int, Notification> = HashMap()
         var contacts : HashMap<String, Contact> = HashMap()
         val callServiceStartId: HashMap<Int,Int> = HashMap()
@@ -80,6 +81,7 @@ class NotificationsManager(private val context: Context, private val callsManage
         const val INTENT_NOTIF_ID = "NOTIFICATION_ID"
         const val INTENT_REPLY_NOTIF_ACTION = "fusion.REPLY_ACTION"
         const val INTENT_HANGUP_CALL_NOTIF_ACTION = "fusion.HANGUP_CALL_ACTION"
+        const val INTENT_UNHOLD_CALL_NOTIF_ACTION = "fusion.UNHOLD_CALL_ACTION"
         const val INTENT_ANSWER_CALL_NOTIF_ACTION = "fusion.ANSWER_CALL_ACTION"
         const val INTENT_MARK_AS_READ_ACTION = "fusion.MARK_AS_READ_ACTION"
         const val INTENT_REMOTE_ADDRESS = "REMOTE_ADDRESS"
@@ -93,6 +95,7 @@ class NotificationsManager(private val context: Context, private val callsManage
 
         fun onCallServiceStart (service: FusionCallService, startId: Int, notificationId: Int) {
             callService = service
+            Log.d(debugTag, " service with notif id $notificationId")
             callServiceStartId[notificationId] = startId
         }
 
@@ -140,8 +143,12 @@ class NotificationsManager(private val context: Context, private val callsManage
         ) {
             Log.d(debugTag," Call state changed [$state]")
             when (call.state) {
+                Call.State.OutgoingInit -> {
+                    Log.d(debugTag, "outgoingInit")
+                }
                 Call.State.IncomingEarlyMedia, Call.State.IncomingReceived -> {
-                    if(call != null && call.callLog.callId != null){
+                    if(!FMCore.core.isInBackground) return
+                    if(call.callLog.callId != null){
                         callsManager.incomingCall(
                             call.callLog.callId,
                             FMUtils.getPhoneNumber(call.remoteAddress),
@@ -149,7 +156,7 @@ class NotificationsManager(private val context: Context, private val callsManage
                         )
                     }
                     Log.d(debugTag, "incoming received")
-                    if(!FMCore.core.isInBackground) return
+
                     /*
                     TODO:: for now we are waiting for the notification info to display fusion
                      contact info, this is an ugly work around, planning to get the contact info
@@ -159,6 +166,7 @@ class NotificationsManager(private val context: Context, private val callsManage
                     job = scope.launch {
                         var t = true;
                         var tries = 0
+                        var notificationSent = false
                         while(t && tries < 1000) {
                             Log.d(debugTag, "waiting for notification info...")
                             delay(50)
@@ -167,7 +175,12 @@ class NotificationsManager(private val context: Context, private val callsManage
                             if(!t){
                                 incomingNotification = false
                                 displayIncomingCallNotification(call)
+                                notificationSent = true
                             }
+                        }
+                        if(tries == 1000 && !notificationSent){
+                            Log.d(debugTag, "waited for 1 sec never got the notification info force display the incoming notification")
+                            displayIncomingCallNotification(call)
                         }
                     }
                 }
@@ -179,13 +192,10 @@ class NotificationsManager(private val context: Context, private val callsManage
 //                    }
                     Log.d(debugTag, "Call released, show missed call notification if call was abandoned")
                 }
-                Call.State.OutgoingInit, Call.State.OutgoingProgress, Call.State.OutgoingRinging -> {
+                Call.State.OutgoingProgress, Call.State.OutgoingRinging -> {
                     displayCallNotification(call)
                 }
-                else -> {
-                    Log.d(debugTag, "call state = ${call.state.name}")
-                    displayCallNotification(call)
-                }
+                else -> displayCallNotification(call)
             }
         }
     }
@@ -320,14 +330,14 @@ class NotificationsManager(private val context: Context, private val callsManage
             }
             notify(notifiable.notificationId, notification!!)
             activeNotification[notifiable.notificationId] = notification
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
                 !callServiceStartedFormBR &&
                 call.state == Call.State.Connected) {
-                    if(callService != null){
+                    if(callService != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE){
                         callService?.startForeground(
                             notifiable.notificationId,
                             notification!!,
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                                 ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE or ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL
                             } else {
                                 0
@@ -351,6 +361,7 @@ class NotificationsManager(private val context: Context, private val callsManage
     private fun dismissCallNotification(call: Call) {
         Log.d(debugTag, "dismiss call")
         val uuid =  callsManager.findUuidByCall(call)
+
         val notifiable: Notifiable? = callNotificationsMap[uuid]
         if (notifiable != null) {
             callNotificationsMap.remove(uuid)
@@ -358,7 +369,7 @@ class NotificationsManager(private val context: Context, private val callsManage
             val callerNumber: String = FMUtils.getPhoneNumber(call.remoteAddress)
             contacts.remove(callerNumber)
             //stop stopForeground service by its notification id
-            Log.d(debugTag, "remining calls whe dissmissed ${FMCore.core.callsNb} $callService")
+            Log.d(debugTag, "remining calls whe dissmissed ${FMCore.core.callsNb} $callService $callServiceStartId ${notifiable.notificationId}")
             notificationManager.cancel(notifiable.notificationId)
             callService?.stopSelf(callServiceStartId[notifiable.notificationId]!!)
         } else {
@@ -381,6 +392,20 @@ class NotificationsManager(private val context: Context, private val callsManage
         )
     }
 
+    fun getUnholdCallPendingIntent (notifiable: Notifiable): PendingIntent {
+        val hangupIntent = Intent(context, NotificationsBroadcastReceiver::class.java)
+        hangupIntent.action = INTENT_UNHOLD_CALL_NOTIF_ACTION
+        hangupIntent.putExtra(INTENT_NOTIF_ID, notifiable.notificationId)
+        hangupIntent.putExtra(INTENT_REMOTE_ADDRESS, notifiable.remoteAddress)
+        hangupIntent.putExtra(INTENT_CALL_UUID, notifiable.uuid)
+
+        return PendingIntent.getBroadcast(
+            context,
+            notifiable.notificationId,
+            hangupIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+    }
     fun getCallAnswerPendingIntent(notifiable: Notifiable): PendingIntent {
         val answerIntent = Intent(context, NotificationsBroadcastReceiver::class.java)
         answerIntent.action = INTENT_ANSWER_CALL_NOTIF_ACTION

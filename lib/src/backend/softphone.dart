@@ -478,7 +478,7 @@ class Softphone implements SipUaHelperListener {
         answerCall(call);
         break;
       case "answeredWhileOnCallFromNotification":
-        if(!Platform.isAndroid)return;
+        if (!Platform.isAndroid) return;
         print("MDBM answeredWhileOnCallFromNotification");
         var toAddress = args[2] as String;
         toAddress = _cleanToAddress(toAddress);
@@ -497,6 +497,9 @@ class Softphone implements SipUaHelperListener {
         LnCall call = _linkLnCallWithUuid(toAddress, args[0] as String,
             args[3] as String, callerId, "INCOMING");
         calls.add(call);
+        if (activeCall == null) {
+          makeActiveCall(call);
+        }
         print("MDBM answeredWhileOnCallFromNotification ${call} ${calls.length}");
         setCallOutput(call, outputDevice.toLowerCase());
         if (bluetoothDeviceId != '') {
@@ -1690,9 +1693,9 @@ class Softphone implements SipUaHelperListener {
   }
 
   int getCallRunTime(Call call) {
-    print('call id here');
-    print(call.id);
-    print(_uuidFor(call));
+    // print('call id here');
+    // print(call.id);
+    // print(_uuidFor(call));
 
     DateTime? time = _getCallDataValue(call.id, "answerTime") as DateTime?;
     if (time == null)
@@ -2061,5 +2064,26 @@ class Softphone implements SipUaHelperListener {
   dynamic getCallDispositionData(String? id, String name) {
     var data = _getCallDataById(id);
     return data[name];
+  }
+
+  bool isConferencable () {
+    int activeCalls = 0;
+    int incomingCalls = 0;
+    int outgoingCalls = 0;
+    for (var call in calls) {
+      if (call.state == CallStateEnum.HOLD ||
+          call.state == CallStateEnum.STREAM) {
+            if(call.direction == "INCOMING"){
+              incomingCalls ++;
+            } 
+            if (call.direction == "OUTGOING") {
+              outgoingCalls ++;
+            }
+            activeCalls ++;
+      }
+    }
+    return activeCalls > 1 && 
+      (activeCalls == incomingCalls || activeCalls == outgoingCalls) && 
+      Platform.isAndroid;
   }
 }

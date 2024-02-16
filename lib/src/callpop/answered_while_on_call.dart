@@ -58,16 +58,16 @@ class _AnsweredWhileOnCallState extends State<AnsweredWhileOnCall> {
             if (softphone!.getHoldState(call)) Text("Hold", style: textStyle),
             Text(" " + mDash + " " + softphone!.getCallRunTimeString(call),
                 style: textStyle),
-            if (!isMerged && Platform.isAndroid) // disabing until we can support conference calling
-              GestureDetector(
-                  onTap: () {
-                    softphone!.mergeCalls();
-                  },
-                  child: Container(
-                      decoration: clearBg(),
-                      padding: EdgeInsets.only(left: 12, top: 2, bottom: 2),
-                      child: Image.asset("assets/icons/call_view/merge.png",
-                          width: 20, height: 20))),
+            // if (!isMerged && Platform.isAndroid) // disabing until we can support conference calling
+            //   GestureDetector(
+            //       onTap: () {
+            //         softphone!.mergeCalls();
+            //       },
+            //       child: Container(
+            //           decoration: clearBg(),
+            //           padding: EdgeInsets.only(left: 12, top: 2, bottom: 2),
+            //           child: Image.asset("assets/icons/call_view/merge.png",
+            //               width: 20, height: 20))),
             Container(width: 12,),
             _hangupButton(call)
           ]),

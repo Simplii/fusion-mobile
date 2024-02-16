@@ -26,7 +26,8 @@ class NotificationsBroadcastReceiver: BroadcastReceiver()  {
                 // TODO:: handleChatIntent to replay/interact from chat notification
 
             } else if (intent.action == NotificationsManager.INTENT_ANSWER_CALL_NOTIF_ACTION ||
-                intent.action == NotificationsManager.INTENT_HANGUP_CALL_NOTIF_ACTION) {
+                intent.action == NotificationsManager.INTENT_HANGUP_CALL_NOTIF_ACTION ||
+                intent.action == NotificationsManager.INTENT_UNHOLD_CALL_NOTIF_ACTION) {
                 handleCallIntent(intent, context, notificationId)
             }
         } else {
@@ -71,6 +72,9 @@ class NotificationsBroadcastReceiver: BroadcastReceiver()  {
                 NotificationsManager.callServiceStartedFormBR = true
             }
             call.accept()
+        } else if (intent.action == NotificationsManager.INTENT_UNHOLD_CALL_NOTIF_ACTION) {
+            Log.d(debugTag, "unhold call")
+            FMCore.callsManager.resumeCall(call)
         } else {
             if (call.state == Call.State.IncomingReceived ||
                 call.state == Call.State.IncomingEarlyMedia

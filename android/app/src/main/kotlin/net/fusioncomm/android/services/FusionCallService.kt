@@ -26,9 +26,9 @@ class FusionCallService : Service() {
             Log.d(debugTag,"notificationId = $notificationId ")
             ServiceCompat.startForeground(
                 this,
-                notificationId!!,
-                notification!!,
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                notificationId,
+                notification,
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                     ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE or ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL
                 } else {
                     0
@@ -38,7 +38,6 @@ class FusionCallService : Service() {
         }
         return super.onStartCommand(intent, flags, startId)
     }
-
 
     override fun onDestroy() {
         Log.d(debugTag, "call service stopped ")

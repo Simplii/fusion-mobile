@@ -69,46 +69,44 @@ class MainActivity : FlutterFragmentActivity() {
         sendDevices()
         getAppVersion()
         getMyPhoneNumber()
-        val activeCalls: Array<Call> = core.calls
 
-        if(!activeCalls.isEmpty()){
-            for (call in activeCalls){
-                val uuid: String = callsManager.findUuidByCall(call)
-                Log.d(debugTag, "call state = ${Call.State.fromInt(call.state.ordinal)}")
-                if(call.state == Call.State.IncomingReceived){
-                    channel.invokeMethod(
-                        "lnIncomingReceived",
-                        mapOf(
-                            Pair("uuid", uuid),
-                            Pair("callId", call.callLog?.callId),
-                            Pair("remoteContact", call.remoteContact),
-                            Pair("remoteAddress", call.remoteAddressAsString),
-                            Pair("displayName", call.remoteAddress.displayName)
-                        )
+        for (call in core.calls){
+            val uuid: String = callsManager.findUuidByCall(call)
+
+            Log.d(debugTag, "call state = ${Call.State.fromInt(call.state.ordinal)}")
+            if(call.state == Call.State.IncomingReceived){
+                channel.invokeMethod(
+                    "lnIncomingReceived",
+                    mapOf(
+                        Pair("uuid", uuid),
+                        Pair("callId", call.callLog?.callId),
+                        Pair("remoteContact", call.remoteContact),
+                        Pair("remoteAddress", call.remoteAddressAsString),
+                        Pair("displayName", call.remoteAddress.displayName)
                     )
-                } else if( call.state == Call.State.StreamsRunning){
-                    channel.invokeMethod(
-                        "answeredFromNotification",
-                        mapOf(
-                            Pair("uuid", uuid),
-                            Pair("callId", call.callLog?.callId),
-                            Pair("remoteContact", call.remoteContact),
-                            Pair("remoteAddress", call.remoteAddressAsString),
-                            Pair("displayName", call.remoteAddress.displayName)
-                        )
+                )
+            } else if( call.state == Call.State.StreamsRunning){
+                channel.invokeMethod(
+                    "answeredFromNotification",
+                    mapOf(
+                        Pair("uuid", uuid),
+                        Pair("callId", call.callLog?.callId),
+                        Pair("remoteContact", call.remoteContact),
+                        Pair("remoteAddress", call.remoteAddressAsString),
+                        Pair("displayName", call.remoteAddress.displayName)
                     )
-                } else if( call.state == Call.State.Paused){
-                    channel.invokeMethod(
-                        "answeredWhileOnCallFromNotification",
-                        mapOf(
-                            Pair("uuid", uuid),
-                            Pair("callId", call.callLog?.callId),
-                            Pair("remoteContact", call.remoteContact),
-                            Pair("remoteAddress", call.remoteAddressAsString),
-                            Pair("displayName", call.remoteAddress.displayName)
-                        )
+                )
+            } else if( call.state == Call.State.Paused){
+                channel.invokeMethod(
+                    "answeredWhileOnCallFromNotification",
+                    mapOf(
+                        Pair("uuid", uuid),
+                        Pair("callId", call.callLog?.callId),
+                        Pair("remoteContact", call.remoteContact),
+                        Pair("remoteAddress", call.remoteAddressAsString),
+                        Pair("displayName", call.remoteAddress.displayName)
                     )
-                }
+                )
             }
         }
     }
@@ -139,11 +137,13 @@ class MainActivity : FlutterFragmentActivity() {
             message: String
         ) {
             if (state == RegistrationState.Failed || state == RegistrationState.Cleared) {
+                Log.d(debugTag, "Registration Failed error $message")
                 channel.invokeMethod(
                     "lnRegistrationFailed",
                     mapOf(Pair("registrationState", "failed"))
                 )
             } else if (state == RegistrationState.Ok) {
+                Log.d(debugTag, "Registration Succeeded $message")
                 channel.invokeMethod(
                     "lnRegistrationSucceeded",
                     mapOf(Pair("registrationState", "success"))

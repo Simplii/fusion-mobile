@@ -17,7 +17,7 @@ class CallActionButtons extends StatefulWidget {
         this.isIncoming,
         this.isRinging,
         this.callIsRecording,
-        this.isOnConference,
+        this.isMergeDisabled,
         this.callOnHold,
         this.resumeDisabled,
         this.loading,
@@ -25,7 +25,7 @@ class CallActionButtons extends StatefulWidget {
       : super(key: key);
 
   final Map<String, Function()>? actions;
-  final bool? isOnConference;
+  final bool? isMergeDisabled;
   final bool? isIncoming;
   final bool? isRinging;
   final bool? callOnHold;
@@ -87,10 +87,10 @@ class _CallActionButtonsState extends State<CallActionButtons> {
                     width: 24, height: 24)),
             CallActionButton(
                 onPressed: widget.actions!['onConfBtnPress'],
-                title: 'Conf',
-                icon: Image.asset("assets/icons/call_view/conference.png",
+                title: 'Merge',
+                icon: Image.asset("assets/icons/call_view/merge.png",
                     width: 24, height: 24),
-                disabled: true), //onHold || widget.isOnConference),
+                disabled: widget.isMergeDisabled ),
           ],
         ),
         Row(

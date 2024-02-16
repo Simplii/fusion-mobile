@@ -8,6 +8,7 @@ import android.graphics.BitmapFactory
 import android.media.AudioAttributes
 import android.media.AudioManager
 import android.media.RingtoneManager
+import android.telephony.PhoneNumberUtils
 import android.util.Log
 import android.view.WindowManager
 import android.widget.RemoteViews
@@ -106,14 +107,14 @@ class Api26Compatibility {
                 context.packageName,
                 R.layout.incoming_call_notification
             )
-            val cleanSip :String = call.remoteAddress.asStringUriOnly().replace("sip:", "")
-            val callerNumber = cleanSip.substring(0,cleanSip.indexOf("@"))
+            val callerNumber = FMUtils.getPhoneNumber(call.remoteAddress)
+            val formattedCallerNumber = PhoneNumberUtils.formatNumber(callerNumber,"US")
             val contact:Contact? = NotificationsManager.contacts[callerNumber]
             Log.d(debugTag,"$contact")
-            val displayName: String = contact?.name ?: callerNumber
+            val displayName: String = contact?.name ?: formattedCallerNumber
             val number = contact?.number
             val callerAvatar = contact?.avatar ?: ""
-            val notificationTitle = "incoming call"
+            val notificationTitle = "Incoming call"
             notificationLayoutHeadsUp.setTextViewText(R.id.caller, displayName)
             notificationLayoutHeadsUp.setTextViewText(R.id.sip_uri, number)
             notificationLayoutHeadsUp.setTextViewText(R.id.incoming_call_info, notificationTitle)
@@ -145,7 +146,7 @@ class Api26Compatibility {
                 )
                 .setStyle(NotificationCompat.DecoratedCustomViewStyle())
                 .addPerson(p)
-                .setSmallIcon(R.drawable.phone_filled_white)
+                .setSmallIcon(R.drawable.ic_on_call)
                 .setContentTitle(displayName)
                 .setContentText(notificationTitle)
                 .setCategory(NotificationCompat.CATEGORY_CALL)
@@ -172,10 +173,11 @@ class Api26Compatibility {
             notificationsManager: NotificationsManager,
         ) : Notification{
             val callerNumber = FMUtils.getPhoneNumber(call.remoteAddress)
+            val formattedCallerNumber = PhoneNumberUtils.formatNumber(callerNumber,"US")
             val contact:Contact? = NotificationsManager.contacts[callerNumber]
 
             val callerAvatar: String = contact?.avatar ?: ""
-            val title= contact?.name ?: callerNumber
+            val title= contact?.name ?: formattedCallerNumber
             if(callerAvatar.isNotEmpty()){
                 runBlocking {
                     pic = getImage(URL(callerAvatar))
@@ -199,10 +201,17 @@ class Api26Compatibility {
                 .build()
             val notificationText:String = when (call.state) {
                 Call.State.Pausing, Call.State.Paused ->{
-                    "Call on hold"
+                    "Call on hold - $formattedCallerNumber"
                 }
                 else -> {
-                    "Call in progress"
+                    "Call in progress - $formattedCallerNumber"
+                }
+            }
+            val smallIcon = when (call.state) {
+                Call.State.Paused, Call.State.Pausing -> {
+                    R.drawable.ic_call_on_hold
+                } else -> {
+                    R.drawable.ic_on_call
                 }
             }
             val notificationBuilder: NotificationCompat.Builder =
@@ -212,7 +221,7 @@ class Api26Compatibility {
                     )
                     .setContentTitle(title)
                     .setContentText(notificationText)
-                    .setSmallIcon(R.drawable.phone_filled_white)
+                    .setSmallIcon(smallIcon)
                     .setLargeIcon(icon)
                     .addPerson(person)
                     .setAutoCancel(false)

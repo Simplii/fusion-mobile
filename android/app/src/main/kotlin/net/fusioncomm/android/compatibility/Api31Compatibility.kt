@@ -5,6 +5,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.telephony.PhoneNumberUtils
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.Person
@@ -12,6 +13,8 @@ import androidx.core.graphics.drawable.IconCompat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import net.fusioncomm.android.FMCore
+import net.fusioncomm.android.FMUtils
 import net.fusioncomm.android.R
 import net.fusioncomm.android.notifications.Contact
 import net.fusioncomm.android.notifications.Notifiable
@@ -39,8 +42,8 @@ class Api31Compatibility {
             notificationsManager: NotificationsManager,
         ) : Notification {
             Log.d(debugTag, "creating incoming call notification ...")
-            val cleanSip:String = call.remoteAddress.asStringUriOnly().replace("sip:", "")
-            val callerNumber: String = cleanSip.substring(0,cleanSip.indexOf("@"))
+            val callerNumber :String = FMUtils.getPhoneNumber(call.remoteAddress)
+            val formattedCallerNumber = PhoneNumberUtils.formatNumber(callerNumber,"US")
             val contact:Contact? = NotificationsManager.contacts[callerNumber]
 
             val avatarLink: String = contact?.avatar ?: ""
@@ -49,7 +52,7 @@ class Api31Compatibility {
                     pic = getImage(URL(avatarLink))
                 }
             }
-            val displayName: String = contact?.name ?: callerNumber
+            val displayName: String = contact?.name ?: formattedCallerNumber
 
             val incomingCallerBuilder: Person.Builder = Person.Builder()
                 .setName(displayName)
@@ -64,7 +67,7 @@ class Api31Compatibility {
 
             val builder = NotificationCompat.Builder(context, context.getString(R.string.notification_channel_incoming_call_id))
                 .setContentIntent(pendingIntent)
-                .setSmallIcon(R.drawable.phone_filled_white)
+                .setSmallIcon(R.drawable.ic_on_call)
                 .setCategory(NotificationCompat.CATEGORY_CALL)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setWhen(System.currentTimeMillis())
@@ -95,8 +98,8 @@ class Api31Compatibility {
             pendingIntent: PendingIntent,
             notificationsManager: NotificationsManager,
         ) :Notification {
-            val cleanSip :String = call.remoteAddress.asStringUriOnly().replace("sip:", "")
-            val callerNumber = cleanSip.substring(0,cleanSip.indexOf("@"))
+            val callerNumber :String = FMUtils.getPhoneNumber(call.remoteAddress)
+            val formattedCallerNumber = PhoneNumberUtils.formatNumber(callerNumber,"US")
             val contact:Contact? = NotificationsManager.contacts[callerNumber]
             val avatarLink: String = contact?.avatar ?: ""
             if(avatarLink.isNotEmpty()){
@@ -104,7 +107,7 @@ class Api31Compatibility {
                     pic = getImage(URL(avatarLink))
                 }
             }
-            val displayName: String = contact?.name ?: callerNumber
+            val displayName: String = contact?.name ?: formattedCallerNumber
             val callPersonBuilder: Person.Builder = Person.Builder()
                 .setName(displayName)
                 .setImportant(true)
@@ -113,12 +116,19 @@ class Api31Compatibility {
             }
             val incomingCaller = callPersonBuilder.build()
             val declineIntent = notificationsManager.getCallDeclinePendingIntent(notifiable)
-            val notificationText:String = when (call.state) {
-                Call.State.Pausing, Call.State.Paused ->{
-                    "Call on hold"
-                }
-                else -> {
-                    "Call in progress"
+            val unholdIntent = notificationsManager.getUnholdCallPendingIntent(notifiable)
+            var unholdAction: NotificationCompat.Action? = null
+            var notificationText = ""
+            when (call.state) {
+                Call.State.Pausing, Call.State.Paused -> {
+                    notificationText = "Call on hold - $formattedCallerNumber"
+                    unholdAction = NotificationCompat.Action.Builder(
+                        IconCompat.createWithResource(context, R.drawable.ic_call_on_hold),
+                        "Unhold",
+                        unholdIntent
+                    ).build()
+                } else -> {
+                    notificationText = "Call in progress - $formattedCallerNumber"
                 }
             }
             val builder = NotificationCompat.Builder(context, context.getString(R.string.notification_channel_call_service_id))
@@ -126,7 +136,6 @@ class Api31Compatibility {
                 .setContentText(notificationText)
                 .setCategory(NotificationCompat.CATEGORY_CALL)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                .setSmallIcon(R.drawable.phone_filled_white)
                 .setAutoCancel(false)
                 .setWhen(System.currentTimeMillis())
                 .setShowWhen(true)
@@ -139,6 +148,13 @@ class Api31Compatibility {
                 )
                 .addPerson(incomingCaller)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+
+            if(unholdAction != null){
+                builder.addAction(unholdAction)
+                builder.setSmallIcon(R.drawable.ic_call_on_hold)
+            } else {
+                builder.setSmallIcon(R.drawable.ic_on_call)
+            }
             pic = null
             return builder.build()
         }

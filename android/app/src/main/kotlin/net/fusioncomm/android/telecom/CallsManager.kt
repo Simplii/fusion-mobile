@@ -115,6 +115,14 @@ class CallsManager(private val context: Context) {
         conferenceStarting = false
     }
 
+    fun resumeCall(call: Call) {
+        for ( call in core.calls) {
+            if (call.state != Call.State.Pausing || call.state == Call.State.Paused) {
+                call.pause()
+            }
+        }
+        call.resume()
+    }
     fun findCallByUuid(uuid: String): Call? {
         return uuidCalls[uuid]
     }
