@@ -6,9 +6,14 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.telephony.PhoneNumberUtils
+import android.text.Spannable
+import android.text.SpannableString
+import android.text.style.ForegroundColorSpan
 import android.util.Log
+import androidx.annotation.ColorRes
 import androidx.core.app.NotificationCompat
 import androidx.core.app.Person
+import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.IconCompat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -124,7 +129,7 @@ class Api31Compatibility {
                     notificationText = "Call on hold - $formattedCallerNumber"
                     unholdAction = NotificationCompat.Action.Builder(
                         IconCompat.createWithResource(context, R.drawable.ic_call_on_hold),
-                        "Unhold",
+                       "Unhold",
                         unholdIntent
                     ).build()
                 } else -> {

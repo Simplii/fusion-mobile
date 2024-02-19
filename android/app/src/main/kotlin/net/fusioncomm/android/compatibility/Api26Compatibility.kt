@@ -230,6 +230,7 @@ class Api26Compatibility {
                     .setPriority(NotificationCompat.PRIORITY_HIGH)
                     .setWhen(System.currentTimeMillis())
                     .setShowWhen(true)
+                    .setOngoing(true)
                     .setColor(ContextCompat.getColor(context, R.color.notification_led_color))
                     .addAction(notificationsManager.getCallDeclineAction(notifiable, true))
             pic = null
