@@ -657,8 +657,6 @@ class _CallHistorySummaryViewState extends State<CallHistorySummaryView> {
   }
 
   _makeCall() {
-    print(
-        "MDBM ${_historyItem.to} ${_historyItem.from} ${_historyItem.fromDid}");
     _softphone
         .makeCall(_historyItem.getOtherNumber(_fusionConnection.getDomain()));
   }

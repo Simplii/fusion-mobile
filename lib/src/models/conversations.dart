@@ -442,7 +442,8 @@ class SMSConversationsStore extends FusionStore<SMSConversation> {
       "assignee": coworkerUid,
       "from": convo.myNumber,
       "to": convo.number,
-      "isGroup": convo.isGroup
+      "isGroup": convo.isGroup,
+      "convoId": convo.conversationId
     }, callback: (Map<String, dynamic> data) {
       if (data.containsKey('assignee') && data['assignee'] != "") {
         convo.assigneeUid = data['assignee'];
