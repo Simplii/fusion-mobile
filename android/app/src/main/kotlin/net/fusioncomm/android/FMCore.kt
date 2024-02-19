@@ -4,6 +4,7 @@ package net.fusioncomm.android
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.media.AudioDeviceCallback
 import android.media.AudioDeviceInfo
 import android.media.AudioManager
 import android.media.RingtoneManager
@@ -406,30 +407,29 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
         return proxyConfig
     }
 
-    //ToDo: implement stop core method
+    private val audioDeviceCallback = object : AudioDeviceCallback() {
+        override fun onAudioDevicesAdded(addedDevices: Array<out AudioDeviceInfo>?) {
+            if (!addedDevices.isNullOrEmpty()) {
+                Log.d(debugTag,"[${addedDevices.size}] new device(s) have been added")
+                core.reloadSoundDevices()
+            }
+        }
+
+        override fun onAudioDevicesRemoved(removedDevices: Array<out AudioDeviceInfo>?) {
+            if (!removedDevices.isNullOrEmpty()) {
+                Log.d(debugTag,"[${removedDevices.size}] existing device(s) have been removed")
+                core.reloadSoundDevices()
+            }
+        }
+    }
+
+//   TODO: implement stop core method
 //    fun stop() {
 //        Log.d(debugTag,"Stopping...")
-//        coroutineScope.cancel()
-
-//        if (::phoneStateListener.isInitialized) {
-//            phoneStateListener.destroy()
-//        }
 //        notificationsManager.destroy()
-//        if (CallsManager.exists()) {
-//            Log.i("[Context] Destroying telecom helper")
-//            TelecomHelper.get().destroy()
-//            TelecomHelper.destroy()
-//        }
-
-//        val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
 //        audioManager.unregisterAudioDeviceCallback(audioDeviceCallback)
-
 //        core.stop()
-//        core.removeListener(MainActivity)
 //        coreStarted = false
 //        _lifecycleRegistry.currentState = Lifecycle.State.DESTROYED
-//        loggingService.removeListener(loggingServiceListener)
-
-//        (context as Application).unregisterActivityLifecycleCallbacks(activityMonitor)
 //    }
 }

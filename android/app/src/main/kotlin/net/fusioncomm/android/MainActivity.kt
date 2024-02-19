@@ -1,8 +1,6 @@
 package net.fusioncomm.android
 
-import android.app.KeyguardManager
 import android.content.Context
-import android.content.Intent
 import android.media.AudioManager
 import android.os.Build
 import android.os.Bundle
@@ -14,13 +12,13 @@ import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import net.fusioncomm.android.FusionMobileApplication.Companion.engine
+import net.fusioncomm.android.FusionMobileApplication.Companion.fmCore
 import net.fusioncomm.android.compatibility.Compatibility
 import net.fusioncomm.android.telecom.CallsManager
 import org.linphone.core.*
 
 class MainActivity : FlutterFragmentActivity() {
     private val debugTag = "MDBM MainActivity"
-
     private val core: Core = FMCore.core
     private val channel: MethodChannel = FusionMobileApplication.callingChannel
     private val versionName = BuildConfig.VERSION_NAME
@@ -64,6 +62,16 @@ class MainActivity : FlutterFragmentActivity() {
             intent.removeExtra("payload")
         }
     }
+
+//    override fun onDestroy() {
+//        if (core.callsNb > 0) {
+//            for(call in core.calls){
+//                call.terminate()
+//            }
+//        }
+//        fmCore.stop()
+//        super.onDestroy()
+//    }
 
     private  fun checkPushIncomingCall(){
         sendDevices()
@@ -117,17 +125,6 @@ class MainActivity : FlutterFragmentActivity() {
        }
        return super.onKeyDown(keyCode, event)
    }
-
-    private fun startFusionService(){
-        if(!FusionService.serviceStarted){
-            Log.d("fusionService","Start")
-            Intent(this, FusionService::class.java).also { intent ->
-                startService(intent)
-            }
-        } else {
-            Log.d("fusionService","Service running")
-        }
-    }
 
     private val coreListener = object : CoreListenerStub() {
         override fun onAccountRegistrationStateChanged(

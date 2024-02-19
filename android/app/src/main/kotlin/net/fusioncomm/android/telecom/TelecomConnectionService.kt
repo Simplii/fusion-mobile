@@ -17,7 +17,7 @@ import org.linphone.core.Core
 import org.linphone.core.CoreListenerStub
 
 class TelecomConnectionService : ConnectionService() {
-    private val debugTag = "MDBM TelecomConnectionService"
+    private val debugTag = "MDBM TelecomService"
 
     override fun onCreate() {
         super.onCreate()

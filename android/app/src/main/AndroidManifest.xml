@@ -126,11 +126,6 @@
             android:foregroundServiceType="microphone|phoneCall|camera"
             android:stopWithTask="true" />
 
-        <service
-            android:name=".FusionService"
-            android:exported="false"
-            android:stopWithTask="false" />
-
         <receiver
             android:name=".notifications.NotificationsBroadcastReceiver"
             android:enabled="true"

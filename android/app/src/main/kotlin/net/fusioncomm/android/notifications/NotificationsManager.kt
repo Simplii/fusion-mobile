@@ -38,7 +38,7 @@ class Notifiable(val notificationId: Int) {
     var remoteAddress: String? = null
     var uuid: String? = null
 
-//    TODO Chat Notification to be able to replay from notification
+//    TODO: Chat Notification to be able to replay from notification
 //    val messages: ArrayList<NotifiableMessage> = arrayListOf()
 //
 //    var isGroup: Boolean = false
@@ -49,7 +49,7 @@ class Notifiable(val notificationId: Int) {
 
 
 // class NotifiableMessage(
-//        TODO Chat Notification
+//        TODO: Chat Notification
 //        var message: String,
 //        val sender: String,
 //        val time: Long,
@@ -87,7 +87,7 @@ class NotificationsManager(private val context: Context, private val callsManage
         const val INTENT_REMOTE_ADDRESS = "REMOTE_ADDRESS"
         const val INTENT_CALL_UUID = "CALL_UUID"
 //        private const val MISSED_CALL_TAG = "Missed call"
-//        TODO Chat Notifications
+//        TODO: Chat Notifications
 //        const val INTENT_LOCAL_IDENTITY = "LOCAL_IDENTITY"
 //        const val CHAT_TAG = "Chat"
 //        const val CHAT_NOTIFICATIONS_GROUP = "CHAT_NOTIF_GROUP"
@@ -118,7 +118,7 @@ class NotificationsManager(private val context: Context, private val callsManage
                 )
                 manager.cancel(notification.id)
             }
-//            TODO Chat Notifications
+//            TODO: Chat Notifications
 //            else if (notification.tag == CHAT_TAG) {
 //                Log.d( debugTag,
 //                    "[Notifications Manager] Found existing chat notification [${notification.id}]"
@@ -158,7 +158,7 @@ class NotificationsManager(private val context: Context, private val callsManage
                     Log.d(debugTag, "incoming received")
 
                     /*
-                    TODO:: for now we are waiting for the notification info to display fusion
+                    FIXME:: for now we are waiting for the notification info to display fusion
                      contact info, this is an ugly work around, planning to get the contact info
                      from the device instead
                      */
@@ -206,10 +206,6 @@ class NotificationsManager(private val context: Context, private val callsManage
     }
 
     fun destroy() {
-        // Don't use cancelAll to keep message notifications !
-        // When a message is received by a push, it will create a CoreService
-        // but it might be getting killed quite quickly after that
-        // causing the notification to be missed by the user...
         Log.d(
             debugTag,
             "Getting destroyed, clearing foreground Service & call notifications"
@@ -221,7 +217,11 @@ class NotificationsManager(private val context: Context, private val callsManage
                 notificationManager.cancel(notifiable.notificationId)
             }
         }
-
+//        if (callService != null) {
+//            callServiceStartId.forEach {it
+//                callService?.stopForeground(it.value)
+//            }
+//        }
         FMCore.core.removeListener(listener)
     }
 
