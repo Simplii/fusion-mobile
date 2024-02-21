@@ -41,7 +41,6 @@ class _TransferCallpopState extends State<TransferCallPopup> with TickerProvider
   Softphone get _softphone => widget._softphone;
   String _query = "";
   TabController? _tabController;
-  bool v2Domain = false;
 
   final List<Tab> tabs = [
     Tab(text: "Recent",height: 30),
@@ -53,7 +52,6 @@ class _TransferCallpopState extends State<TransferCallPopup> with TickerProvider
   initState(){
     super.initState();
     _tabController = TabController(length: tabs.length, vsync: this);
-    v2Domain = _fusionConnection!.settings!.isV2User();
   }
 
   _directTransfer(String to) {
@@ -204,7 +202,6 @@ class _TransferCallpopState extends State<TransferCallPopup> with TickerProvider
                       );
                     } else {
                       return ContactsSearchList(_fusionConnection, _softphone, _query, tab.text!.toLowerCase(),
-                        v2Domain,
                         embedded: true,
                         onSelect: (Contact? contact, CrmContact? crmContact) {
                           if (contact != null && contact.firstNumber() != null) {

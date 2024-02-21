@@ -209,7 +209,7 @@ class CallHistoryStore extends FusionStore<CallHistory> {
     List<PhoneContact> phoneContacts = [];
     if (status.isGranted) {
       phoneContacts =
-          await fusionConnection.phoneContacts.getAdderssBookContacts("");
+          await fusionConnection.phoneContacts.getAddressBookContacts("");
     }
 
     await fusionConnection.apiV2Call(

@@ -347,40 +347,37 @@ class PhoneContactsStore extends FusionStore<PhoneContact> {
     }
   }
 
-  Future<List<PhoneContact>> getAdderssBookContacts(String query) async {
+  Future<List<PhoneContact>> getAddressBookContacts(String query) async {
     List<PhoneContact> contacts = getRecords();
     if (contacts.isNotEmpty && query.isEmpty) {
       return contacts;
     } else {
-      getDatabasesPath().then((path) {
-        openDatabase(join(path, "fusion.db")).then((db) async {
-          await db
-              .query(
-            'phone_contacts',
-            where: 'searchString Like ?',
-            whereArgs: ["%" + query + "%"],
-            orderBy: "lastName asc, firstName asc",
-          )
-              .then((List<Map<String, dynamic>> results) async {
-            List<PhoneContact> list = [];
+      final database = openDatabase(join(await getDatabasesPath(), "fusion.db"));
+      final db = await database;
 
-            for (Map<String, dynamic> result in results) {
-              PhoneContact phoneContact =
-                  PhoneContact.unserialize(result['raw']);
-              phoneContact.profileImage = result['profileImage'];
-              storeRecord(phoneContact);
-              list.add(phoneContact);
-            }
-            contacts = list;
+      List<Map<String,dynamic>> results = await db.query(
+        'phone_contacts',
+        where: 'searchString Like ?',
+        whereArgs: ["%" + query + "%"],
+        orderBy: "lastName asc, firstName asc",
+      );
 
-            if (list.isEmpty && query.isEmpty && !syncing) {
-              initSync = true;
-              syncPhoneContacts();
-            }
-          });
-        });
-      });
+      List<PhoneContact> list = [];
+      
+      for (Map<String, dynamic> result in results) {
+        PhoneContact phoneContact = PhoneContact.unserialize(result['raw']);
+        phoneContact.profileImage = result['profileImage'];
+        storeRecord(phoneContact);
+        list.add(phoneContact);
+      }
+
+      contacts = list;
+      
+      if (list.isEmpty && query.isEmpty && !syncing) {
+        initSync = true;
+        syncPhoneContacts();
+      }
+      return contacts;
     }
-    return contacts;
   }
 }

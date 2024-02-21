@@ -478,8 +478,13 @@ class ContactsStore extends FusionStore<Contact> {
     });
   }
 
-  searchPersisted(String query, int limit, int offset,
-      Function(List<Contact>, bool, bool fromPhonebook) callback) {
+  searchPersisted(
+    String query, 
+    int limit, 
+    int offset,
+    Function(List<Contact>, bool, bool fromPhonebook) callback
+  ) {
+    print("MDBM p q $query");
     getDatabasesPath().then((path) {
       openDatabase(join(path, "fusion.db")).then((db) {
         db.query('contacts',
