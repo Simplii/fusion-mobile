@@ -838,6 +838,7 @@ class FusionConnection {
         _heartbeats[message['heartbeat']] = true;
       } else if (message.containsKey('sms_received')) {
         // Receive incoming message platform data
+        print("MDBM ${message['message_object']}");
         SMSMessage newMessage = SMSMessage.fromV2(message['message_object']);
         if (!received_smses.containsKey(newMessage.id)) {
           received_smses[newMessage.id] = true;
@@ -858,6 +859,7 @@ class FusionConnection {
           for (SMSMessage message in msgs) {
             if (message.id == newMessage.id) {
               message.messageStatus = newMessage.messageStatus;
+              message.errorMessage = newMessage.errorMessage;
               messages.storeRecord(message);
             }
           }
