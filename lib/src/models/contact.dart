@@ -184,7 +184,7 @@ class Contact extends FusionModel {
     this.profileImage = contactObject["profileImage"] ?? null;
   }
 
-  Contact.fake(dynamic number) {
+  Contact.fake(dynamic number, {String firstName = "", String lastName = ""}) {
     String date = DateTime.now().toString();
     this.addresses = [];
     this.company = '';
@@ -192,12 +192,14 @@ class Contact extends FusionModel {
     this.createdAt = CarbonDate.fromDate(date);
     this.deleted = false;
     this.emails = [];
-    this.firstName = '';
+    this.firstName = firstName;
     this.groups = [];
     this.id = '';
     this.jobTitle = '';
-    this.lastName = '';
-    this.name = number.toString().formatPhone();
+    this.lastName = lastName;
+    this.name = firstName.isNotEmpty 
+      ? "$firstName $lastName" 
+      : number.toString().formatPhone();
     this.owner = '';
     this.phoneNumbers = [
       {"number": number, "smsCapable": true, "type": 'Mobile'}

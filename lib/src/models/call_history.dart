@@ -42,9 +42,7 @@ class CallHistory extends FusionModel {
   }
 
   getOtherNumber(String domain) {
-    return isInternal(domain) && to != "abandoned"
-        ? (direction == "inbound" ? fromDid : toDid).toString()
-        : (direction == "inbound" ? from : to).toString();
+    return (direction == "inbound" ? fromDid : toDid).toString();
   }
 
   CallHistory(Map<String, dynamic> obj) {
