@@ -108,10 +108,10 @@ class Api26Compatibility {
                 R.layout.incoming_call_notification
             )
             val callerNumber = FMUtils.getPhoneNumber(call.remoteAddress)
+            val callerId = FMUtils.getDisplayName(call.remoteAddress)
             val formattedCallerNumber = PhoneNumberUtils.formatNumber(callerNumber,"US")
             val contact:Contact? = NotificationsManager.contacts[callerNumber]
-            Log.d(debugTag,"$contact")
-            val displayName: String = contact?.name ?: formattedCallerNumber
+            val displayName: String = contact?.name ?: callerId.ifEmpty { formattedCallerNumber }
             val number = contact?.number
             val callerAvatar = contact?.avatar ?: ""
             val notificationTitle = "Incoming call"

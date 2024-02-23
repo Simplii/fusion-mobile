@@ -48,6 +48,7 @@ class Api31Compatibility {
         ) : Notification {
             Log.d(debugTag, "creating incoming call notification ...")
             val callerNumber :String = FMUtils.getPhoneNumber(call.remoteAddress)
+            val callerId = FMUtils.getDisplayName(call.remoteAddress)
             val formattedCallerNumber = PhoneNumberUtils.formatNumber(callerNumber,"US")
             val contact:Contact? = NotificationsManager.contacts[callerNumber]
 
@@ -57,7 +58,7 @@ class Api31Compatibility {
                     pic = getImage(URL(avatarLink))
                 }
             }
-            val displayName: String = contact?.name ?: formattedCallerNumber
+            val displayName: String = contact?.name ?: callerId.ifEmpty { formattedCallerNumber }
 
             val incomingCallerBuilder: Person.Builder = Person.Builder()
                 .setName(displayName)
