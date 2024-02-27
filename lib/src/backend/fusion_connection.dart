@@ -665,14 +665,17 @@ class FusionConnection {
     return Creds(_username, _password);
   }
 
-  _postLoginSetup(Function(bool) callback) async {
+  _postLoginSetup(Function(bool)? callback) async {
     _getCookies();
-    settings!.lookupSubscriber();
+    settings.lookupSubscriber();
     coworkers.getCoworkers((data) {});
     await smsDepartments.getDepartments((List<SMSDepartment> lis) {});
     dids.getDids((p0, p1) => {});
-    contacts.searchV2("", 100, 0, false, (p0, p1, fromPhoneBook) => null);
-    contacts.search("", 100, 0, (p0, p1, fromPhoneBook) => null);
+    if (settings.usesV2) {
+      contacts.searchV2("", 100, 0, false, (p0, p1, fromPhoneBook) => null);
+    } else {
+      contacts.search("", 100, 0, (p0, p1, fromPhoneBook) => null);
+    }
     conversations.getConversations(
         "-2", 100, 0, (convos, fromServer, departmentId) {});
     refreshUnreads();
@@ -776,6 +779,7 @@ class FusionConnection {
           prefs.setString("username", _username);
           if (response.containsKey("uses_v2")) {
             prefs.setBool("v2User", response["uses_v2"]);
+            settings.usesV2 = response["uses_v2"];
           }
         });
         this.encryptFusionData(username, password);
@@ -854,6 +858,7 @@ class FusionConnection {
           for (SMSMessage message in msgs) {
             if (message.id == newMessage.id) {
               message.messageStatus = newMessage.messageStatus;
+              message.errorMessage = newMessage.errorMessage;
               messages.storeRecord(message);
             }
           }
@@ -925,6 +930,7 @@ class FusionConnection {
         _extension = _username.split('@')[0];
         if (response.containsKey("uses_v2")) {
           prefs.setBool("v2User", response["uses_v2"]);
+          settings.usesV2 = response["uses_v2"];
         }
         settings.setOptions(response);
         _postLoginSetup((bool success) {});

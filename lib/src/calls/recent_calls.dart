@@ -507,9 +507,9 @@ class _CallHistorySummaryViewState extends State<CallHistorySummaryView> {
   String _getLinePrefix(String? callerId) {
     String? linePrefix;
     List<dynamic>? domainPrefixes = _fusionConnection.settings.domainPrefixes();
-    if (domainPrefixes != null) {
+    if (domainPrefixes != null && callerId != null) {
       domainPrefixes.forEach((prefix) {
-        if (callerId!.startsWith(prefix)) {
+        if (callerId.startsWith(prefix)) {
           linePrefix = prefix;
         }
       });
@@ -657,8 +657,6 @@ class _CallHistorySummaryViewState extends State<CallHistorySummaryView> {
   }
 
   _makeCall() {
-    print(
-        "MDBM ${_historyItem.to} ${_historyItem.from} ${_historyItem.fromDid}");
     _softphone
         .makeCall(_historyItem.getOtherNumber(_fusionConnection.getDomain()));
   }

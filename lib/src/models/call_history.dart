@@ -42,9 +42,7 @@ class CallHistory extends FusionModel {
   }
 
   getOtherNumber(String domain) {
-    return isInternal(domain) && to != "abandoned"
-        ? (direction == "inbound" ? fromDid : toDid).toString()
-        : (direction == "inbound" ? from : to).toString();
+    return (direction == "inbound" ? fromDid : toDid).toString();
   }
 
   CallHistory(Map<String, dynamic> obj) {
@@ -211,7 +209,7 @@ class CallHistoryStore extends FusionStore<CallHistory> {
     List<PhoneContact> phoneContacts = [];
     if (status.isGranted) {
       phoneContacts =
-          await fusionConnection.phoneContacts.getAdderssBookContacts("");
+          await fusionConnection.phoneContacts.getAddressBookContacts("");
     }
 
     await fusionConnection.apiV2Call(
@@ -226,7 +224,6 @@ class CallHistoryStore extends FusionStore<CallHistory> {
           if (datas.containsKey('items')) {
             for (Map<String, dynamic> item in datas['items']) {
               CallHistory obj = CallHistory(item);
-              print("MDBM dir ${obj.direction}");
               obj.coworker = fusionConnection.coworkers.lookupCoworker(
                   obj.direction == 'inbound' ? obj.from! : obj.to!);
               if (phoneContacts.isNotEmpty) {
