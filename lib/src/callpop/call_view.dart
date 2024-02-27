@@ -132,12 +132,8 @@ class _CallViewState extends State<CallView> {
             DialPadModal(_fusionConnection, _softphone, initialTab: 0));
   }
 
-  _onConfBtnPress() {
-    showModalBottomSheet(
-        context: context,
-        backgroundColor: Colors.transparent,
-        isScrollControlled: true,
-        builder: (context) => DialPadModal(_fusionConnection, _softphone));
+  _onMergeBtnPress() {
+    _softphone.mergeCalls();
   }
 
   _onRecBtnPress() {
@@ -612,7 +608,7 @@ class _CallViewState extends State<CallView> {
       'onXferBtnPress': _onXferBtnPress,
       'onDialBtnPress': _onDialBtnPress,
       'onParkBtnPress': _onParkBtnPress,
-      'onConfBtnPress': _onConfBtnPress,
+      'onConfBtnPress': _onMergeBtnPress,
       'onRecBtnPress': _onRecBtnPress,
       'onVidBtnPress': _onVidBtnPress,
       'onMuteBtnPress': _onMuteBtnPress,
@@ -741,8 +737,8 @@ class _CallViewState extends State<CallView> {
                                       isRinging: isRinging,
                                       isIncoming: isIncoming,
                                       dialPadOpen: dialpadVisible,
-                                      isOnConference:
-                                          _softphone!.isCallMerged(_activeCall!),
+                                      isMergeDisabled:
+                                          !_softphone.isConferencable(),
                                       setDialpad: (bool isOpen) {
                                         setState(() {
                                           dialpadVisible = isOpen;

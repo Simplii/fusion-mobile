@@ -180,6 +180,7 @@ class FusionConnection {
   }
 
   logOut() {
+    _softphone?.unregisterLinphone();
     FirebaseMessaging.instance.getToken().then((token) {
       if (_pushkitToken != null) {
         apiV1Call("delete", "/clients/device_token", {"token": _pushkitToken});
@@ -849,7 +850,7 @@ class FusionConnection {
           });
           if (!numbers.contains(newMessage.from)) {
             refreshUnreads();
-            await messages.notifyMessage(newMessage);
+            messages.notifyMessage(newMessage);
             messages.storeRecord(newMessage);
             unreadMessages.getRecords();
           }
