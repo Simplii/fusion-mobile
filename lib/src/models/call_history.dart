@@ -42,9 +42,7 @@ class CallHistory extends FusionModel {
   }
 
   getOtherNumber(String domain) {
-    return isInternal(domain) && to != "abandoned"
-        ? (direction == "inbound" ? fromDid : toDid).toString()
-        : (direction == "inbound" ? from : to).toString();
+    return (direction == "inbound" ? fromDid : toDid).toString();
   }
 
   CallHistory(Map<String, dynamic> obj) {
@@ -211,7 +209,7 @@ class CallHistoryStore extends FusionStore<CallHistory> {
     List<PhoneContact> phoneContacts = [];
     if (status.isGranted) {
       phoneContacts =
-          await fusionConnection.phoneContacts.getAdderssBookContacts("");
+          await fusionConnection.phoneContacts.getAddressBookContacts("");
     }
 
     await fusionConnection.apiV2Call(

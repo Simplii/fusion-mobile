@@ -329,23 +329,18 @@ class _MyHomePageState extends State<MyHomePage> {
       List<Contact> convoContacts = [];
 
       for (String num in notificationData.numbers) {
-        for (NotificationMember member in notificationData.members) {
-          if (depNumbers.contains(num)) {
-            numberUsed = num;
-          }
-          if (num == numberUsed) {
-            continue;
-          }
-          if (num == member.number) {
-            convoContacts.add(
-              Contact.build(name: member.name, pictures: [{"url" : member.avatar}])
-            );
-          } else {
-            convoContacts.add(
-              Contact.fake(num)
-            );
-          }
+        if (depNumbers.contains(num) && num != numberUsed) {
+          numberUsed = num;
         }
+      }
+      for (NotificationMember member in notificationData.members) {
+        convoContacts.add(
+          Contact.fake(
+            member.number, 
+            firstName: member.name.split(' ')[0],
+            lastName: member.name.split("").length > 1 ? member.name.split(' ')[1] : ""
+          )
+        );
       }
       showModalBottomSheet(
         context: context,

@@ -51,7 +51,7 @@ class VoicemailStore extends FusionStore<Voicemail> {
     final PermissionStatus status = await Permission.contacts.status;
     List<PhoneContact> phoneContacts = [];
     if(status.isGranted){
-      phoneContacts = await fusionConnection.phoneContacts.getAdderssBookContacts("");
+      phoneContacts = await fusionConnection.phoneContacts.getAddressBookContacts("");
     }
     fusionConnection
         .apiV2Call("get", "/user/voicemails", {"limit": 200, "start": 0},

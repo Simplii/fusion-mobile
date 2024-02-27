@@ -106,7 +106,9 @@ class SMSMessage extends FusionModel {
         ? map['user'].toString().replaceFirst(RegExp("@.*"), "")
         : null;
     this.broadcastConvoId = map['broadcastConversationId'] ?? 0;
-    this.errorMessage = map['errorMessage'] ?? "";
+    this.errorMessage = map.containsKey("errorMessage") 
+      ? map['errorMessage'] 
+      : map['error_message'] ?? "";
   }
 
   serialize() {

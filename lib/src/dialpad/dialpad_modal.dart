@@ -40,7 +40,6 @@ class _DialPadModalState extends State<DialPadModal>
   int? _tabIndex = 1;
   String _query = "";
   Timer? _timer;
-  bool v2Domain = false;
   
   final List<Tab> tabs = [
     Tab(text: "Recent",height: 30),
@@ -66,7 +65,6 @@ class _DialPadModalState extends State<DialPadModal>
     _tc =
         new TabController(length: 3, initialIndex: _initialIndex!, vsync: this);
     _tc!.addListener(_updateTabIndex);
-    v2Domain = _fusionConnection!.settings!.isV2User();
   }
 
   @override
@@ -135,7 +133,6 @@ class _DialPadModalState extends State<DialPadModal>
                       );
                     } else {
                       return ContactsSearchList(_fusionConnection, _softphone, _query, tab.text!.toLowerCase(),
-                        v2Domain,
                         embedded: true,
                         onSelect: (Contact? contact, CrmContact? crmContact) {
                           if (contact != null && contact.firstNumber() != null) {

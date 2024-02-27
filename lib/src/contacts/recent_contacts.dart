@@ -43,12 +43,6 @@ class _RecentContactsTabState extends State<RecentContactsTab> {
   bool _showingResults = false;
   String _selectedTab = 'coworkers';
   String _query = '';
-  bool v2Domain = false;
-  
-  @override initState(){ 
-    super.initState(); 
-    v2Domain = _fusionConnection!.settings!.isV2User();
-  }
 
   _getTitle() {
     return {
@@ -94,7 +88,7 @@ class _RecentContactsTabState extends State<RecentContactsTab> {
         child: Row(children: [
           //_tabIcon("all", "all", 23, 20.5),
           _tabIcon("coworkers", "briefcase", 23, 20.5),
-          !v2Domain ? _tabIcon("integrated", "integrated", 23, 20.5) : null,
+          if (!_fusionConnection.settings.usesV2) _tabIcon("integrated", "integrated", 23, 20.5),
           _tabIcon("fusion", "personalcontact", 23, 20.5),
           _tabIcon(
             "addressBook", 
@@ -119,7 +113,7 @@ class _RecentContactsTabState extends State<RecentContactsTab> {
         });
       }, () {}),
       _tabBar(),
-      ContactsSearchList(_fusionConnection, _softphone, _query, _selectedTab, v2Domain)
+      ContactsSearchList(_fusionConnection, _softphone, _query, _selectedTab)
     ];
     return Container(child: Column(children: children));
   }
@@ -131,7 +125,6 @@ class ContactsSearchList extends StatefulWidget {
   final String _query;
   final String selectedTab;
   final Function(Contact contact, CrmContact? crmContact)? onSelect;
-  final bool isV2Domain;
   final bool fromDialpad;
   bool? embedded = false;
 
@@ -139,8 +132,7 @@ class ContactsSearchList extends StatefulWidget {
       this._fusionConnection, 
       this._softphone, 
       this._query, 
-      this.selectedTab, 
-      this.isV2Domain,
+      this.selectedTab,
       {Key? key, this.embedded, this.onSelect, this.fromDialpad = false})
       : super(key: key);
 
@@ -159,7 +151,6 @@ class _ContactsSearchListState extends State<ContactsSearchList> {
   int lookupState = 0; // 0 - not looking up; 1 - looking up; 2 - got results
   List<Contact> _contacts = [];
   String? _lookedUpQuery;
-  bool get _isV2Domain => widget.isV2Domain;
   String get _selectedTab => widget.selectedTab;
   String _typeFilter = "Fusion Contacts";
   String? _subscriptionKey;
@@ -199,10 +190,9 @@ class _ContactsSearchListState extends State<ContactsSearchList> {
     lookupState = 1;
     _lookedUpQuery = _typeFilter + _query;
     String thisLookup = _typeFilter + _query;
-
     if (_typeFilter == 'Fusion Contacts') {
       if (_page == -1) return;
-      if(_isV2Domain){
+      if (_fusionConnection.settings.usesV2) {
         _fusionConnection.contacts.searchV2(_query, 100, _page * 100, _fromDialpad,
           (List<Contact> contacts, bool fromServer, bool fromPhonebook) {
           if (thisLookup != _lookedUpQuery) return;
@@ -343,15 +333,15 @@ class _ContactsSearchListState extends State<ContactsSearchList> {
           });
         });
       });
-    } else if (_typeFilter == "Phone Contacts"){
+    } else if (_typeFilter == "Phone Contacts") {
+
         if (thisLookup != _lookedUpQuery) return;
         if (!mounted) return;
         if (!mounted || _typeFilter != 'Phone Contacts') return;
         _checkContactsPermission().then((PermissionStatus status) {
           if(status.isGranted){
-            _fusionConnection.phoneContacts.getAdderssBookContacts(_query).then((List<PhoneContact> contacts){
+            _fusionConnection.phoneContacts.getAddressBookContacts(_query).then((List<PhoneContact> contacts){
               setState(() {
-
                 if(contacts.isEmpty && _fusionConnection.phoneContacts.initSync){
                   lookupState = 2;
                   _contacts = [];
