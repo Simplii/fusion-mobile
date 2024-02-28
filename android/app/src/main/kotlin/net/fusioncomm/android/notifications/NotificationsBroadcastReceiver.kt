@@ -63,7 +63,7 @@ class NotificationsBroadcastReceiver: BroadcastReceiver()  {
             // we must start a foregroundService with type mic, but we can't start a foregroundService
             // that needs while-in-use permission unless it falls in one of the exemptions ref#
             // https://developer.android.com/develop/background-work/services/foreground-services#bg-access-restrictions
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 // here we're tackling this exemption, The user performs an action on a UI element related to your app.
                 // Since we know the user has tapped on callStyle notification to get here
                 val intent = Intent(context, FusionCallService::class.java)

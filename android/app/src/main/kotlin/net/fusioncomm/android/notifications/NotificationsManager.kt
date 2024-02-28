@@ -333,10 +333,10 @@ class NotificationsManager(private val context: Context, private val callsManage
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
                 !callServiceStartedFormBR &&
                 call.state == Call.State.Connected) {
-                    if(callService != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE){
+                    if(callService != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU){
                         callService?.startForeground(
                             notifiable.notificationId,
-                            notification!!,
+                            notification,
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                                 ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE or ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL
                             } else {
