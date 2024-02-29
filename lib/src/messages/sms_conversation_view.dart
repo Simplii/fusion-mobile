@@ -393,12 +393,12 @@ class _SMSConversationViewState extends State<SMSConversationView> {
                                 _setOnMessagePosted!(null);
                               })));
                 });
-              } else if (chosen == "markunread"){
-                _fusionConnection.conversations.markUnread(_conversation.message!.id,_conversation, 
-                  () => Navigator.pop(this.context)
-                );
-              } 
-              else if (chosen == "assignConvo") {
+              } else if (chosen == "markunread") {
+                _fusionConnection.conversations.markUnread(
+                    _conversation.message!.id,
+                    _conversation,
+                    () => Navigator.pop(this.context));
+              } else if (chosen == "assignConvo") {
                 Coworker emptyCoworker = Coworker.empty();
                 emptyCoworker.uid = "Unassigned";
                 emptyCoworker.firstName = "Unassigned";
@@ -1200,45 +1200,56 @@ class _SMSConversationViewState extends State<SMSConversationView> {
     return Container(
         child: Column(children: [
           Expanded(
-              child: Container(
-                  decoration: BoxDecoration(color: Colors.transparent),
-                  padding: EdgeInsets.only(top: 80, bottom: 0),
-                  child: Column(children: [
-                    Container(
-                        decoration: BoxDecoration(
-                            color: particle,
-                            borderRadius: BorderRadius.only(
-                                topLeft: Radius.circular(16),
-                                topRight: Radius.circular(16))),
-                        padding: EdgeInsets.only(
-                            top: 10, left: 14, right: 14, bottom: 12),
-                        child: _header()),
-                    Row(children: [
+            child: Container(
+              decoration: BoxDecoration(color: Colors.transparent),
+              padding: EdgeInsets.only(top: 80, bottom: 0),
+              child: Column(
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                        color: particle,
+                        borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(16),
+                            topRight: Radius.circular(16))),
+                    padding: EdgeInsets.only(
+                        top: 10, left: 14, right: 14, bottom: 12),
+                    child: _header(),
+                  ),
+                  Row(
+                    children: [
                       Expanded(
                           child: Container(
                               decoration: BoxDecoration(
                                   color: Color.fromARGB(255, 222, 221, 221)),
                               height: 1))
-                    ]),
-                    Expanded(
-                        child: Container(
-                            decoration: BoxDecoration(color: Colors.white),
-                            child: Row(children: [
-                              Expanded(
-                                  child: _loaded
-                                      ? ConvoMessagesList(
-                                          _fusionConnection, _conversation,
-                                          (List<SMSMessage> messages) {
-                                          _messages = messages;
-                                        },
-                                          _openMedia,
-                                          _deleteConvo,
-                                          _selectedGroupId,
-                                          _setOnMessagePosted,
-                                          _changeConvo)
-                                      : Container())
-                            ]))),
-                  ]))),
+                    ],
+                  ),
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(color: Colors.white),
+                      child: Row(
+                        children: [
+                          Expanded(
+                              child: _loaded
+                                  ? ConvoMessagesList(
+                                      _fusionConnection, _conversation,
+                                      (List<SMSMessage> messages) {
+                                      _messages = messages;
+                                    },
+                                      _openMedia,
+                                      _deleteConvo,
+                                      _selectedGroupId,
+                                      _setOnMessagePosted,
+                                      _changeConvo)
+                                  : Container())
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
           AnimatedContainer(
             duration: const Duration(milliseconds: 500),
             curve: Curves.fastOutSlowIn,
@@ -1793,13 +1804,13 @@ class _SMSMessageViewState extends State<SMSMessageView> {
                       : (_message.messageStatus == 'failed' ||
                               _message.messageStatus == 'offline')
                           ? Container(
-                            padding: EdgeInsets.only(bottom: 1),
-                            child: Icon(
+                              padding: EdgeInsets.only(bottom: 1),
+                              child: Icon(
                                 Icons.clear,
                                 size: 15,
                                 color: crimsonDark,
                               ),
-                          )
+                            )
                           : Container(),
                   Container(
                     constraints: BoxConstraints(
@@ -1808,27 +1819,31 @@ class _SMSMessageViewState extends State<SMSMessageView> {
                     child: Text(
                       myContact?.name?.toUpperCase() ?? "",
                       style: TextStyle(
-                          fontSize: 11, fontWeight: FontWeight.w800, color: char),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: char),
                       textWidthBasis: TextWidthBasis.longestLine,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   Text(DateFormat.jm().format(date),
                       style: TextStyle(
-                          fontSize: 11, fontWeight: FontWeight.w800, color: smoke)),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: smoke)),
                 ],
               ),
-              if (_message.errorMessage.isNotEmpty) 
+              if (_message.errorMessage.isNotEmpty)
                 Padding(
-                  padding: const EdgeInsets.only(top:1, bottom: 2),
+                  padding: const EdgeInsets.only(top: 1, bottom: 2),
                   child: Text(
                     _message.errorMessage!,
-                    textAlign: TextAlign.end, 
+                    textAlign: TextAlign.end,
                     style: TextStyle(
-                      fontSize: 11, 
-                      color: smoke, 
-                      fontWeight: FontWeight.w500
-                    ),),
+                        fontSize: 11,
+                        color: smoke,
+                        fontWeight: FontWeight.w500),
+                  ),
                 )
             ],
           ),

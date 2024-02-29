@@ -106,9 +106,9 @@ class SMSMessage extends FusionModel {
         ? map['user'].toString().replaceFirst(RegExp("@.*"), "")
         : null;
     this.broadcastConvoId = map['broadcastConversationId'] ?? 0;
-    this.errorMessage = map.containsKey("errorMessage") 
-      ? map['errorMessage'] 
-      : map['error_message'] ?? "";
+    this.errorMessage = map.containsKey("errorMessage")
+        ? map['errorMessage']
+        : map['error_message'] ?? "";
   }
 
   serialize() {
@@ -242,23 +242,23 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
   notifyMessage(SMSMessage message) {
     if (!notifiedMessages.containsKey(message.id)) {
       notifiedMessages[message.id] = true;
-      
+
       List<SMSConversation> convos =
           fusionConnection.conversations.getRecords();
-      
-      SMSConversation? convo = convos.where((element) => element.isGroup 
-        ? element.number == message.to
-        : element.myNumber == message.to).firstOrNull;
-      
+
+      SMSConversation? convo = convos
+          .where((element) => element.isGroup
+              ? element.number == message.to
+              : element.myNumber == message.to)
+          .firstOrNull;
+
       if (convo != null) {
-          convo.message = message;
-          convo.unread = convo.unread + 1;
-          convo.lastContactTime =
-              DateTime.parse(message.time.date ?? "")
-                  .toLocal()
-                  .toIso8601String();
-          fusionConnection.conversations.storeRecord(convo);
-          notification.update(convo);
+        convo.message = message;
+        convo.unread = convo.unread + 1;
+        convo.lastContactTime =
+            DateTime.parse(message.time.date ?? "").toLocal().toIso8601String();
+        fusionConnection.conversations.storeRecord(convo);
+        notification.update(convo);
       }
 
       new Future.delayed(Duration(minutes: 2), () {
@@ -293,7 +293,7 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
           'user': record.user,
           'raw': record.serialize(),
           'broadcastConvoId': record.broadcastConvoId,
-          'errorMessage': record.errorMessage 
+          'errorMessage': record.errorMessage
         },
         conflictAlgorithm: ConflictAlgorithm.replace);
   }
@@ -375,33 +375,33 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
         isGroup: numbers.length > 1,
         hash: myNumber + ':' + numbers.join(':'));
     await fusionConnection.apiV2Call(
-      "post", 
-      "/messaging/group/${departmentId}/conversations/existing", 
-      {'identifiers': [myNumber,...numbers]}, 
-      callback: (Map<String, dynamic> data) {
-        if(data['lastMessage'] != null){
-          List<CrmContact> leads = [];
-          for (Map<String, dynamic> obj in data['conversationMembers']) {
-            List<dynamic> convoMembersLeads = obj['leads'];
-            if(convoMembersLeads != null && convoMembersLeads.length > 0 && !fusionConnection.settings.usesV2){
-              convoMembersLeads.forEach((lead) { 
-                leads.add(CrmContact.fromExpanded(lead));
-              });
-            }
+        "post", "/messaging/group/${departmentId}/conversations/existing", {
+      'identifiers': [myNumber, ...numbers]
+    }, callback: (Map<String, dynamic> data) {
+      if (data['lastMessage'] != null) {
+        List<CrmContact> leads = [];
+        for (Map<String, dynamic> obj in data['conversationMembers']) {
+          List<dynamic> convoMembersLeads = obj['leads'];
+          if (convoMembersLeads != null &&
+              convoMembersLeads.length > 0 &&
+              !fusionConnection.settings.usesV2) {
+            convoMembersLeads.forEach((lead) {
+              leads.add(CrmContact.fromExpanded(lead));
+            });
           }
-          convo = SMSConversation(data);
-          convo.crmContacts = leads;
-          convo.contacts = contacts;
-        } else {
-          convo = SMSConversation.build(
+        }
+        convo = SMSConversation(data);
+        convo.crmContacts = leads;
+        convo.contacts = contacts;
+      } else {
+        convo = SMSConversation.build(
             myNumber: myNumber,
             contacts: contacts,
             crmContacts: [],
             number: numbers.join(','),
             isGroup: numbers.length > 1,
-            hash: myNumber +':'+numbers.join(':')
-          );
-        }
+            hash: myNumber + ':' + numbers.join(':'));
+      }
     });
 
     return convo;

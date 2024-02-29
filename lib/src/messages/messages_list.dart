@@ -233,7 +233,8 @@ class _MessagesListState extends State<MessagesList> {
     lookupState = 1;
     _fusionConnection!.conversations.getConversations(
         _selectedGroupId!, limit ?? 100, offset ?? _page * 100,
-        (List<SMSConversation> convos, bool fromServer, String departmentId) {
+        (List<SMSConversation> convos, bool fromServer, String departmentId,
+            errorMessage) {
       if (!mounted) return;
 
       this.setState(() {

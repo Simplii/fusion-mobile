@@ -90,7 +90,8 @@ class FusionConnection {
   static const MethodChannel contactsChannel =
       MethodChannel('net.fusioncomm.ios/contacts');
 
-  FusionConnection() {
+  // Switched fusion connection to Singleton so we don't have to pass it down each widget
+  FusionConnection._internal() {
     _getCookies();
     crmContacts = CrmContactsStore(this);
     integratedContacts = IntegratedContactsStore(this);
@@ -113,6 +114,11 @@ class FusionConnection {
         fusionConnection: this, contactsChannel: contactsChannel);
     phoneContacts.setup();
     getDatabase();
+  }
+
+  static final FusionConnection instance = FusionConnection._internal();
+  factory FusionConnection() {
+    return instance;
   }
 
   refreshUnreads() {
@@ -209,6 +215,7 @@ class FusionConnection {
       });
     });
   }
+
   // need to change this in the future to use database versioning and run migrations
   getDatabase() {
     getDatabasesPath().then((String path) {
@@ -678,7 +685,7 @@ class FusionConnection {
       contacts.search("", 100, 0, (p0, p1, fromPhoneBook) => null);
     }
     conversations.getConversations(
-        "-2", 100, 0, (convos, fromServer, departmentId) {});
+        "-2", 100, 0, (convos, fromServer, departmentId, errorMessage) {});
     refreshUnreads();
     phoneContacts.syncPhoneContacts();
     contactFields.getFields((List<ContactField> list, bool fromServer) {});

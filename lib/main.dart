@@ -16,6 +16,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:fusion_mobile_revamped/src/callpop/call_view.dart';
 import 'package:fusion_mobile_revamped/src/callpop/disposition.dart';
+import 'package:fusion_mobile_revamped/src/chats/chats.dart';
 import 'package:fusion_mobile_revamped/src/dialpad/dialpad_modal.dart';
 import 'package:fusion_mobile_revamped/src/models/contact.dart';
 import 'package:fusion_mobile_revamped/src/models/conversations.dart';
@@ -224,6 +225,8 @@ class _MyHomePageState extends State<MyHomePage> {
   late StreamSubscription<ProximityEvent> _proximitySub;
   bool flutterBackgroundInitialized = false;
   Function? onMessagePosted;
+  late SharedPreferences sharedPreferences;
+
   _logOut() {
     SharedPreferences.getInstance().then((SharedPreferences prefs) {
       prefs.remove('username');
@@ -247,16 +250,19 @@ class _MyHomePageState extends State<MyHomePage> {
     // }
   }
 
+  void _getSharedPres() async {
+    sharedPreferences = await SharedPreferences.getInstance();
+  }
+
   @override
   initState() {
     super.initState();
-
+    _getSharedPres();
     receivedMsg = "";
     fusionConnection.onLogOut(_logOut);
     softphone.onUpdate(() {
       setState(() {});
     });
-    print("MDBM INITSTATE DART MAIN");
     _autoLogin();
     // need to move _setupPermissions away from initState
     // or will have error when dart execute in the background
@@ -318,11 +324,13 @@ class _MyHomePageState extends State<MyHomePage> {
     String depId = notificationData.departmentId ?? DepartmentIds.AllMessages;
 
     if (notificationData.toNumber.isNotEmpty && notificationData.isGroup) {
-      List<SMSDepartment> deps = fusionConnection.smsDepartments.allDepartments();
+      List<SMSDepartment> deps =
+          fusionConnection.smsDepartments.allDepartments();
       if (deps.isEmpty) {
         await fusionConnection.smsDepartments.getDepartments((p0) => deps = p0);
       }
-      SMSDepartment? dep = deps.where((element) => element.id == depId).firstOrNull;
+      SMSDepartment? dep =
+          deps.where((element) => element.id == depId).firstOrNull;
       String numberUsed = "";
 
       List<String> depNumbers = dep?.numbers ?? [];
@@ -334,13 +342,11 @@ class _MyHomePageState extends State<MyHomePage> {
         }
       }
       for (NotificationMember member in notificationData.members) {
-        convoContacts.add(
-          Contact.fake(
-            member.number, 
+        convoContacts.add(Contact.fake(member.number,
             firstName: member.name.split(' ')[0],
-            lastName: member.name.split("").length > 1 ? member.name.split(' ')[1] : ""
-          )
-        );
+            lastName: member.name.split("").length > 1
+                ? member.name.split(' ')[1]
+                : ""));
       }
       showModalBottomSheet(
         context: context,
@@ -373,45 +379,48 @@ class _MyHomePageState extends State<MyHomePage> {
           },
         ),
       );
-    } else if (notificationData.toNumber.isNotEmpty && !notificationData.isGroup) {
+    } else if (notificationData.toNumber.isNotEmpty &&
+        !notificationData.isGroup) {
       fusionConnection.contacts.search(notificationData.fromNumber, 10, 0,
           (contacts, contactsFromServer, contactsFromPhonebook) {
         if (contactsFromServer || contactsFromPhonebook) {
-          fusionConnection.integratedContacts.search(notificationData.fromNumber, 10, 0,
-              (crmContacts, fromServer, hasMore) {
+          fusionConnection.integratedContacts
+              .search(notificationData.fromNumber, 10, 0,
+                  (crmContacts, fromServer, hasMore) {
             if (fromServer || contactsFromPhonebook) {
-              if(!fusionConnection.settings.usesV2){
+              if (!fusionConnection.settings.usesV2) {
                 contacts.addAll(crmContacts);
               }
-              fusionConnection.messages.checkExistingConversation(
-                depId,
-                notificationData.toNumber,
-                [notificationData.fromNumber],
-                contacts
-              ).then((convo) {
-                showModalBottomSheet(
-                  context: context,
-                  backgroundColor: Colors.transparent,
-                  isScrollControlled: true,
-                  builder: (context) => StatefulBuilder(
-                    builder: (BuildContext context,StateSetter setState) {
-                      SMSConversation displayingConvo = convo;
-                      return SMSConversationView(
-                          fusionConnection: fusionConnection, 
-                          softphone: softphone, 
-                          smsConversation: displayingConvo, 
-                          deleteConvo: null,//deleteConvo
-                          setOnMessagePosted: null,//onMessagePosted
-                          changeConvo: (SMSConversation updateConvo){
-                            setState(() {
-                              displayingConvo = updateConvo;
-                            },);
-                          }
-                      );
-                    },
-                  ),
-                );
-              },);
+              fusionConnection.messages
+                  .checkExistingConversation(depId, notificationData.toNumber,
+                      [notificationData.fromNumber], contacts)
+                  .then(
+                (convo) {
+                  showModalBottomSheet(
+                    context: context,
+                    backgroundColor: Colors.transparent,
+                    isScrollControlled: true,
+                    builder: (context) => StatefulBuilder(
+                      builder: (BuildContext context, StateSetter setState) {
+                        SMSConversation displayingConvo = convo;
+                        return SMSConversationView(
+                            fusionConnection: fusionConnection,
+                            softphone: softphone,
+                            smsConversation: displayingConvo,
+                            deleteConvo: null, //deleteConvo
+                            setOnMessagePosted: null, //onMessagePosted
+                            changeConvo: (SMSConversation updateConvo) {
+                              setState(
+                                () {
+                                  displayingConvo = updateConvo;
+                                },
+                              );
+                            });
+                      },
+                    ),
+                  );
+                },
+              );
             }
           });
         }
@@ -702,11 +711,21 @@ class _MyHomePageState extends State<MyHomePage> {
         ? RecentCallsTab(fusionConnection, softphone)
         : (_currentIndex == 1
             ? RecentContactsTab(fusionConnection, softphone)
-            : MessagesTab(fusionConnection, softphone, (Function func) {
-                onMessagePosted = func;
-              }, () {
-                onMessagePosted = null;
-              })));
+            // : MessagesTab(
+            //     fusionConnection,
+            //     softphone,
+            //     (Function func) {
+            //       onMessagePosted = func;
+            //     },
+            //     () {
+            //       onMessagePosted = null;
+            //     },
+            //   )));
+            : Chats(
+                fusionConnection: fusionConnection,
+                softPhone: softphone,
+                sharedPreferences: sharedPreferences,
+              )));
   }
 
   @override
