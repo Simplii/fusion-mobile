@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:fusion_mobile_revamped/src/backend/fusion_connection.dart';
-import 'package:fusion_mobile_revamped/src/chats/chatsVM.dart';
 import 'package:fusion_mobile_revamped/src/chats/components/conversationActions.dart';
 import 'package:fusion_mobile_revamped/src/chats/components/conversationDepartmentSelector.dart';
 import 'package:fusion_mobile_revamped/src/chats/components/groupMessageHeader.dart';
 import 'package:fusion_mobile_revamped/src/chats/components/singleMessageHeader.dart';
+import 'package:fusion_mobile_revamped/src/chats/viewModels/chatsVM.dart';
 import 'package:fusion_mobile_revamped/src/chats/viewModels/conversation.dart';
 import 'package:fusion_mobile_revamped/src/models/conversations.dart';
 import 'package:fusion_mobile_revamped/src/models/coworkers.dart';
@@ -63,7 +63,7 @@ class _ConversationHeaderState extends State<ConversationHeader> {
               ),
               chatsVM: _chatsVM,
               conversationVM: _conversationVM,
-              messages: [], //TODO:add convo messages
+              messages: _conversationVM.conversationMessages,
             )
           ],
         ),

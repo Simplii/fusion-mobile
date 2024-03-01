@@ -4,14 +4,19 @@ import 'package:fusion_mobile_revamped/src/models/contact.dart';
 import 'package:fusion_mobile_revamped/src/models/conversations.dart';
 import 'package:fusion_mobile_revamped/src/models/coworkers.dart';
 import 'package:fusion_mobile_revamped/src/models/messages.dart';
+import 'package:fusion_mobile_revamped/src/models/sms_departments.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ConversationVM with ChangeNotifier {
   late String conversationDepartmentId;
-  final SMSConversation conversation;
+  SMSConversation conversation;
   final FusionConnection fusionConnection = FusionConnection.instance;
 
   List<SMSMessage> conversationMessages = [];
   bool loadingMessages = false;
+  bool showSnackBar = false;
+  DateTime? scheduledAt;
+  List<XFile> mediaToSend = [];
 
   ConversationVM({required this.conversation}) {
     conversationDepartmentId = conversation.getDepartmentId(
@@ -63,5 +68,45 @@ class ConversationVM with ChangeNotifier {
     conversation.groupName = newName;
     notifyListeners();
     return nameUpdated;
+  }
+
+  void onDepartmentChange(String departmentId) async {
+    SMSDepartment department =
+        fusionConnection.smsDepartments.getDepartment(departmentId);
+    if (department.numbers.isNotEmpty) {
+      loadingMessages = true;
+      conversationDepartmentId = departmentId;
+      conversationMessages = [];
+      String myNumber = department.numbers.first;
+      conversation = await fusionConnection.messages.checkExistingConversation(
+        departmentId,
+        myNumber,
+        [conversation.number],
+        conversation.contacts,
+      );
+      lookupMessages();
+      loadingMessages = false;
+      notifyListeners();
+    }
+  }
+
+  void onPhoneNumberChange(String phoneNumber) async {
+    SMSDepartment? department =
+        fusionConnection.smsDepartments.getDepartmentByPhoneNumber(phoneNumber);
+    if (department != null && department.id != null) {
+      loadingMessages = true;
+      conversationDepartmentId = department.id!;
+      conversationMessages = [];
+      String myNumber = phoneNumber;
+      conversation = await fusionConnection.messages.checkExistingConversation(
+        department.id!,
+        myNumber,
+        [conversation.number],
+        conversation.contacts,
+      );
+      lookupMessages();
+      loadingMessages = false;
+      notifyListeners();
+    }
   }
 }

@@ -197,9 +197,9 @@ class Contact extends FusionModel {
     this.id = '';
     this.jobTitle = '';
     this.lastName = lastName;
-    this.name = firstName.isNotEmpty 
-      ? "$firstName $lastName" 
-      : number.toString().formatPhone();
+    this.name = firstName.isNotEmpty
+        ? "$firstName $lastName"
+        : number.toString().formatPhone();
     this.owner = '';
     this.phoneNumbers = [
       {"number": number, "smsCapable": true, "type": 'Mobile'}
@@ -449,10 +449,7 @@ class Contact extends FusionModel {
     this.unread = contact.unread;
   }
 
-  Contact.build({
-    required this.name,
-    required this.pictures
-  });
+  Contact.build({required this.name, required this.pictures});
 }
 
 class ContactsStore extends FusionStore<Contact> {
@@ -478,12 +475,8 @@ class ContactsStore extends FusionStore<Contact> {
     });
   }
 
-  searchPersisted(
-    String query, 
-    int limit, 
-    int offset,
-    Function(List<Contact>, bool, bool fromPhonebook) callback
-  ) {
+  searchPersisted(String query, int limit, int offset,
+      Function(List<Contact>, bool, bool fromPhonebook) callback) {
     getDatabasesPath().then((path) {
       openDatabase(join(path, "fusion.db")).then((db) {
         db.query('contacts',
@@ -653,11 +646,11 @@ class ContactsStore extends FusionStore<Contact> {
     });
   }
 
-  Future<Contact?> getContactById ({int? fusionId, int? crmId}) async {
+  Future<Contact?> getContactById({int? fusionId, int? crmId}) async {
     Contact? contact = null;
     //first search persisted
     //then search legacy and v2
-    await fusionConnection.apiV2Call("get", "", {}, callback: (){});
+    await fusionConnection.apiV2Call("get", "", {}, callback: () {});
     return contact;
   }
 }

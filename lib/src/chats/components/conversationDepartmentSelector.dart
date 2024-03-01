@@ -32,14 +32,15 @@ class DepartmentSelector extends StatelessWidget {
       padding: EdgeInsets.only(top: 0, bottom: 0, right: 0, left: 8),
       height: 36,
       child: FusionDropdown(
-        disabled: false,
+        disabled: conversationVM.conversationDepartmentId ==
+            DepartmentIds.FusionChats,
         departments: departments,
         style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
         value: conversationVM.conversationDepartmentId,
         selectedNumber: conversation.myNumber,
         options: options,
-        onChange: (selectedDep) => print("change"),
-        onNumberTap: (selectedNum) => print("change"),
+        onChange: conversationVM.onDepartmentChange,
+        onNumberTap: conversationVM.onPhoneNumberChange,
         label: "All Departments",
       ),
     );

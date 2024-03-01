@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:fusion_mobile_revamped/src/chats/chatsVM.dart';
 import 'package:fusion_mobile_revamped/src/chats/components/conversationListRow.dart';
 import 'package:fusion_mobile_revamped/src/chats/conversationView.dart';
+import 'package:fusion_mobile_revamped/src/chats/viewModels/chatsVM.dart';
 import 'package:fusion_mobile_revamped/src/models/conversations.dart';
 import 'package:fusion_mobile_revamped/src/styles.dart';
 
