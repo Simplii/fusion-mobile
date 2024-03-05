@@ -5,6 +5,7 @@ import 'dart:math';
 import 'dart:ui';
 
 import 'package:all_sensors/all_sensors.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -17,12 +18,15 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:fusion_mobile_revamped/src/callpop/call_view.dart';
 import 'package:fusion_mobile_revamped/src/callpop/disposition.dart';
 import 'package:fusion_mobile_revamped/src/chats/chats.dart';
+import 'package:fusion_mobile_revamped/src/chats/newConversationView.dart';
+import 'package:fusion_mobile_revamped/src/chats/viewModels/chatsVM.dart';
 import 'package:fusion_mobile_revamped/src/dialpad/dialpad_modal.dart';
 import 'package:fusion_mobile_revamped/src/models/contact.dart';
 import 'package:fusion_mobile_revamped/src/models/conversations.dart';
 import 'package:fusion_mobile_revamped/src/models/dids.dart';
 import 'package:fusion_mobile_revamped/src/models/notification_data.dart';
 import 'package:fusion_mobile_revamped/src/models/sms_departments.dart';
+import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:overlay_support/overlay_support.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -138,7 +142,11 @@ Future<void> main() async {
     appRunner: () =>
         runApp(OverlaySupport.global(child: MaterialApp(home: MyApp()))),
   );*/
-  runApp(OverlaySupport.global(child: MaterialApp(home: MyApp())));
+  runApp(OverlaySupport.global(
+      child: MaterialApp(
+    debugShowCheckedModeBanner: false,
+    home: MyApp(),
+  )));
   // runApp(MaterialApp(home: MyApp()));
 }
 
@@ -167,6 +175,7 @@ class MyApp extends StatelessWidget {
     }
 
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       builder: (BuildContext context, Widget? child) {
         final double scaleRange =
             MediaQuery.of(context).textScaleFactor.clamp(0.8, 1.2);
@@ -226,6 +235,8 @@ class _MyHomePageState extends State<MyHomePage> {
   bool flutterBackgroundInitialized = false;
   Function? onMessagePosted;
   late SharedPreferences sharedPreferences;
+  late StreamSubscription<ConnectivityResult> connectivitySubscription;
+  ConnectivityResult connectionStatus = ConnectivityResult.none;
 
   _logOut() {
     SharedPreferences.getInstance().then((SharedPreferences prefs) {
@@ -277,6 +288,59 @@ class _MyHomePageState extends State<MyHomePage> {
     fusionConnection.setRefreshUi(() {
       this.setState(() {});
     });
+    connectivitySubscription =
+        fusionConnection.connectivity.onConnectivityChanged.listen(
+      _updateConnectionStatus,
+    );
+    Connectivity().checkConnectivity().then((value) {
+      if (value == ConnectivityResult.none) {
+        ScaffoldMessenger.of(context).showMaterialBanner(
+          MaterialBanner(
+            content: Text(
+              "This device is not connected to the internet",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            actions: [
+              Icon(
+                Icons.error_outline,
+                color: crimsonDark,
+              )
+            ],
+          ),
+        );
+      }
+    });
+  }
+
+  @override
+  dispose() {
+    connectivitySubscription.cancel();
+    super.dispose();
+  }
+
+  Future<void> _updateConnectionStatus(ConnectivityResult result) async {
+    connectionStatus = result;
+    FusionConnection.isInternetActive =
+        await InternetConnectionChecker().hasConnection;
+    if (!FusionConnection.isInternetActive) {
+      ScaffoldMessenger.of(context).showMaterialBanner(
+        MaterialBanner(
+          content: Text(
+            "This device is not connected to the internet",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          actions: [
+            Icon(
+              Icons.error_outline,
+              color: crimsonDark,
+            )
+          ],
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).clearMaterialBanners();
+      _autoLogin();
+    }
   }
 
   Future<void> _setupPermissions() async {
@@ -659,15 +723,17 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  _openNewMessage() {
-    showModalBottomSheet(
-        routeSettings: RouteSettings(name: 'newMessagePopup'),
-        context: context,
-        backgroundColor: Colors.transparent,
-        isScrollControlled: true,
-        builder: (context) =>
-            NewMessagePopup(fusionConnection, softphone, onMessagePosted));
-  }
+  // _openNewMessage() {
+  //   showModalBottomSheet(
+  //     routeSettings: RouteSettings(name: 'newMessagePopup'),
+  //     context: context,
+  //     backgroundColor: Colors.transparent,
+  //     isScrollControlled: true,
+  //     builder: (context) =>
+  //         // NewMessagePopup(fusionConnection, softphone, onMessagePosted),
+  //         NewMessageView(sharedPreferences: sharedPreferences),
+  //   );
+  // }
 
   void _loginSuccess(String? username, String? password) {
     this.setState(() {
@@ -694,13 +760,13 @@ class _MyHomePageState extends State<MyHomePage> {
           break;
         }
       }
-      return FloatingActionButton(
-        backgroundColor:
-            _canSendMessage ? crimsonLight : crimsonLight.withOpacity(0.5),
-        foregroundColor: Colors.white,
-        onPressed: _canSendMessage ? _openNewMessage : null,
-        child: Icon(Icons.add),
-      );
+      // return FloatingActionButton(
+      //   backgroundColor:
+      //       _canSendMessage ? crimsonLight : crimsonLight.withOpacity(0.5),
+      //   foregroundColor: Colors.white,
+      //   onPressed: _canSendMessage ? _openNewMessage : null,
+      //   child: Icon(Icons.add),
+      // );
     } else {
       return null;
     }

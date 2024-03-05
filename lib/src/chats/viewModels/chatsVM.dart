@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:fusion_mobile_revamped/src/backend/fusion_connection.dart';
 import 'package:fusion_mobile_revamped/src/backend/softphone.dart';
 import 'package:fusion_mobile_revamped/src/models/conversations.dart';
-import 'package:fusion_mobile_revamped/src/models/messages.dart';
 import 'package:fusion_mobile_revamped/src/models/sms_departments.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -20,7 +19,7 @@ class ChatsVM extends ChangeNotifier {
   bool loading = false;
   int _offset = 0;
   List<SMSConversation> conversations = [];
-
+  bool applicationPaused = false;
   ChatsVM({
     required this.fusionConnection,
     required this.softPhone,
@@ -38,13 +37,26 @@ class ChatsVM extends ChangeNotifier {
   }
 
   void _onForegroundNotificationReceived(RemoteMessage remoteMessage) {
+    print("MDBM ChatsVM _onForegroundNotificationReceived");
     if (remoteMessage.notification != null) {
-      print("MDBM remoteMessage ${remoteMessage.notification}");
+      lookupMessages(limit: 20);
     }
   }
 
   void refreshView() {
-    notifyListeners();
+    print("MDBM ChatsVM refreshView");
+    lookupMessages(limit: 20, getAllMessages: true);
+  }
+
+  void onAppStateChanged(AppLifecycleState state) {
+    print("MDBM ChatsVM onAppStateChanged ${state.name}");
+    if (state == AppLifecycleState.paused) {
+      applicationPaused = true;
+    }
+    if (state == AppLifecycleState.resumed && applicationPaused) {
+      applicationPaused = false;
+      lookupMessages(limit: 20, getAllMessages: true);
+    }
   }
 
   String selectedDepartmentName() {
@@ -82,13 +94,15 @@ class ChatsVM extends ChangeNotifier {
     notifyListeners();
   }
 
-  lookupMessages() async {
+  lookupMessages({int? limit, bool? getAllMessages}) async {
     loading = true;
     notifyListeners();
 
     await fusionConnection.conversations.getConversations(
-      selectedDepartmentId,
-      conversationsLimit,
+      getAllMessages != null && getAllMessages
+          ? DepartmentIds.AllMessages
+          : selectedDepartmentId,
+      limit ?? conversationsLimit,
       _offset,
       (
         List<SMSConversation> convos,
@@ -110,6 +124,9 @@ class ChatsVM extends ChangeNotifier {
               ? -1
               : 1;
         });
+        if (fromServer) {
+          notifyListeners();
+        }
       },
     );
     loading = false;

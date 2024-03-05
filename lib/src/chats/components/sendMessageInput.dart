@@ -1,14 +1,26 @@
+import 'dart:async';
+import 'dart:io';
+
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:fusion_mobile_revamped/src/backend/fusion_connection.dart';
 import 'package:fusion_mobile_revamped/src/chats/viewModels/chatsVM.dart';
 import 'package:fusion_mobile_revamped/src/chats/viewModels/conversation.dart';
+import 'package:fusion_mobile_revamped/src/components/date_time_picker.dart';
 import 'package:fusion_mobile_revamped/src/components/fusion_dropdown.dart';
+import 'package:fusion_mobile_revamped/src/components/popup_menu.dart';
 import 'package:fusion_mobile_revamped/src/models/conversations.dart';
 import 'package:fusion_mobile_revamped/src/models/coworkers.dart';
 import 'package:fusion_mobile_revamped/src/styles.dart';
 import 'package:fusion_mobile_revamped/src/utils.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:path/path.dart' as p;
 
+//TODO::CLEAN UP
 class SendMessageInput extends StatefulWidget {
   final ConversationVM conversationVM;
   final ChatsVM? chatsVM;
@@ -31,13 +43,221 @@ class _SendMessageInputState extends State<SendMessageInput> {
   FusionConnection fusionConnection = FusionConnection.instance;
   TextEditingController _messageInputController = TextEditingController();
 
-  //FIXME: clean up
+  //FIXME: Switch to copy image in natve since its not supported by flutter
+  Timer? _debounceMessageInput;
   int textLength = 0;
   bool isSavedMessage = false;
   bool loading = false;
+  List<String> _savedImgPaths = [];
+  _saveLocalState(lastMessage) {
+    if (_debounceMessageInput?.isActive ?? false)
+      _debounceMessageInput!.cancel();
+    _debounceMessageInput = Timer(const Duration(milliseconds: 1000), () {
+      SharedPreferences.getInstance().then((SharedPreferences prefs) {
+        prefs.setString("${_conversation!.hash}_savedMessage", lastMessage);
+      });
+    });
+  }
+
+  _saveImageLocally(XFile image) async {
+    final String path = await getApplicationDocumentsDirectory().toString();
+
+    String imgExt = p.extension(path);
+    String imagePath =
+        "${_conversation!.hash}_savedImage_" + randomString(10) + "." + imgExt;
+
+    _savedImgPaths.add(imagePath);
+
+    SharedPreferences.getInstance().then((SharedPreferences prefs) {
+      prefs.setStringList("${_conversation!.hash}_savedImages", _savedImgPaths);
+    });
+
+    image.saveTo('$path/$imagePath');
+  }
+
+  @override
+  void dispose() {
+    _debounceMessageInput?.cancel();
+    super.dispose();
+  }
+
   _hasEnteredMessage() {
     return _conversationVM.mediaToSend.length > 0 ||
         _messageInputController.value.text.trim().length > 0;
+  }
+
+  _openMessageScheduling() {
+    showModalBottomSheet(
+        useRootNavigator: true, //to replace previous route
+        context: context,
+        backgroundColor: Colors.transparent,
+        isScrollControlled: true,
+        builder: (BuildContext context) => PopupMenu(
+              bottomChildSymmetricPadding: 0,
+              label: "Schedule Message",
+              bottomChild: DateTimePicker(
+                  iosStyle: true,
+                  height: 240,
+                  onComplete: (DateTime? selectedDateTime) {
+                    setState(() {
+                      if (selectedDateTime != null)
+                        _conversationVM.scheduledAt = selectedDateTime;
+                    });
+                  }),
+            ));
+  }
+
+  _mediaToSendViews() {
+    return _conversationVM.mediaToSend
+        .map((XFile media) {
+          return Container(
+              margin: EdgeInsets.only(right: 8),
+              child: Stack(alignment: Alignment.topRight, children: [
+                ClipRRect(
+                    borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(4),
+                        topRight: Radius.circular(4),
+                        bottomLeft: Radius.circular(4),
+                        bottomRight: Radius.circular(4)),
+                    child: (media.name.toLowerCase().contains("png") ||
+                            media.name.toLowerCase().contains("gif") ||
+                            media.name.toLowerCase().contains("jpg") ||
+                            media.name.toLowerCase().contains("jpeg") ||
+                            media.name.toLowerCase().contains("jiff"))
+                        ? Image.file(File(media.path), height: 100)
+                        : Container(
+                            height: 100,
+                            width: 100,
+                            color: particle,
+                            alignment: Alignment.center,
+                            child: Text("attachment",
+                                style: TextStyle(color: coal)))),
+                GestureDetector(
+                    onTap: () {
+                      this.setState(() {
+                        _conversationVM.mediaToSend.remove(media);
+                      });
+                    },
+                    child: Container(
+                        alignment: Alignment.center,
+                        margin: EdgeInsets.only(top: 8, right: 8),
+                        width: 22,
+                        height: 22,
+                        decoration: BoxDecoration(
+                            color: char,
+                            borderRadius: BorderRadius.all(Radius.circular(11)),
+                            border: Border.all(color: Colors.white, width: 2)),
+                        child: Icon(CupertinoIcons.xmark,
+                            color: Colors.white, size: 12)))
+              ]));
+        })
+        .toList()
+        .cast<Widget>();
+  }
+
+  void _attachImage(String source) {
+    final ImagePicker _picker = ImagePicker();
+    if (source == "camera") {
+      _picker.pickImage(source: ImageSource.camera).then((XFile? file) {
+        if (file != null) {
+          setState(() {
+            _conversationVM.mediaToSend.add(file);
+            _saveImageLocally(file);
+          });
+        }
+      });
+    } else if (source == 'videos') {
+      _picker.pickVideo(source: ImageSource.gallery).then((XFile? file) {
+        if (file != null) {
+          setState(() {
+            _conversationVM.mediaToSend.add(file);
+            _saveImageLocally(file);
+          });
+        }
+      });
+    } else if (source == 'recordvideo') {
+      _picker.pickVideo(source: ImageSource.camera).then((XFile? file) {
+        if (file != null) {
+          setState(() {
+            _conversationVM.mediaToSend.add(file);
+            _saveImageLocally(file);
+          });
+        }
+      });
+    } else {
+      _picker.pickMultiImage().then((List<XFile> images) {
+        this.setState(() {
+          if (images != null) {
+            images.forEach((file) {
+              this.setState(() {
+                _conversationVM.mediaToSend.add(file);
+                _saveImageLocally(file);
+              });
+            });
+          }
+        });
+      });
+    }
+  }
+
+  void _openQuickResponses() {
+    List<String?> messages = _conversationVM.quickResponses
+        .map(
+          (qr) => qr.message,
+        )
+        .toList();
+    showModalBottomSheet(
+        backgroundColor: Colors.transparent,
+        constraints:
+            BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.7),
+        context: context,
+        isScrollControlled: true,
+        builder: (context) => PopupMenu(
+            label: "Quick Responses",
+            bottomChild: messages.length > 0
+                ? Container(
+                    height: MediaQuery.of(context).size.height * 0.3,
+                    child: ListView.separated(
+                        itemBuilder: (BuildContext context, int index) {
+                          return GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _messageInputController.text = messages[index]!;
+                              });
+                              Navigator.pop(context);
+                            },
+                            child: Container(
+                              margin: EdgeInsets.only(top: index == 0 ? 8 : 0),
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 8),
+                                child: Text(
+                                  messages[index]!,
+                                  style: TextStyle(
+                                      fontSize: 16, color: Colors.white),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                        separatorBuilder: (context, index) => Divider(
+                              color: lightDivider,
+                              thickness: 1.0,
+                            ),
+                        itemCount: messages.length),
+                  )
+                : Container(
+                    height: 100,
+                    child: Center(
+                        child: Text("no quick responses found".toTitleCase(),
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.white,
+                              height: 1.5,
+                            ),
+                            textAlign: TextAlign.center)),
+                  )));
   }
 
   @override
@@ -110,9 +330,9 @@ class _SendMessageInputState extends State<SendMessageInput> {
                       padding: EdgeInsets.symmetric(vertical: 10),
                       constraints: BoxConstraints(),
                       onPressed: () {
-                        // setState(() {
-                        //   secheduleIsSet = null;
-                        // });
+                        setState(() {
+                          _conversationVM.scheduledAt = null;
+                        });
                       },
                       icon: Icon(
                         Icons.remove_circle_outline_rounded,
@@ -127,9 +347,9 @@ class _SendMessageInputState extends State<SendMessageInput> {
                   selectedNumber: "",
                   onChange: (String value) {
                     if (value == "schedule") {
-                      // _openMessageScheduling();
+                      _openMessageScheduling();
                     } else {
-                      // _attachImage(value);
+                      _attachImage(value);
                     }
                   },
                   value: "",
@@ -166,8 +386,7 @@ class _SendMessageInputState extends State<SendMessageInput> {
                                 BorderRadius.only(topLeft: Radius.circular(8))),
                         child: ListView(
                           scrollDirection: Axis.horizontal,
-                          // children: _mediaToSendViews(),
-                          children: [],
+                          children: _mediaToSendViews(),
                         ),
                       ),
                     Container(
@@ -198,34 +417,36 @@ class _SendMessageInputState extends State<SendMessageInput> {
                               !isSavedMessage &&
                               _messageInputController.text
                                   .contains("https://fusioncom.co/media")) {
-                            // SharedPreferences.getInstance().then(
-                            //   (SharedPreferences prefs) {
-                            //     String imageUri =
-                            //         prefs.getString("copiedImagePath")!;
-                            //     if (imageUri.length == 0) {
-                            //       this.setState(() {
-                            //         _saveLocalState(changedTo);
-                            //       });
-                            //     } else {
-                            //       // setState(() {
-                            //       //   _mediaToSend.add(XFile('$imageUri'));
-                            //       //   _messageInputController.text = '';
-                            //       //   Clipboard.setData(ClipboardData(text: ''));
-                            //       // });
-                            //     }
-                            //   },
-                            // );
+                            //TODO: clean up and move to native
+                            SharedPreferences.getInstance().then(
+                              (SharedPreferences prefs) {
+                                String imageUri =
+                                    prefs.getString("copiedImagePath")!;
+                                if (imageUri.length == 0) {
+                                  this.setState(() {
+                                    _saveLocalState(changedTo);
+                                  });
+                                } else {
+                                  setState(() {
+                                    _conversationVM.mediaToSend
+                                        .add(XFile('$imageUri'));
+                                    _messageInputController.text = '';
+                                    Clipboard.setData(ClipboardData(text: ''));
+                                  });
+                                }
+                              },
+                            );
                           } else {
-                            // setState(() {
-                            //   _saveLocalState(changedTo);
-                            // });
+                            setState(() {
+                              _saveLocalState(changedTo);
+                            });
                           }
                           textLength = _messageInputController.text.length;
                         },
                         decoration: InputDecoration(
                             suffixIcon: IconButton(
                               icon: Icon(Icons.chat_bubble_outline_outlined),
-                              onPressed: () => print("_openQuickResponses"),
+                              onPressed: _openQuickResponses,
                             ),
                             contentPadding: EdgeInsets.only(
                                 left: 0, right: 0, top: 2, bottom: 2),
@@ -264,7 +485,19 @@ class _SendMessageInputState extends State<SendMessageInput> {
                               : "assets/icons/send.png",
                           height: 40,
                           width: 40),
-                  onPressed: loading ? null : () => print("_sendMessage"),
+                  onPressed: loading
+                      ? null
+                      : () {
+                          _conversationVM.sendMessage(
+                            conversation: _conversation,
+                            messageText:
+                                _messageInputController.value.text.trim(),
+                          );
+                          setState(() {
+                            _messageInputController.text = "";
+                            _saveLocalState("");
+                          });
+                        },
                 ),
               )
             ],

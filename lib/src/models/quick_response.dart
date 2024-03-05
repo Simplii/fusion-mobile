@@ -1,4 +1,3 @@
-
 import 'dart:convert' as convert;
 import 'package:fusion_mobile_revamped/src/backend/fusion_connection.dart';
 
@@ -14,7 +13,7 @@ class QuickResponse extends FusionModel {
   String? uid;
   String? updatedAt;
 
-  QuickResponse(Map<String,dynamic>obj){
+  QuickResponse(Map<String, dynamic> obj) {
     this.createdAt = obj['created_at'];
     this.domain = obj['domain'];
     this.groupId = obj['group_id'];
@@ -23,7 +22,7 @@ class QuickResponse extends FusionModel {
     this.uid = obj['uid'];
     this.updatedAt = obj['updated_at'];
   }
-  
+
   serialize() {
     return convert.jsonEncode({
       'createdAt': createdAt,
@@ -35,7 +34,7 @@ class QuickResponse extends FusionModel {
     });
   }
 
-  QuickResponse.unserialize(String data){
+  QuickResponse.unserialize(String data) {
     Map<String, dynamic> obj = convert.jsonDecode(data);
     this.createdAt = obj['created_at'];
     this.domain = obj['domain'];
@@ -48,24 +47,29 @@ class QuickResponse extends FusionModel {
 }
 
 class QuickResponsesStore extends FusionStore<QuickResponse> {
-  QuickResponsesStore(FusionConnection fusionConnection) : super(fusionConnection);
+  QuickResponsesStore(FusionConnection fusionConnection)
+      : super(fusionConnection);
 
-  void getQuickResponses(String? departmentId, Function(List<QuickResponse>) quickResponses){
-    fusionConnection.apiV2Call("get", 
-    departmentId == "-1" 
-      ? "/messaging/user/${fusionConnection.getUid()}/quickMessages"
-      : "/messaging/group/$departmentId/quickMessages", 
-    {}, 
-    callback: (Map<String,dynamic>data){
-      List<QuickResponse> quickResps = [];
-      if(data.containsKey('items')){
-        for (Map<String,dynamic> item in data['items']) {
-          QuickResponse quickRes = QuickResponse(item);
-          storeRecord(quickRes);
-          quickResps.add(quickRes);
+  Future<List<QuickResponse>> getQuickResponses(
+    String? departmentId,
+  ) async {
+    List<QuickResponse> quickResponses = [];
+    await fusionConnection.apiV2Call(
+      "get",
+      departmentId == "-1"
+          ? "/messaging/user/${fusionConnection.getUid()}/quickMessages"
+          : "/messaging/group/$departmentId/quickMessages",
+      {},
+      callback: (Map<String, dynamic> data) {
+        if (data.containsKey('items')) {
+          for (Map<String, dynamic> item in data['items']) {
+            QuickResponse quickRes = QuickResponse(item);
+            storeRecord(quickRes);
+            quickResponses.add(quickRes);
+          }
         }
-      }
-      quickResponses(quickResps);
-    });
+      },
+    );
+    return quickResponses;
   }
 }

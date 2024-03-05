@@ -315,14 +315,15 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
     persist(message);
   }
 
-  sendMediaMessage(
-      XFile file,
-      SMSConversation conversation,
-      String? departmentId,
-      dynamic generatedConvoId,
-      Function? callback,
-      Function largeMMSCallback,
-      schedule) async {
+  _sendMediaMessage(
+    XFile file,
+    SMSConversation conversation,
+    String? departmentId,
+    dynamic generatedConvoId,
+    Function? callback,
+    Function largeMMSCallback,
+    schedule,
+  ) async {
     int fileSize = await file.length();
     bool _canSendLargeMMS = true;
 
@@ -408,17 +409,25 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
   }
 
   sendMessage(
-      String? text,
-      SMSConversation conversation,
-      String? departmentId,
-      XFile? mediaFile,
-      Function? callback,
-      Function largeMMSCallback,
-      DateTime? schedule) async {
+    String? text,
+    SMSConversation conversation,
+    String? departmentId,
+    XFile? mediaFile,
+    Function(SMSMessage)? callback,
+    Function largeMMSCallback,
+    DateTime? schedule,
+  ) async {
     if (conversation.conversationId != null) {
       if (mediaFile != null) {
-        this.sendMediaMessage(mediaFile, conversation, departmentId, null,
-            callback, largeMMSCallback, schedule);
+        _sendMediaMessage(
+          mediaFile,
+          conversation,
+          departmentId,
+          null,
+          callback,
+          largeMMSCallback,
+          schedule,
+        );
       } else {
         fusionConnection.apiV2Call(
             "post",
@@ -431,7 +440,7 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
               'isGroup': conversation.isGroup
             }, callback: (Map<String, dynamic> data) {
           if (data.containsKey("success") && !data['success']) {
-            return toast("${data['error']}");
+            return toast("Message did not send due to ${data['error']}");
           }
           SMSMessage message = SMSMessage.fromV2(data);
           conversation.message = message;
@@ -439,7 +448,7 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
           storeRecord(message);
           fusionConnection.conversations.storeRecord(conversation);
           if (callback != null) {
-            callback();
+            callback(message);
           }
         });
       }
@@ -453,8 +462,15 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
         conversation.conversationId = data['groupId'];
         if (mediaFile != null) {
           var generatedConvoId = data['groupId'];
-          this.sendMediaMessage(mediaFile, conversation, departmentId,
-              generatedConvoId, callback, largeMMSCallback, schedule);
+          _sendMediaMessage(
+            mediaFile,
+            conversation,
+            departmentId,
+            generatedConvoId,
+            callback,
+            largeMMSCallback,
+            schedule,
+          );
         } else {
           fusionConnection.apiV2Call(
               "post",
@@ -471,7 +487,9 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
             SMSMessage message = SMSMessage.fromV2(data);
             conversation.message = message;
             storeRecord(message);
-            callback!();
+            if (callback != null) {
+              callback(message);
+            }
           });
         }
       });
@@ -762,5 +780,82 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
     this.removeRecord(message.id);
     await fusionConnection.db
         .delete('sms_message', where: 'id = ?', whereArgs: [message.id]);
+  }
+}
+
+class wsMessageObject {
+  final int id;
+  final String mime;
+  final String from;
+  final String to;
+  final String time;
+  final bool media;
+  final String messageStatus;
+  final String type;
+  final bool convertedMMS;
+  final bool isGroup;
+  final bool read;
+  final int unixtime;
+  final String? user;
+  final bool smsWebhookId;
+  final String domain;
+  final String message;
+  final bool scheduledAt;
+  final bool smsCampaignId;
+  final bool flagged;
+  final String flag;
+  final String flagLevel;
+  final String errorMessage;
+
+  wsMessageObject({
+    required this.id,
+    required this.mime,
+    required this.from,
+    required this.to,
+    required this.time,
+    required this.media,
+    required this.messageStatus,
+    required this.type,
+    required this.convertedMMS,
+    required this.isGroup,
+    required this.read,
+    required this.unixtime,
+    required this.smsWebhookId,
+    required this.user,
+    required this.domain,
+    required this.message,
+    required this.scheduledAt,
+    required this.smsCampaignId,
+    required this.flagged,
+    required this.flag,
+    required this.flagLevel,
+    required this.errorMessage,
+  });
+
+  factory wsMessageObject.fromJson(Map<String, dynamic> data) {
+    return wsMessageObject(
+      id: data["id"],
+      mime: data["mime"],
+      from: data["from"],
+      to: data["to"],
+      time: data["time"],
+      media: data["media"],
+      messageStatus: data["message_status"],
+      type: data["type"],
+      convertedMMS: data["converted_mms"] == 1,
+      isGroup: data["is_group"],
+      read: data["read"] == 1,
+      unixtime: data["unixtime"],
+      smsWebhookId: data["sms_webhook_id"],
+      user: data["user"],
+      domain: data["domain"],
+      message: data["message"],
+      scheduledAt: data["scheduled_at"],
+      smsCampaignId: data["sms_campaign_id"],
+      flagged: data["flagged"],
+      flag: data["flag"],
+      flagLevel: data["flagLevel"],
+      errorMessage: data["error_message"],
+    );
   }
 }

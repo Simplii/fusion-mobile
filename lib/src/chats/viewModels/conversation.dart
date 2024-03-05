@@ -1,36 +1,79 @@
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:fusion_mobile_revamped/src/backend/fusion_connection.dart';
+import 'package:fusion_mobile_revamped/src/chats/viewModels/chatsVM.dart';
 import 'package:fusion_mobile_revamped/src/models/contact.dart';
 import 'package:fusion_mobile_revamped/src/models/conversations.dart';
 import 'package:fusion_mobile_revamped/src/models/coworkers.dart';
 import 'package:fusion_mobile_revamped/src/models/messages.dart';
+import 'package:fusion_mobile_revamped/src/models/quick_response.dart';
 import 'package:fusion_mobile_revamped/src/models/sms_departments.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:internet_connection_checker/internet_connection_checker.dart';
 
 class ConversationVM with ChangeNotifier {
   late String conversationDepartmentId;
-  SMSConversation conversation;
+  late StreamSubscription wsStream;
+  late StreamSubscription<RemoteMessage> notificationStream;
   final FusionConnection fusionConnection = FusionConnection.instance;
+  ChatsVM? _chatsVM;
+  SMSConversation conversation;
 
   List<SMSMessage> conversationMessages = [];
   bool loadingMessages = false;
   bool showSnackBar = false;
   DateTime? scheduledAt;
   List<XFile> mediaToSend = [];
+  List<QuickResponse> quickResponses = [];
+  bool sendingMessage = false;
 
-  ConversationVM({required this.conversation}) {
+  ConversationVM({required this.conversation, ChatsVM? chatsVM}) {
+    _chatsVM = chatsVM;
     conversationDepartmentId = conversation.getDepartmentId(
       fusionConnection: fusionConnection,
     );
+    wsStream = fusionConnection.websocketStream.stream.listen(_updateFromWS);
+    notificationStream =
+        FirebaseMessaging.onMessage.listen(_onNotificationReceived);
     lookupMessages();
   }
 
-  void lookupMessages() {
+  void _updateFromWS(event) {
+    Map<String, dynamic> wsMessage = jsonDecode(event);
+    if (wsMessage.containsKey("sms_received") && wsMessage["sms_received"]) {
+      wsMessageObject message = wsMessageObject.fromJson(
+        wsMessage['message_object'],
+      );
+      SMSMessage? messageToUpdate = conversationMessages
+          .where((m) => int.parse(m.id) == message.id)
+          .firstOrNull;
+      if (messageToUpdate != null) {
+        messageToUpdate.messageStatus = message.messageStatus;
+        messageToUpdate.errorMessage = message.errorMessage;
+        notifyListeners();
+      }
+    }
+  }
+
+  void _onNotificationReceived(RemoteMessage message) {
+    lookupMessages(limit: 20);
+  }
+
+  void cancelListeners() {
+    wsStream.cancel();
+    notificationStream.cancel();
+  }
+
+  void lookupMessages({int? limit}) {
     loadingMessages = true;
     notifyListeners();
     fusionConnection.messages.getMessages(
       conversation,
-      100,
+      limit ?? 100,
       0,
       (List<SMSMessage> messages, fromServer) {
         conversationMessages = messages;
@@ -39,7 +82,6 @@ class ConversationVM with ChangeNotifier {
         });
         loadingMessages = false;
         notifyListeners();
-        print("MDBM callback ${messages} $fromServer");
       },
       conversationDepartmentId,
     );
@@ -70,6 +112,16 @@ class ConversationVM with ChangeNotifier {
     return nameUpdated;
   }
 
+  Future<void> _updateQuickMessages() async {
+    List<QuickResponse> quickRes =
+        await fusionConnection.quickResponses.getQuickResponses(
+      conversationDepartmentId == DepartmentIds.AllMessages
+          ? DepartmentIds.Personal
+          : conversationDepartmentId,
+    );
+    quickResponses = quickRes;
+  }
+
   void onDepartmentChange(String departmentId) async {
     SMSDepartment department =
         fusionConnection.smsDepartments.getDepartment(departmentId);
@@ -85,6 +137,7 @@ class ConversationVM with ChangeNotifier {
         conversation.contacts,
       );
       lookupMessages();
+      await _updateQuickMessages();
       loadingMessages = false;
       notifyListeners();
     }
@@ -105,8 +158,63 @@ class ConversationVM with ChangeNotifier {
         conversation.contacts,
       );
       lookupMessages();
+      await _updateQuickMessages();
       loadingMessages = false;
       notifyListeners();
     }
+  }
+
+  void sendMessage({
+    required SMSConversation conversation,
+    required String messageText,
+  }) {
+    if (messageText.isNotEmpty) {
+      if (FusionConnection.isInternetActive) {
+        fusionConnection.messages.sendMessage(
+          messageText,
+          conversation,
+          conversationDepartmentId,
+          null,
+          (SMSMessage message) {
+            //success callback
+            print("MDBM send message callback");
+            conversationMessages.insert(
+              0,
+              message,
+            );
+            notifyListeners();
+            _chatsVM?.refreshView();
+          },
+          () {
+            // failed callback: LargeMMS
+          },
+          scheduledAt,
+        );
+      } else {
+        //TODO:Send offline message
+        print("MDBM send offline message ");
+        print("MDBM internet active= ${FusionConnection.isInternetActive}");
+      }
+    }
+    if (mediaToSend.isNotEmpty) {
+      for (XFile file in mediaToSend) {
+        fusionConnection.messages.sendMessage(
+          '',
+          conversation,
+          conversationDepartmentId,
+          file,
+          (message) {
+            //success callback
+          },
+          () {
+            // failed callback: LargeMMS
+          },
+          scheduledAt,
+        );
+      }
+      mediaToSend = [];
+    }
+    print("MDBM send message");
+    notifyListeners();
   }
 }

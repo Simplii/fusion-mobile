@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:fusion_mobile_revamped/src/backend/fusion_connection.dart';
 import 'package:fusion_mobile_revamped/src/chats/components/headerTopRow.dart';
@@ -29,8 +32,17 @@ class _ConversationViewState extends State<ConversationView> {
 
   @override
   void initState() {
-    _conversationVM = ConversationVM(conversation: _conversation);
+    _conversationVM = ConversationVM(
+      conversation: _conversation,
+      chatsVM: _chatsVM,
+    );
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    _conversationVM.cancelListeners();
+    super.dispose();
   }
 
   @override

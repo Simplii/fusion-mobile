@@ -172,14 +172,14 @@ class _SMSConversationViewState extends State<SMSConversationView> {
   }
 
   _updateQuickMessages({String selectedDept = ""}) {
-    _fusionConnection.quickResponses.getQuickResponses(
-        selectedDept == DepartmentIds.AllMessages
-            ? DepartmentIds.Personal
-            : selectedDept, (List<QuickResponse> data) {
-      setState(() {
-        quickResponses = data;
-      });
-    });
+    // _fusionConnection.quickResponses.getQuickResponses(
+    //     selectedDept == DepartmentIds.AllMessages
+    //         ? DepartmentIds.Personal
+    //         : selectedDept, (List<QuickResponse> data) {
+    //   setState(() {
+    //     quickResponses = data;
+    //   });
+    // });
   }
 
   _openMedia(SMSMessage? message) {
@@ -1154,38 +1154,38 @@ class _SMSConversationViewState extends State<SMSConversationView> {
           }
           _messageInputController.text = "";
         } else {
-          _fusionConnection!.messages.sendMessage(
-              _messageInputController.value.text,
-              _conversation!,
-              _selectedGroupId,
-              null, () {
-            if (_setOnMessagePosted != null)
-              _setOnMessagePosted!(_conversation!.getId());
-            if (!mounted) return;
-            setState(() {
-              secheduleIsSet = null;
-            });
-            Future.delayed(Duration(seconds: 4), () {
-              if (mounted) {
-                setState(() {
-                  disableDepartmentSelection = false;
-                });
-              }
-            });
-          }, () => null, secheduleIsSet ?? secheduleIsSet);
+          // _fusionConnection!.messages.sendMessage(
+          //     _messageInputController.value.text,
+          //     _conversation!,
+          //     _selectedGroupId,
+          //     null, () {
+          //   if (_setOnMessagePosted != null)
+          //     _setOnMessagePosted!(_conversation!.getId());
+          //   if (!mounted) return;
+          //   setState(() {
+          //     secheduleIsSet = null;
+          //   });
+          //   Future.delayed(Duration(seconds: 4), () {
+          //     if (mounted) {
+          //       setState(() {
+          //         disableDepartmentSelection = false;
+          //       });
+          //     }
+          //   });
+          // }, () => null, secheduleIsSet ?? secheduleIsSet);
           _messageInputController.text = "";
         }
       }
       if (_mediaToSend.length > 0) {
         for (XFile file in _mediaToSend) {
-          _fusionConnection!.messages.sendMessage(
-              '',
-              _conversation!,
-              _selectedGroupId,
-              file,
-              _setOnMessagePosted,
-              _largeMMS,
-              secheduleIsSet ?? secheduleIsSet);
+          // _fusionConnection!.messages.sendMessage(
+          //     '',
+          //     _conversation!,
+          //     _selectedGroupId,
+          //     file,
+          //     _setOnMessagePosted,
+          //     _largeMMS,
+          //     secheduleIsSet ?? secheduleIsSet);
         }
         _mediaToSend = [];
       }
@@ -1637,8 +1637,8 @@ class _SMSMessageViewState extends State<SMSMessageView> {
         _messages.removeWhere((msg) => msg.id == message.id);
       });
 
-      _fusionConnection!.messages.sendMessage(message.message, _conversation!,
-          _selectedGroupId, null, _setOnMessagePosted, () => null, null);
+      // _fusionConnection!.messages.sendMessage(message.message, _conversation!,
+      //     _selectedGroupId, null, _setOnMessagePosted, () => null, null);
     }
   }
 

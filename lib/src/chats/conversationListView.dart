@@ -64,62 +64,67 @@ class _ConversationListViewState extends State<ConversationListView> {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      controller: _scrollController,
-      itemCount: _conversations.length,
-      itemBuilder: (BuildContext context, int index) {
-        return GestureDetector(
-          onTap: () => _openConversation(_conversations[index]),
-          child: Dismissible(
-            key: ValueKey<SMSConversation>(_conversations[index]),
-            direction: DismissDirection.endToStart,
-            background: Container(
-              color: crimsonDark,
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: Icon(Icons.delete, color: Colors.white),
-                ),
-              ),
-            ),
-            onDismissed: (DismissDirection direction) {
-              _chatsVM.deleteConversation(conversationIndex: index);
-            },
-            confirmDismiss: (DismissDirection direction) async {
-              return await showDialog(
-                context: context,
-                builder: (BuildContext context) {
-                  return AlertDialog(
-                    title: const Text("Confirm"),
-                    content: const Text(
-                        "Are you sure you wish to delete this conversation?"),
-                    actions: <Widget>[
-                      TextButton(
-                          style: TextButton.styleFrom(
-                            foregroundColor: crimsonDark,
-                          ),
-                          onPressed: () => Navigator.of(context).pop(true),
-                          child: const Text("DELETE")),
-                      TextButton(
-                        style: TextButton.styleFrom(
-                          foregroundColor: Colors.black,
-                        ),
-                        onPressed: () => Navigator.of(context).pop(false),
-                        child: const Text("CANCEL"),
+    return ListenableBuilder(
+        listenable: _chatsVM,
+        builder: (context, child) {
+          return ListView.builder(
+            controller: _scrollController,
+            itemCount: _conversations.length,
+            itemBuilder: (BuildContext context, int index) {
+              return GestureDetector(
+                onTap: () => _openConversation(_conversations[index]),
+                child: Dismissible(
+                  key: ValueKey<SMSConversation>(_conversations[index]),
+                  direction: DismissDirection.endToStart,
+                  background: Container(
+                    color: crimsonDark,
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: Padding(
+                        padding: EdgeInsets.all(16.0),
+                        child: Icon(Icons.delete, color: Colors.white),
                       ),
-                    ],
-                  );
-                },
+                    ),
+                  ),
+                  onDismissed: (DismissDirection direction) {
+                    _chatsVM.deleteConversation(conversationIndex: index);
+                  },
+                  confirmDismiss: (DismissDirection direction) async {
+                    return await showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: const Text("Confirm"),
+                          content: const Text(
+                              "Are you sure you wish to delete this conversation?"),
+                          actions: <Widget>[
+                            TextButton(
+                                style: TextButton.styleFrom(
+                                  foregroundColor: crimsonDark,
+                                ),
+                                onPressed: () =>
+                                    Navigator.of(context).pop(true),
+                                child: const Text("DELETE")),
+                            TextButton(
+                              style: TextButton.styleFrom(
+                                foregroundColor: Colors.black,
+                              ),
+                              onPressed: () => Navigator.of(context).pop(false),
+                              child: const Text("CANCEL"),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                  child: ConversationRow(
+                    convo: _conversations[index],
+                    chatsVM: _chatsVM,
+                  ),
+                ),
               );
             },
-            child: ConversationRow(
-              convo: _conversations[index],
-              chatsVM: _chatsVM,
-            ),
-          ),
-        );
-      },
-    );
+          );
+        });
   }
 }
