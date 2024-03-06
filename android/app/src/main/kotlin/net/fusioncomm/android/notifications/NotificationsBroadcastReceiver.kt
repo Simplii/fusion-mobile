@@ -68,10 +68,12 @@ class NotificationsBroadcastReceiver: BroadcastReceiver()  {
                 // Since we know the user has tapped on callStyle notification to get here
                 val intent = Intent(context, FusionCallService::class.java)
                 intent.putExtra(NotificationsManager.INTENT_NOTIF_ID, notificationId)
+                intent.putExtra("AnswerCall", true)
                 context.startForegroundService(intent)
                 NotificationsManager.callServiceStartedFormBR = true
             }
-            call.accept()
+            //FIXME:: call need to be answered after the service start
+//            call.accept()
         } else if (intent.action == NotificationsManager.INTENT_UNHOLD_CALL_NOTIF_ACTION) {
             Log.d(debugTag, "unhold call")
             FMCore.callsManager.resumeCall(call)
