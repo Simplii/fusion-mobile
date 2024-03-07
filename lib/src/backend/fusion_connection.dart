@@ -849,7 +849,7 @@ class FusionConnection {
     websocketStream.addStream(socketChannel.stream);
 
     websocketStream.stream.listen((messageData) async {
-      print("MDBM wsMessage ${messageData}");
+      // print("MDBM wsMessage ${messageData}");
       Map<String, dynamic> message = convert.jsonDecode(messageData);
       if (message.containsKey('heartbeat')) {
         _heartbeats[message['heartbeat']] = true;

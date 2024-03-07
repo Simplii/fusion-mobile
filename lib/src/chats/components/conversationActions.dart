@@ -60,14 +60,16 @@ class ConversationActions extends StatelessWidget {
     List<List<String>> options = [
       ["Shared Media", "sharedmedia"],
       ["Delete Conversation", "deleteconversation"],
+      ["Mark Unread", "markunread"]
     ];
-
+    if (conversation.isBroadcast) {
+      options.removeWhere((item) => item[0] == "Mark Unread");
+    }
     if (conversation.isGroup) {
       options.add(["Rename Conversation", "rename"]);
     }
     if (conversation.isGroup && !conversation.isBroadcast) {
       options.add(["Open Members List", "convoMembers"]);
-      options.add(["Mark Unread", "markunread"]);
       if (conversationDepartmentId != DepartmentIds.FusionChats &&
           conversationDepartmentId != DepartmentIds.Personal) {
         options.add(["Assign Conversation", "assignConvo"]);

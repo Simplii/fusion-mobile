@@ -35,20 +35,16 @@ class _ConversationListViewState extends State<ConversationListView> {
     super.dispose();
   }
 
-  //FIXME: fix load more convos
   void _loadMoreData() {
     if (_scrollController.position.pixels ==
             _scrollController.position.maxScrollExtent &&
         !_chatsVM.loading) {
-      // User has reached the end of the list
-      // Load more data or trigger pagination in flutter
-      print('MDBM end of list');
+      _chatsVM.loadMore();
     }
   }
 
-  //Routes
   void _openConversation(SMSConversation convo) {
-    // _fusionConnection.conversations.markRead(convo);
+    _chatsVM.markConversationAsRead(convo);
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -57,6 +53,7 @@ class _ConversationListViewState extends State<ConversationListView> {
         return ConversationView(
           conversation: convo,
           chatsVM: _chatsVM,
+          isNewConversation: false,
         );
       },
     );
@@ -69,8 +66,24 @@ class _ConversationListViewState extends State<ConversationListView> {
         builder: (context, child) {
           return ListView.builder(
             controller: _scrollController,
-            itemCount: _conversations.length,
+            itemCount: _chatsVM.loadingMoreConversations
+                ? _conversations.length + 1
+                : _conversations.length,
             itemBuilder: (BuildContext context, int index) {
+              if (index == (_conversations.length)) {
+                return Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Center(
+                    child: SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(
+                        color: crimsonLight,
+                      ),
+                    ),
+                  ),
+                );
+              }
               return GestureDetector(
                 onTap: () => _openConversation(_conversations[index]),
                 child: Dismissible(

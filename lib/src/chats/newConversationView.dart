@@ -237,6 +237,8 @@ class _NewMessageViewState extends State<NewMessageView> {
         }
       });
     }
+    print(
+        "MDBM convo ${newConversationVM.selectedDepartmentId} ${newConversationVM.getMyNumber()}");
 
     SMSConversation? convo =
         await fusionConnection.messages.checkExistingConversation(
@@ -245,7 +247,6 @@ class _NewMessageViewState extends State<NewMessageView> {
       toNumbers,
       toContacts,
     );
-
     Navigator.pop(this.context);
     showModalBottomSheet(
         context: context,
@@ -254,6 +255,7 @@ class _NewMessageViewState extends State<NewMessageView> {
         builder: (context) => ConversationView(
               conversation: convo,
               chatsVM: _chatsVM,
+              isNewConversation: true,
             ));
   }
 

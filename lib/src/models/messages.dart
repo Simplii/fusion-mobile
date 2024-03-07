@@ -47,6 +47,9 @@ class SMSMessage extends FusionModel {
   String? user;
   String errorMessage = "";
   int broadcastConvoId = 0;
+  List<String> typingUsers = [];
+  String userTyping1 = "";
+  String userTyping2 = "";
 
   SMSMessage(Map<String, dynamic> map) {
     Map<String, dynamic> timeDateObj = checkDateObj(map['time'])!;
@@ -70,7 +73,7 @@ class SMSMessage extends FusionModel {
     this.time = CarbonDate(timeDateObj);
     this.to = map['to'].toString().toLowerCase();
     this.type = map['type'];
-    this.unixtime = map['unixtime'];
+    this.unixtime = map['unixtime'] ?? 0;
     this.user = map['user'].runtimeType == String ? map['user'] : null;
     this.broadcastConvoId = map['broadcastConversationId'] ?? 0;
     this.errorMessage = map['errorMessage'] ?? "";
@@ -132,7 +135,10 @@ class SMSMessage extends FusionModel {
       'unixtime': unixtime,
       'user': user,
       'broadcastConvoId': broadcastConvoId,
-      'errorMessage': errorMessage
+      'errorMessage': errorMessage,
+      'typingUsers': typingUsers,
+      'userTyping1': userTyping1,
+      'userTyping2': userTyping2,
     });
   }
 
@@ -190,6 +196,37 @@ class SMSMessage extends FusionModel {
     this.errorMessage = "";
   }
 
+  SMSMessage.typing({
+    required String from,
+    required bool isGroup,
+    required String text,
+    required String to,
+    required String user,
+    required String messageId,
+    required String domain,
+  }) {
+    String date = DateTime.now().toString();
+    this.convertedMms = false;
+    this.domain = domain;
+    this.from = from;
+    this.fromMe = false;
+    this.id = messageId;
+    this.isGroup = isGroup;
+    this.message = text;
+    this.messageStatus = 'typing';
+    this.mime = null;
+    this.read = true;
+    this.scheduledAt = null;
+    this.smsWebhookId = 0;
+    this.time = CarbonDate.fromDate(date);
+    this.to = to;
+    this.type = "sms";
+    this.unixtime = DateTime.parse(date).millisecondsSinceEpoch ~/ 1000;
+    this.user = user;
+    this.broadcastConvoId = 0;
+    this.errorMessage = "";
+    this.typingUsers.add(user);
+  }
   @override
   String getId() => this.id!.toLowerCase();
 }
@@ -780,82 +817,5 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
     this.removeRecord(message.id);
     await fusionConnection.db
         .delete('sms_message', where: 'id = ?', whereArgs: [message.id]);
-  }
-}
-
-class wsMessageObject {
-  final int id;
-  final String mime;
-  final String from;
-  final String to;
-  final String time;
-  final bool media;
-  final String messageStatus;
-  final String type;
-  final bool convertedMMS;
-  final bool isGroup;
-  final bool read;
-  final int unixtime;
-  final String? user;
-  final bool smsWebhookId;
-  final String domain;
-  final String message;
-  final bool scheduledAt;
-  final bool smsCampaignId;
-  final bool flagged;
-  final String flag;
-  final String flagLevel;
-  final String errorMessage;
-
-  wsMessageObject({
-    required this.id,
-    required this.mime,
-    required this.from,
-    required this.to,
-    required this.time,
-    required this.media,
-    required this.messageStatus,
-    required this.type,
-    required this.convertedMMS,
-    required this.isGroup,
-    required this.read,
-    required this.unixtime,
-    required this.smsWebhookId,
-    required this.user,
-    required this.domain,
-    required this.message,
-    required this.scheduledAt,
-    required this.smsCampaignId,
-    required this.flagged,
-    required this.flag,
-    required this.flagLevel,
-    required this.errorMessage,
-  });
-
-  factory wsMessageObject.fromJson(Map<String, dynamic> data) {
-    return wsMessageObject(
-      id: data["id"],
-      mime: data["mime"],
-      from: data["from"],
-      to: data["to"],
-      time: data["time"],
-      media: data["media"],
-      messageStatus: data["message_status"],
-      type: data["type"],
-      convertedMMS: data["converted_mms"] == 1,
-      isGroup: data["is_group"],
-      read: data["read"] == 1,
-      unixtime: data["unixtime"],
-      smsWebhookId: data["sms_webhook_id"],
-      user: data["user"],
-      domain: data["domain"],
-      message: data["message"],
-      scheduledAt: data["scheduled_at"],
-      smsCampaignId: data["sms_campaign_id"],
-      flagged: data["flagged"],
-      flag: data["flag"],
-      flagLevel: data["flagLevel"],
-      errorMessage: data["error_message"],
-    );
   }
 }

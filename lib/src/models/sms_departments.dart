@@ -10,7 +10,7 @@ import 'fusion_store.dart';
 
 class SMSDepartment extends FusionModel {
   String? groupName;
-  String? id;
+  late String id;
   List<String> numbers = [];
   List<String> mmsNumbers = [];
   String? primaryUser;
@@ -145,7 +145,7 @@ class SMSDepartmentsStore extends FusionStore<SMSDepartment> {
     }
   }
 
-  getDepartment(String? id) {
+  SMSDepartment getDepartment(String? id) {
     return lookupRecord(id);
   }
 

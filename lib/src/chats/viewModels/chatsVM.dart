@@ -12,11 +12,12 @@ class ChatsVM extends ChangeNotifier {
   final FusionConnection fusionConnection;
   final Softphone softPhone;
   final SharedPreferences sharedPreferences;
-  final int conversationsLimit = 100;
+  final int conversationsLimit = 50;
   late final StreamSubscription<RemoteMessage> notificationsStream;
   //mutable values
   String selectedDepartmentId = "-2";
   bool loading = false;
+  bool loadingMoreConversations = false;
   int _offset = 0;
   List<SMSConversation> conversations = [];
   bool applicationPaused = false;
@@ -125,6 +126,7 @@ class ChatsVM extends ChangeNotifier {
               : 1;
         });
         if (fromServer) {
+          loadingMoreConversations = false;
           notifyListeners();
         }
       },
@@ -132,6 +134,12 @@ class ChatsVM extends ChangeNotifier {
     loading = false;
     print("MDBM conversations offset $_offset");
     notifyListeners();
+  }
+
+  void loadMore() {
+    loadingMoreConversations = true;
+    _offset = conversationsLimit + _offset;
+    lookupMessages();
   }
 
   void deleteConversation({
@@ -187,5 +195,10 @@ class ChatsVM extends ChangeNotifier {
     );
     print("MDBM new ${newConvos.length}");
     return newConvos;
+  }
+
+  void markConversationAsRead(SMSConversation conversation) {
+    fusionConnection.conversations.markRead(conversation);
+    notifyListeners();
   }
 }

@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:fusion_mobile_revamped/src/backend/fusion_connection.dart';
 import 'package:fusion_mobile_revamped/src/chats/components/messageBody.dart';
 import 'package:fusion_mobile_revamped/src/chats/components/pictureMessageBody.dart';
+import 'package:fusion_mobile_revamped/src/chats/viewModels/conversation.dart';
 import 'package:fusion_mobile_revamped/src/components/contact_circle.dart';
 import 'package:fusion_mobile_revamped/src/components/popup_menu.dart';
 import 'package:fusion_mobile_revamped/src/models/contact.dart';
 import 'package:fusion_mobile_revamped/src/models/conversations.dart';
+import 'package:fusion_mobile_revamped/src/models/coworkers.dart';
 import 'package:fusion_mobile_revamped/src/models/messages.dart';
 import 'package:fusion_mobile_revamped/src/styles.dart';
 import 'package:fusion_mobile_revamped/src/utils.dart';
@@ -32,11 +34,11 @@ class MessageRow extends StatelessWidget {
   }
 
   Contact _getAvatar(String from, bool isMe) {
+    final FusionConnection fusionConnection = FusionConnection.instance;
     if (isMe) {
-      final FusionConnection fusionConnection = FusionConnection.instance;
       //FIXME: figure out unknown coworker
-      return message.user == null
-          ? Contact.fake(from, firstName: "Unknown", lastName: "Coworker")
+      return message.user == null || !message.user!.contains("@")
+          ? Contact.fake(from, firstName: "", lastName: "")
           : fusionConnection.coworkers
               .lookupCoworker(
                   "${message.user?.split('@')[0]}@${fusionConnection.getDomain()}")
@@ -160,6 +162,58 @@ class MessageRow extends StatelessWidget {
         });
   }
 
+  Widget UserAvatar() {
+    return Container(
+      constraints: BoxConstraints(
+          maxWidth: message.typingUsers.length * 40, maxHeight: 40),
+      margin: EdgeInsets.symmetric(horizontal: 10),
+      child: ListView.builder(
+        shrinkWrap: true,
+        scrollDirection: Axis.horizontal,
+        itemCount: message.typingUsers.length,
+        itemBuilder: (context, index) {
+          FusionConnection fusionConnection = FusionConnection.instance;
+          Contact contact = message.typingUsers[index] == "test@SimpliiDev"
+              ? Contact.fake("801897133")
+              : fusionConnection.coworkers
+                  .getCowworker(message.typingUsers[index])
+                  ?.toContact();
+          return Align(
+            widthFactor: 0.4,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(60),
+              child: SizedBox(
+                height: 40,
+                width: 40,
+                child:
+                    ContactCircle.withDiameterAndMargin([contact], [], 44, 0),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  String _getTypingUserName() {
+    String title = "";
+    FusionConnection fusionConnection = FusionConnection.instance;
+    if (message.typingUsers.length > 2) {
+      return title = "Several People are typing...";
+    }
+    for (var element in message.typingUsers) {
+      Coworker? co = fusionConnection.coworkers.getCowworker(element);
+      if (title.isNotEmpty) {
+        title += " & ${co?.firstName}";
+      } else {
+        title = "${co?.firstName}";
+      }
+    }
+    return message.typingUsers.length > 1
+        ? title + ' are typing...'
+        : title + ' is typing...';
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool isMe = message.from == conversation.myNumber;
@@ -183,15 +237,10 @@ class MessageRow extends StatelessWidget {
         : false;
     return Align(
         alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-        child: Container(
-            //TODO:remove this container
-            // color: Colors.amber,
-            child: Row(
+        child: Row(
           textDirection: isMe ? TextDirection.ltr : TextDirection.rtl,
           mainAxisSize: MainAxisSize.min,
-          // children will be user avatar and message
           children: [
-            // children are message time and message body
             Column(
               crossAxisAlignment:
                   isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
@@ -200,11 +249,15 @@ class MessageRow extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      Text(
-                        matchedContact.id.isNotEmpty
-                            ? "${matchedContact.name!.toTitleCase()}"
-                            : "${message.from.formatPhone()}",
-                      ),
+                      message.typingUsers.isNotEmpty
+                          ? LimitedBox(
+                              maxWidth: MediaQuery.of(context).size.width - 165,
+                              child: Text(_getTypingUserName()))
+                          : Text(
+                              matchedContact.id.isNotEmpty
+                                  ? "${matchedContact.name!.toTitleCase()}"
+                                  : "${message.from.formatPhone()}",
+                            ),
                       SizedBox(
                         width: 4,
                       ),
@@ -271,6 +324,7 @@ class MessageRow extends StatelessWidget {
                             : MessageBody(
                                 isMe: isMe,
                                 maxWidth: maxWidth,
+                                isTyping: message.id == "-3",
                                 messageText: message.message)),
                     if (message.messageStatus == "offline")
                       IconButton(
@@ -289,8 +343,11 @@ class MessageRow extends StatelessWidget {
               ],
             ),
             SizedBox(width: 8),
-            ContactCircle.withDiameterAndMargin([matchedContact], [], 44, 0)
+            message.id == "-3"
+                ? UserAvatar()
+                : ContactCircle.withDiameterAndMargin(
+                    [matchedContact], [], 44, 0),
           ],
-        )));
+        ));
   }
 }

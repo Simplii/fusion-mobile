@@ -193,7 +193,7 @@ class SMSConversation extends FusionModel {
     return fusionConnection.smsDepartments
             .getDepartmentByPhoneNumber(myNumber)
             ?.id ??
-        fusionConnection.smsDepartments.getDepartment("-2");
+        fusionConnection.smsDepartments.getDepartment("-2").id;
   }
 
   Coworker? getCoworker({required FusionConnection fusionConnection}) {

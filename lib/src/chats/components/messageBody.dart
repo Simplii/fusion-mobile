@@ -1,5 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:fusion_mobile_revamped/src/styles.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -7,10 +8,12 @@ class MessageBody extends StatelessWidget {
   final double maxWidth;
   final bool isMe;
   final String messageText;
+  final bool isTyping;
   const MessageBody({
     required this.isMe,
     required this.maxWidth,
     required this.messageText,
+    required this.isTyping,
     super.key,
   });
 
@@ -61,7 +64,15 @@ class MessageBody extends StatelessWidget {
           bottomRight: Radius.circular(8),
         ),
       ),
-      child: SelectableText.rich(TextSpan(children: texts)),
+      child: isTyping
+          ? SizedBox(
+              width: 20,
+              child: SpinKitThreeBounce(
+                color: Colors.white,
+                size: 12,
+              ),
+            )
+          : SelectableText.rich(TextSpan(children: texts)),
     );
   }
 }

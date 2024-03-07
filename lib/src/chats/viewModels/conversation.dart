@@ -1,19 +1,19 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:fusion_mobile_revamped/src/backend/fusion_connection.dart';
 import 'package:fusion_mobile_revamped/src/chats/viewModels/chatsVM.dart';
-import 'package:fusion_mobile_revamped/src/models/contact.dart';
+import 'package:fusion_mobile_revamped/src/classes/websocket_message.dart';
+import 'package:fusion_mobile_revamped/src/classes/ws_message_obj.dart';
+import 'package:fusion_mobile_revamped/src/classes/ws_typing_status.dart';
 import 'package:fusion_mobile_revamped/src/models/conversations.dart';
 import 'package:fusion_mobile_revamped/src/models/coworkers.dart';
 import 'package:fusion_mobile_revamped/src/models/messages.dart';
 import 'package:fusion_mobile_revamped/src/models/quick_response.dart';
 import 'package:fusion_mobile_revamped/src/models/sms_departments.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:internet_connection_checker/internet_connection_checker.dart';
 
 class ConversationVM with ChangeNotifier {
   late String conversationDepartmentId;
@@ -30,6 +30,10 @@ class ConversationVM with ChangeNotifier {
   List<XFile> mediaToSend = [];
   List<QuickResponse> quickResponses = [];
   bool sendingMessage = false;
+  int messagesLimit = 10;
+  int _offset = 0;
+  bool loadingMoreMessages = false;
+  Timer? _timer;
 
   ConversationVM({required this.conversation, ChatsVM? chatsVM}) {
     _chatsVM = chatsVM;
@@ -45,9 +49,8 @@ class ConversationVM with ChangeNotifier {
   void _updateFromWS(event) {
     Map<String, dynamic> wsMessage = jsonDecode(event);
     if (wsMessage.containsKey("sms_received") && wsMessage["sms_received"]) {
-      wsMessageObject message = wsMessageObject.fromJson(
-        wsMessage['message_object'],
-      );
+      WsMessageObject message =
+          WebsocketMessage.getMessageObj(wsMessage["message_object"]);
       SMSMessage? messageToUpdate = conversationMessages
           .where((m) => int.parse(m.id) == message.id)
           .firstOrNull;
@@ -56,6 +59,52 @@ class ConversationVM with ChangeNotifier {
         messageToUpdate.errorMessage = message.errorMessage;
         notifyListeners();
       }
+    }
+    if (wsMessage.containsKey("push_typing_status_v2") &&
+        wsMessage["push_typing_status_v2"]) {
+      WsTypingStatus typingStatus = WebsocketMessage.getTypingStatus(wsMessage);
+      SMSMessage? typingMessage = conversationMessages
+          .where((element) => element.id == "-3")
+          .firstOrNull;
+
+      print("MDBM  typing user ${typingMessage}");
+      if (typingMessage != null) {
+        if (!typingMessage.typingUsers.contains(typingStatus.username)) {
+          if (typingMessage.typingUsers.length < 3) {
+            typingMessage.typingUsers.add(typingStatus.username);
+          }
+        }
+      } else {
+        SMSMessage typingMessage = SMSMessage.typing(
+          from: typingStatus.uid.toLowerCase(),
+          isGroup: false,
+          text: "",
+          to: typingStatus.to,
+          user: typingStatus.username,
+          messageId: "-3",
+          domain: "simpliidev",
+        );
+        conversationMessages.insert(0, typingMessage);
+      }
+      notifyListeners();
+      Timer.periodic(Duration(seconds: 4), (timer) {
+        SMSMessage? message = conversationMessages
+            .where((element) => element.id == "-3")
+            .firstOrNull;
+
+        if (message != null) {
+          if (message.typingUsers.length > 0) {
+            message.typingUsers.remove(message.typingUsers[0]);
+            if (message.typingUsers.isEmpty) {
+              conversationMessages.remove(message);
+              timer.cancel();
+            }
+          }
+          notifyListeners();
+        } else {
+          timer.cancel();
+        }
+      });
     }
   }
 
@@ -73,18 +122,34 @@ class ConversationVM with ChangeNotifier {
     notifyListeners();
     fusionConnection.messages.getMessages(
       conversation,
-      limit ?? 100,
-      0,
+      limit ?? messagesLimit,
+      _offset,
       (List<SMSMessage> messages, fromServer) {
-        conversationMessages = messages;
+        if (_offset == 0) {
+          conversationMessages = messages;
+        } else {
+          conversationMessages.addAll(messages);
+        }
+
         conversationMessages.sort((SMSMessage m1, SMSMessage m2) {
           return m1.unixtime > m2.unixtime ? -1 : 1;
         });
-        loadingMessages = false;
-        notifyListeners();
+        if (fromServer) {
+          loadingMoreMessages = false;
+          notifyListeners();
+        }
       },
       conversationDepartmentId,
     );
+    loadingMessages = false;
+    notifyListeners();
+  }
+
+  void loadMore() {
+    if (loadingMoreMessages) return;
+    loadingMoreMessages = true;
+    _offset = messagesLimit + _offset;
+    lookupMessages();
   }
 
   void updateView() {
@@ -186,7 +251,7 @@ class ConversationVM with ChangeNotifier {
             _chatsVM?.refreshView();
           },
           () {
-            // failed callback: LargeMMS
+            //TODO::handle failed callback: LargeMMS
           },
           scheduledAt,
         );
@@ -215,6 +280,13 @@ class ConversationVM with ChangeNotifier {
       mediaToSend = [];
     }
     print("MDBM send message");
+    notifyListeners();
+  }
+
+  void deleteMessage(String messageId, int index) {
+    fusionConnection.messages
+        .deleteMessage(messageId, conversationDepartmentId);
+    conversationMessages.removeAt(index);
     notifyListeners();
   }
 }

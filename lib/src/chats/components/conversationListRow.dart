@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:fusion_mobile_revamped/src/backend/fusion_connection.dart';
 import 'package:fusion_mobile_revamped/src/chats/viewModels/chatsVM.dart';
 import 'package:fusion_mobile_revamped/src/components/contact_circle.dart';
 import 'package:fusion_mobile_revamped/src/models/conversations.dart';
@@ -101,6 +102,7 @@ class ConversationRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final FusionConnection fusionConnection = FusionConnection.instance;
     String convoLabel = '';
     Coworker? _coworker;
     DateTime date =
@@ -109,10 +111,10 @@ class ConversationRow extends StatelessWidget {
       convoLabel =
           convo.groupName.isNotEmpty ? convo.groupName : _makeConvoGroupName();
     } else {
-      // if (convo.number.contains("@")) {
-      //   _fusionConnection.coworkers
-      //       .getRecord(convo.number, (p0) => _coworker = p0);
-      // }
+      if (convo.number.contains("@")) {
+        fusionConnection.coworkers
+            .getRecord(convo.number, (p0) => _coworker = p0);
+      }
       String? contactName = convo.contactName(coworker: _coworker);
       convoLabel = contactName == "Unknown" && convo.number.isNotEmpty
           ? convo.number.formatPhone()

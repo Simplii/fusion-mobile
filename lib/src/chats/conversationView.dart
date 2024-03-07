@@ -15,9 +15,11 @@ import 'package:fusion_mobile_revamped/src/styles.dart';
 class ConversationView extends StatefulWidget {
   final SMSConversation conversation;
   final ChatsVM? chatsVM;
+  final bool isNewConversation;
   const ConversationView({
     required this.conversation,
     this.chatsVM,
+    required this.isNewConversation,
     super.key,
   });
 
@@ -29,7 +31,7 @@ class _ConversationViewState extends State<ConversationView> {
   SMSConversation get _conversation => widget.conversation;
   late ConversationVM _conversationVM;
   ChatsVM? get _chatsVM => widget.chatsVM;
-
+  bool get _isNewConversation => widget.isNewConversation;
   @override
   void initState() {
     _conversationVM = ConversationVM(
@@ -83,6 +85,7 @@ class _ConversationViewState extends State<ConversationView> {
                   conversation: _conversationVM.conversation,
                   conversationVM: _conversationVM,
                   chatsVM: _chatsVM,
+                  isNewConversation: _isNewConversation,
                 ),
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 500),

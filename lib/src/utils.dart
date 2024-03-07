@@ -272,10 +272,3 @@ Uint8List? getImageBinary(dynamicList) {
   }
   return null;
 }
-
-extension DateTimeTimeExtension on DateTime {
-  /// return true if date is same
-  bool isSameDate(DateTime date) {
-    return year == date.year && month == date.month && day == date.day;
-  }
-}

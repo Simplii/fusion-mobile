@@ -11,10 +11,12 @@ class MessagesListView extends StatefulWidget {
   final SMSConversation conversation;
   final ConversationVM conversationVM;
   final ChatsVM? chatsVM;
+  final bool isNewConversation;
   const MessagesListView({
     required this.conversation,
     required this.conversationVM,
     this.chatsVM,
+    required this.isNewConversation,
     super.key,
   });
 
@@ -26,7 +28,7 @@ class _MessagesListViewState extends State<MessagesListView> {
   SMSConversation get _conversation => widget.conversation;
   ConversationVM get _conversationVM => widget.conversationVM;
   ChatsVM? get _chatsVM => widget.chatsVM;
-
+  bool get _isNewConversation => widget.isNewConversation;
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
@@ -42,6 +44,8 @@ class _MessagesListViewState extends State<MessagesListView> {
                 : MessagesList2(
                     messages: _conversationVM.conversationMessages,
                     conversation: _conversation,
+                    conversationVM: _conversationVM,
+                    isNewConversation: _isNewConversation,
                   ),
           ),
         );

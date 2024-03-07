@@ -25,9 +25,16 @@ class SingleMessageHeader extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                conversation.contactName(coworker: coworker),
-                style: headerTextStyle,
+              LimitedBox(
+                maxWidth: MediaQuery.of(context).size.width - 200,
+                child: Wrap(
+                  children: [
+                    Text(
+                      conversation.contactName(coworker: coworker),
+                      style: headerTextStyle,
+                    )
+                  ],
+                ),
               ),
               Text(
                 conversation.number.formatPhone(),
