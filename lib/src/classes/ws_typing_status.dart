@@ -2,7 +2,7 @@ import 'dart:convert';
 
 class WsTypingStatus {
   final String departmentId;
-  final String conversationId;
+  final int conversationId;
   final String to;
   final String uid;
   final String username;
@@ -16,7 +16,7 @@ class WsTypingStatus {
   factory WsTypingStatus.fromJson(Map<String, dynamic> data) {
     return WsTypingStatus(
       departmentId: data["groupId"] ?? "",
-      conversationId: data["groupConversationId"].toString(),
+      conversationId: data["groupConversationId"],
       to: data["to"] ?? "",
       uid: data["uid"] ?? "",
       username: data["username"] ?? "",
@@ -26,7 +26,7 @@ class WsTypingStatus {
   Map<String, dynamic> toJson() {
     return {
       "groupId": departmentId,
-      "groupConversationId": int.parse(conversationId),
+      "groupConversationId": conversationId,
       "to": to,
       "uid": uid,
       "username": username,

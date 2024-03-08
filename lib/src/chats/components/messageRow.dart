@@ -199,7 +199,7 @@ class MessageRow extends StatelessWidget {
     String title = "";
     FusionConnection fusionConnection = FusionConnection.instance;
     if (message.typingUsers.length > 2) {
-      return title = "Several People are typing...";
+      return title = "Several people are typing...";
     }
     for (var element in message.typingUsers) {
       Coworker? co = fusionConnection.coworkers.getCowworker(element);
@@ -261,12 +261,13 @@ class MessageRow extends StatelessWidget {
                       SizedBox(
                         width: 4,
                       ),
-                      Text(
-                        matchedContact.id.isNotEmpty
-                            ? "${intl.DateFormat.jm().format(messageTime)}"
-                            : "${intl.DateFormat.jm().format(messageTime)}",
-                        style: timeTextStyle,
-                      )
+                      if (message.typingUsers.isEmpty)
+                        Text(
+                          matchedContact.id.isNotEmpty
+                              ? "${intl.DateFormat.jm().format(messageTime)}"
+                              : "${intl.DateFormat.jm().format(messageTime)}",
+                          style: timeTextStyle,
+                        )
                     ],
                   ),
                 if (isMe)

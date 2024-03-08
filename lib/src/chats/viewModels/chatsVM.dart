@@ -4,8 +4,11 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:fusion_mobile_revamped/src/backend/fusion_connection.dart';
 import 'package:fusion_mobile_revamped/src/backend/softphone.dart';
+import 'package:fusion_mobile_revamped/src/models/contact.dart';
 import 'package:fusion_mobile_revamped/src/models/conversations.dart';
+import 'package:fusion_mobile_revamped/src/models/crm_contact.dart';
 import 'package:fusion_mobile_revamped/src/models/sms_departments.dart';
+import 'package:fusion_mobile_revamped/src/utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ChatsVM extends ChangeNotifier {
@@ -13,7 +16,10 @@ class ChatsVM extends ChangeNotifier {
   final Softphone softPhone;
   final SharedPreferences sharedPreferences;
   final int conversationsLimit = 50;
+  final Debounce debounce = Debounce(Duration(milliseconds: 700));
+
   late final StreamSubscription<RemoteMessage> notificationsStream;
+
   //mutable values
   String selectedDepartmentId = "-2";
   bool loading = false;
@@ -21,6 +27,11 @@ class ChatsVM extends ChangeNotifier {
   int _offset = 0;
   List<SMSConversation> conversations = [];
   bool applicationPaused = false;
+  //conversations search values
+  bool searchingForConversation = false;
+  List<Contact> conversationsSearchContacts = [];
+  List<CrmContact> conversationsSearchCrmContacts = [];
+  List<SMSConversation> foundConversations = [];
   ChatsVM({
     required this.fusionConnection,
     required this.softPhone,
@@ -61,9 +72,15 @@ class ChatsVM extends ChangeNotifier {
   }
 
   String selectedDepartmentName() {
-    SMSDepartment? dep =
-        fusionConnection.smsDepartments.getDepartment(selectedDepartmentId);
-    return dep?.groupName ?? "All Messages";
+    String dpName = "";
+    fusionConnection.smsDepartments.lookupDepartment(
+      selectedDepartmentId,
+      (departmentName) {
+        dpName = departmentName;
+        notifyListeners();
+      },
+    );
+    return dpName;
   }
 
   List<List<String>> groupOptions() {
@@ -200,5 +217,60 @@ class ChatsVM extends ChangeNotifier {
   void markConversationAsRead(SMSConversation conversation) {
     fusionConnection.conversations.markRead(conversation);
     notifyListeners();
+  }
+
+  void _searchContacts(String query) {
+    if (selectedDepartmentId == DepartmentIds.FusionChats) {
+      fusionConnection.coworkers.search(query, (p0) {
+        conversationsSearchContacts = p0;
+        notifyListeners();
+      });
+    } else {
+      bool usesV2 = fusionConnection.settings.isV2User();
+      if (!usesV2) {
+        fusionConnection.contacts.search(query, 50, 0,
+            (List<Contact> contacts, bool fromServer, bool fromPhonebook) {
+          fusionConnection.integratedContacts.search(query, 50, 0,
+              (List<Contact> crmContacts, bool fromServer, bool? hasMore) {
+            conversationsSearchContacts = [...contacts, ...crmContacts];
+            notifyListeners();
+          });
+        });
+      } else {
+        fusionConnection.contacts.searchV2(query, 50, 0, false,
+            (List<Contact> contacts, bool fromServer, bool fromPhonebook) {
+          conversationsSearchContacts = contacts;
+          if (fromServer) {
+            notifyListeners();
+          }
+        });
+      }
+    }
+  }
+
+  void searchConversations(String query) {
+    loading = true;
+    searchingForConversation = true;
+    notifyListeners();
+
+    debounce(() {
+      loading = false;
+      if (query.trim().isEmpty) {
+        searchingForConversation = false;
+        notifyListeners();
+        return;
+      }
+      _searchContacts(query);
+      fusionConnection.messages.searchV2(query, (
+        List<SMSConversation> convos,
+        List<CrmContact> crmContacts,
+        List<Contact> contacts,
+      ) {
+        //FIXME:
+        print("MDBM convos ${convos.length}");
+        foundConversations = convos;
+        notifyListeners();
+      });
+    });
   }
 }

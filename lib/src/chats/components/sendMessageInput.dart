@@ -54,8 +54,11 @@ class _SendMessageInputState extends State<SendMessageInput> {
       _debounceMessageInput!.cancel();
     _debounceMessageInput = Timer(const Duration(milliseconds: 1000), () {
       SharedPreferences.getInstance().then((SharedPreferences prefs) {
-        prefs.setString("${_conversation!.hash}_savedMessage", lastMessage);
+        prefs.setString("${_conversation.hash}_savedMessage", lastMessage);
       });
+      if (lastMessage.toString().trim().isNotEmpty) {
+        _conversationVM.sendTypingStatus();
+      }
     });
   }
 

@@ -847,9 +847,8 @@ class FusionConnection {
     final wsUrl = Uri.parse('wss://zaid-fusion-dev.fusioncomm.net:8443/');
     socketChannel = WebSocketChannel.connect(wsUrl);
     websocketStream.addStream(socketChannel.stream);
-
     websocketStream.stream.listen((messageData) async {
-      // print("MDBM wsMessage ${messageData}");
+      print("MDBM wsMessage ${messageData}");
       Map<String, dynamic> message = convert.jsonDecode(messageData);
       if (message.containsKey('heartbeat')) {
         _heartbeats[message['heartbeat']] = true;
@@ -888,6 +887,8 @@ class FusionConnection {
       }
 
       if (_softphone != null) _softphone!.checkCallIds(message);
+    }, onError: (e) {
+      print("MDBM WS ERROR ${e}");
     });
     _reconnectSocket();
     _sendHeartbeat();

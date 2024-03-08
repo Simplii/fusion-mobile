@@ -149,6 +149,22 @@ class SMSDepartmentsStore extends FusionStore<SMSDepartment> {
     return lookupRecord(id);
   }
 
+  lookupDepartment(
+    String id,
+    Function(String departmentName) callback,
+  ) async {
+    SMSDepartment? dep = lookupRecord(id);
+    if (dep != null) {
+      return callback(dep.groupName ?? "Unknown department");
+    } else {
+      callback("");
+      getDepartments((p0) {
+        dep = p0.where((element) => element.id == 1).firstOrNull;
+        callback(dep?.groupName ?? "Unknwon");
+      });
+    }
+  }
+
   List<SMSDepartment> allDepartments() {
     return getRecords();
   }

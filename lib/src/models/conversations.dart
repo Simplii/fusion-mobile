@@ -252,25 +252,29 @@ class SMSConversationsStore extends FusionStore<SMSConversation> {
         conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
-  getPersisted(String groupId, int limit, int offset,
-      Function(List<SMSConversation> conversations, bool fromServer) callback) {
-    SMSDepartment group = fusionConnection.smsDepartments.lookupRecord(groupId);
-    if (group != null) {
-      fusionConnection.db
-          .query('sms_conversation',
-              limit: limit,
-              offset: offset,
-              orderBy: 'lastContactTime DESC',
-              where: 'myNumber in ("' + group.numbers.join('","') + '")')
-          .then((List<Map<String, dynamic>> results) {
-        List<SMSConversation> list = [];
-        for (Map<String, dynamic> result in results) {
-          list.add(SMSConversation.unserialize(result['raw']));
-        }
-        print("MDBM pers ${list.length}");
-        callback(list, false);
-      });
+  getPersisted(
+    String groupId,
+    int limit,
+    int offset,
+    Function(List<SMSConversation> conversations, bool fromServer) callback,
+  ) {
+    if (fusionConnection.smsDepartments.allDepartments().isEmpty) {
+      return callback([], false);
     }
+    SMSDepartment group = fusionConnection.smsDepartments.lookupRecord(groupId);
+    fusionConnection.db
+        .query('sms_conversation',
+            limit: limit,
+            offset: offset,
+            orderBy: 'lastContactTime DESC',
+            where: 'myNumber in ("' + group.numbers.join('","') + '")')
+        .then((List<Map<String, dynamic>> results) {
+      List<SMSConversation> list = [];
+      for (Map<String, dynamic> result in results) {
+        list.add(SMSConversation.unserialize(result['raw']));
+      }
+      callback(list, false);
+    });
   }
 
   searchPersisted(String query, String groupId, int limit, int offset,
@@ -476,5 +480,18 @@ class SMSConversationsStore extends FusionStore<SMSConversation> {
         convo.assigneeUid = data['assignee'];
       }
     });
+  }
+
+  void sendTypingEvent(SMSConversation convo, String departmentId) {
+    fusionConnection.apiV2Call(
+      "post",
+      "/client/typingEvent",
+      {
+        "groupConversationId": convo.conversationId,
+        "groupId": departmentId,
+        "to": convo.number,
+        "uid": fusionConnection.getUid(),
+      },
+    );
   }
 }

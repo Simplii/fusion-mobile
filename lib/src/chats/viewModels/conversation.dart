@@ -33,7 +33,7 @@ class ConversationVM with ChangeNotifier {
   int messagesLimit = 10;
   int _offset = 0;
   bool loadingMoreMessages = false;
-  Timer? _timer;
+  Map<String, Timer> usersTimers = {};
 
   ConversationVM({required this.conversation, ChatsVM? chatsVM}) {
     _chatsVM = chatsVM;
@@ -44,6 +44,21 @@ class ConversationVM with ChangeNotifier {
     notificationStream =
         FirebaseMessaging.onMessage.listen(_onNotificationReceived);
     lookupMessages();
+  }
+
+  Timer _assignTypingStatusTimer(SMSMessage? message, String user) {
+    return Timer(Duration(seconds: 10), () {
+      if (message != null) {
+        if (message.typingUsers.length > 0) {
+          message.typingUsers.remove(user);
+          if (message.typingUsers.isEmpty) {
+            conversationMessages.remove(message);
+            usersTimers = {};
+          }
+        }
+        notifyListeners();
+      }
+    });
   }
 
   void _updateFromWS(event) {
@@ -63,6 +78,7 @@ class ConversationVM with ChangeNotifier {
     if (wsMessage.containsKey("push_typing_status_v2") &&
         wsMessage["push_typing_status_v2"]) {
       WsTypingStatus typingStatus = WebsocketMessage.getTypingStatus(wsMessage);
+      if (typingStatus.conversationId != conversation.conversationId) return;
       SMSMessage? typingMessage = conversationMessages
           .where((element) => element.id == "-3")
           .firstOrNull;
@@ -87,24 +103,21 @@ class ConversationVM with ChangeNotifier {
         conversationMessages.insert(0, typingMessage);
       }
       notifyListeners();
-      Timer.periodic(Duration(seconds: 4), (timer) {
-        SMSMessage? message = conversationMessages
-            .where((element) => element.id == "-3")
-            .firstOrNull;
 
-        if (message != null) {
-          if (message.typingUsers.length > 0) {
-            message.typingUsers.remove(message.typingUsers[0]);
-            if (message.typingUsers.isEmpty) {
-              conversationMessages.remove(message);
-              timer.cancel();
-            }
-          }
-          notifyListeners();
-        } else {
-          timer.cancel();
-        }
-      });
+      SMSMessage? message = conversationMessages
+          .where((element) => element.id == "-3")
+          .firstOrNull;
+
+      if (!usersTimers.containsKey(typingStatus.username)) {
+        usersTimers.addAll({
+          typingStatus.username:
+              _assignTypingStatusTimer(message, typingStatus.username)
+        });
+      } else if (usersTimers.containsKey(typingStatus.username)) {
+        usersTimers[typingStatus.username]?.cancel();
+        usersTimers[typingStatus.username] =
+            _assignTypingStatusTimer(message, typingStatus.username);
+      }
     }
   }
 
@@ -288,5 +301,10 @@ class ConversationVM with ChangeNotifier {
         .deleteMessage(messageId, conversationDepartmentId);
     conversationMessages.removeAt(index);
     notifyListeners();
+  }
+
+  void sendTypingStatus() {
+    fusionConnection.conversations
+        .sendTypingEvent(conversation, conversationDepartmentId);
   }
 }

@@ -1,15 +1,14 @@
-import 'dart:async';
-
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:fusion_mobile_revamped/src/backend/fusion_connection.dart';
 import 'package:fusion_mobile_revamped/src/backend/softphone.dart';
 import 'package:fusion_mobile_revamped/src/chats/ConversationListView.dart';
+import 'package:fusion_mobile_revamped/src/chats/components/conversationsSerachResults.dart';
+import 'package:fusion_mobile_revamped/src/chats/components/convestaionsListViewHeader.dart';
 import 'package:fusion_mobile_revamped/src/chats/newConversationView.dart';
 import 'package:fusion_mobile_revamped/src/chats/viewModels/chatsVM.dart';
-import 'package:fusion_mobile_revamped/src/components/fusion_dropdown.dart';
 import 'package:fusion_mobile_revamped/src/styles.dart';
+import 'package:fusion_mobile_revamped/src/utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Chats extends StatefulWidget {
@@ -32,6 +31,7 @@ class _ChatsState extends State<Chats> with WidgetsBindingObserver {
   Softphone get _softPhone => widget.softPhone;
   SharedPreferences get _sharedPreferences => widget.sharedPreferences;
   late ChatsVM _chatsVM;
+  final _searchTextController = TextEditingController();
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
@@ -52,6 +52,7 @@ class _ChatsState extends State<Chats> with WidgetsBindingObserver {
   @override
   dispose() {
     _chatsVM.cancelNotificationsStream();
+    _chatsVM.debounce.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -83,107 +84,55 @@ class _ChatsState extends State<Chats> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      floatingActionButton: _getFloatingButton(),
-      body: ListenableBuilder(
-        listenable: _chatsVM,
-        builder: (BuildContext context, Widget? child) {
-          return Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: TextFormField(
-                  decoration: InputDecoration(
-                    hintStyle: TextStyle(
-                      color: Color.fromARGB(255, 154, 148, 149),
-                    ),
-                    hintText: "Search",
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(
-                        width: 0,
-                        style: BorderStyle.none,
-                      ),
-                    ),
-                    fillColor: Color.fromARGB(85, 0, 0, 0),
-                    filled: true,
-                    prefixIcon: IconButton(
-                      icon: Icon(
-                        Icons.menu,
-                        color: Colors.white,
-                      ),
-                      onPressed: _openMenu,
-                    ),
-                  ),
-                  style: TextStyle(color: Colors.white),
+        backgroundColor: Colors.transparent,
+        floatingActionButton: _getFloatingButton(),
+        body: ListenableBuilder(
+            listenable: _chatsVM,
+            builder: (BuildContext context, Widget? child) {
+              return Column(children: [
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: TextFormField(
+                      decoration: InputDecoration(
+                          hintStyle: TextStyle(
+                              color: Color.fromARGB(255, 154, 148, 149)),
+                          hintText: "Search",
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(
+                                  width: 0, style: BorderStyle.none)),
+                          fillColor: Color.fromARGB(85, 0, 0, 0),
+                          filled: true,
+                          prefixIcon: IconButton(
+                              icon: Icon(Icons.menu, color: Colors.white),
+                              onPressed: _openMenu)),
+                      onChanged: _chatsVM.searchConversations,
+                      style: TextStyle(color: Colors.white)),
                 ),
-              ),
-              Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.all(Radius.circular(16)),
-                  ),
-                  child: Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(
-                            top: 16, left: 24, right: 24, bottom: 5),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Container(
-                              height: 30,
-                              constraints: BoxConstraints(
-                                maxWidth:
-                                    MediaQuery.of(context).size.width - 90,
-                              ),
-                              child: Text(
-                                _chatsVM.selectedDepartmentName(),
-                                style: headerTextStyle,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            FusionDropdown(
-                              selectedNumber: "",
-                              onChange: _chatsVM.onGroupChange,
-                              value: _chatsVM.selectedDepartmentId,
-                              options: _chatsVM.groupOptions(),
-                              label: "Select a Department",
-                              button: Container(
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: translucentSmoke,
-                                ),
-                                padding: EdgeInsets.all(2),
-                                child: Icon(
-                                  Icons.expand_more,
-                                  size: 30,
-                                ),
-                              ),
-                            )
-                          ],
-                        ),
-                      ),
-                      Expanded(
+                Expanded(
+                    child: Container(
+                        decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius:
+                                BorderRadius.all(Radius.circular(16))),
                         child: _chatsVM.loading
                             ? Center(
                                 child:
-                                    SpinKitThreeBounce(color: smoke, size: 50),
-                              )
-                            : ConversationListView(
-                                conversations: _chatsVM.conversations,
-                                chatsVM: _chatsVM,
-                              ),
-                      )
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-    );
+                                    SpinKitThreeBounce(color: smoke, size: 50))
+                            : _chatsVM.searchingForConversation
+                                ? ConversationsSearchResults(
+                                    chatsVM: _chatsVM,
+                                  )
+                                : Column(children: [
+                                    ConversationsListViewHeader(
+                                        chatsVM: _chatsVM),
+                                    Expanded(
+                                        child: ConversationListView(
+                                            conversations:
+                                                _chatsVM.conversations,
+                                            chatsVM: _chatsVM))
+                                  ])))
+              ]);
+            }));
   }
 }
