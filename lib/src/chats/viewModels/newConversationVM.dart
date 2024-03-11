@@ -27,7 +27,6 @@ class NewConversationVM with ChangeNotifier {
           ? DepartmentIds.Personal
           : selectedDepartmentId,
     );
-    print("MDBM dep ${department.serserialize()}");
     if (department.numbers.length > 0 &&
         department.id != DepartmentIds.AllMessages) {
       myPhoneNumber = department.numbers[0];

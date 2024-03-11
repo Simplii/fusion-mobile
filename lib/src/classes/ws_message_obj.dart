@@ -59,15 +59,19 @@ class WsMessageObject {
       to: data["to"],
       time: data["time"],
       media: data["media"],
-      messageStatus: data["message_status"],
+      messageStatus: data.containsKey("message_status")
+          ? data["message_status"] ?? ""
+          : "",
       type: data["type"],
       convertedMMS: data["converted_mms"] == 1,
       isGroup: data["is_group"],
       read: data["read"] == 1,
       unixtime: data["unixtime"],
       smsWebhookId: data["sms_webhook_id"],
-      user: data["user"],
-      domain: data["domain"],
+      user: data.containsKey("user") && data["user"].runtimeType == String
+          ? data["user"]
+          : null,
+      domain: data["domain"].runtimeType == String ? data["domain"] : "",
       message: data["message"],
       scheduledAt: data["scheduled_at"],
       smsCampaignId: data["sms_campaign_id"],

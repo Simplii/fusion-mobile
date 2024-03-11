@@ -416,11 +416,13 @@ class SMSConversationsStore extends FusionStore<SMSConversation> {
   }
 
   void markRead(SMSConversation convo) {
-    var future = new Future.delayed(const Duration(milliseconds: 2000), () {
-      fusionConnection.refreshUnreads();
-    });
     convo.unread = 0;
     storeRecord(convo);
+    fusionConnection.refreshUnreads();
+    fusionConnection.apiV2Call("post", "/messaging/markRead", {
+      "from": convo.number,
+      "to": convo.myNumber,
+    });
   }
 
   void clearPersistedConvoMessages(SMSConversation convo) {

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/widgets.dart';
+import 'package:fusion_mobile_revamped/src/classes/ws_message_obj.dart';
 import 'package:fusion_mobile_revamped/src/models/sms_departments.dart';
 import 'package:fusion_mobile_revamped/src/models/user_settings.dart';
 import 'package:fusion_mobile_revamped/src/styles.dart';
@@ -226,6 +227,28 @@ class SMSMessage extends FusionModel {
     this.broadcastConvoId = 0;
     this.errorMessage = "";
     this.typingUsers.add(user);
+  }
+
+  SMSMessage.fromWsMessageObj(WsMessageObject wsMessageObject) {
+    this.convertedMms = false;
+    this.domain = wsMessageObject.domain;
+    this.from = wsMessageObject.from.toString().toLowerCase();
+    this.fromMe = true;
+    this.id = wsMessageObject.id.toString();
+    this.isGroup = wsMessageObject.isGroup;
+    this.message = wsMessageObject.message;
+    this.messageStatus = wsMessageObject.messageStatus;
+    this.mime = wsMessageObject.mime;
+    this.read = wsMessageObject.read;
+    this.scheduledAt = null;
+    this.smsWebhookId = 0;
+    this.time = CarbonDate.fromDate(wsMessageObject.time);
+    this.to = wsMessageObject.to;
+    this.type = wsMessageObject.type;
+    this.unixtime = wsMessageObject.unixtime;
+    this.user = wsMessageObject.user;
+    this.broadcastConvoId = 0;
+    this.errorMessage = wsMessageObject.errorMessage;
   }
   @override
   String getId() => this.id!.toLowerCase();
@@ -622,10 +645,14 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
   }
 
   searchV2(
-      String query,
-      Function(List<SMSConversation> conversations,
-              List<CrmContact> crmContacts, List<Contact> Contacts)
-          callback) {
+    String query,
+    Function(
+      List<SMSConversation> conversations,
+      List<CrmContact> crmContacts,
+      List<Contact> Contacts,
+      bool fromServer,
+    ) callback,
+  ) {
     if (query.trim().length == 0) {
       return;
     }
@@ -633,7 +660,7 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
     List<SMSConversation> matchedConversations = [];
 
     Function() _sendFromPersisted = () {
-      callback(matchedConversations, [], []);
+      callback(matchedConversations, [], [], false);
     };
 
     fusionConnection.conversations
@@ -682,7 +709,7 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
         fullConversations.add(convo);
       }
 
-      callback(fullConversations, [], contacts);
+      callback(fullConversations, [], contacts, true);
     });
   }
 

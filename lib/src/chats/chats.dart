@@ -41,18 +41,19 @@ class _ChatsState extends State<Chats> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     _chatsVM = ChatsVM(
       fusionConnection: _fusionConnection,
       softPhone: _softPhone,
       sharedPreferences: _sharedPreferences,
     );
+    WidgetsBinding.instance.addObserver(this);
   }
 
   @override
   dispose() {
     _chatsVM.cancelNotificationsStream();
     _chatsVM.debounce.dispose();
+    _searchTextController.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -81,6 +82,16 @@ class _ChatsState extends State<Chats> with WidgetsBindingObserver {
     );
   }
 
+  void _resetSearch() {
+    setState(() {
+      _searchTextController.text = "";
+      _chatsVM.searchingForConversation = false;
+      _chatsVM.conversationsSearchContacts = [];
+      _chatsVM.conversationsSearchCrmContacts = [];
+      _chatsVM.foundConversations = [];
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -93,6 +104,7 @@ class _ChatsState extends State<Chats> with WidgetsBindingObserver {
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: TextFormField(
+                      controller: _searchTextController,
                       decoration: InputDecoration(
                           hintStyle: TextStyle(
                               color: Color.fromARGB(255, 154, 148, 149)),
@@ -122,6 +134,7 @@ class _ChatsState extends State<Chats> with WidgetsBindingObserver {
                             : _chatsVM.searchingForConversation
                                 ? ConversationsSearchResults(
                                     chatsVM: _chatsVM,
+                                    resetSearch: _resetSearch,
                                   )
                                 : Column(children: [
                                     ConversationsListViewHeader(

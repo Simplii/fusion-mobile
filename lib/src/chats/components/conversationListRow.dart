@@ -10,18 +10,18 @@ import 'package:fusion_mobile_revamped/src/styles.dart';
 import 'package:fusion_mobile_revamped/src/utils.dart';
 
 class ConversationRow extends StatelessWidget {
-  final SMSConversation convo;
+  final SMSConversation conversation;
   final ChatsVM chatsVM;
   const ConversationRow({
-    required this.convo,
+    required this.conversation,
     required this.chatsVM,
     super.key,
   });
 
-  String _makeConvoGroupName() {
-    return convo.filters != null
+  String _makeconversationGroupName() {
+    return conversation.filters != null
         ? "Broadcast - Query"
-        : convo.isBroadcast
+        : conversation.isBroadcast
             ? "Broadcast - Batch"
             : "Group Conversation";
   }
@@ -34,7 +34,7 @@ class ConversationRow extends StatelessWidget {
     );
     Color textColor = char;
     final SMSDepartment _department = chatsVM.getConversationDepartment(
-      convoMyNumber: convo.myNumber,
+      convoMyNumber: conversation.myNumber,
     );
     if (_department.protocol == DepartmentProtocols.FusionChats) {
       bg = fusionChatsBg;
@@ -103,30 +103,35 @@ class ConversationRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final FusionConnection fusionConnection = FusionConnection.instance;
-    String convoLabel = '';
+    String conversationLabel = '';
     Coworker? _coworker;
-    DateTime date =
-        DateTime.fromMillisecondsSinceEpoch(convo.message!.unixtime * 1000);
-    if (convo.isGroup) {
-      convoLabel =
-          convo.groupName.isNotEmpty ? convo.groupName : _makeConvoGroupName();
+    DateTime date = DateTime.fromMillisecondsSinceEpoch(
+        conversation.message!.unixtime * 1000);
+    if (conversation.isGroup) {
+      conversationLabel = conversation.groupName.isNotEmpty
+          ? conversation.groupName
+          : _makeconversationGroupName();
     } else {
-      if (convo.number.contains("@")) {
+      if (conversation.number.contains("@")) {
         fusionConnection.coworkers
-            .getRecord(convo.number, (p0) => _coworker = p0);
+            .getRecord(conversation.number, (p0) => _coworker = p0);
       }
-      String? contactName = convo.contactName(coworker: _coworker);
-      convoLabel = contactName == "Unknown" && convo.number.isNotEmpty
-          ? convo.number.formatPhone()
-          : contactName;
+      String? contactName = conversation.contactName(coworker: _coworker);
+      conversationLabel =
+          contactName == "Unknown" && conversation.number.isNotEmpty
+              ? conversation.number.formatPhone()
+              : contactName;
     }
     return Container(
         margin: EdgeInsets.only(bottom: 18, left: 16, right: 16),
         child: Row(children: [
           _coworker != null
               ? ContactCircle.withCoworkerAndDiameter([], [], _coworker, 60)
-              : ContactCircle.forSMS(convo.contacts, convo.crmContacts,
-                  convo.isGroup, convo.isBroadcast),
+              : ContactCircle.forSMS(
+                  conversation.contacts,
+                  conversation.crmContacts,
+                  conversation.isGroup,
+                  conversation.isBroadcast),
           Expanded(
               child: Container(
                   decoration: BoxDecoration(color: Colors.transparent),
@@ -136,7 +141,7 @@ class ConversationRow extends StatelessWidget {
                           child: Wrap(runSpacing: 4, children: [
                         Align(
                             alignment: Alignment.centerLeft,
-                            child: Text(convoLabel,
+                            child: Text(conversationLabel,
                                 style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16))),
@@ -154,7 +159,7 @@ class ConversationRow extends StatelessWidget {
                                 child: Text(
                                     getDateTime(date) +
                                         " \u2014 " +
-                                        convo.message!.message,
+                                        conversation.message!.message,
                                     style: smallTextStyle,
                                     maxLines: 1,
                                     softWrap: true,
@@ -163,7 +168,7 @@ class ConversationRow extends StatelessWidget {
                             DepartmentIds.AllMessages)
                           _departmentTag()
                       ])),
-                      if (convo.unread > 0)
+                      if (conversation.unread > 0)
                         Container(
                           width: 8,
                           height: 8,
@@ -171,7 +176,7 @@ class ConversationRow extends StatelessWidget {
                           decoration: BoxDecoration(
                               shape: BoxShape.circle, color: informationBlue),
                         ),
-                      if (convo.message!.messageStatus == "offline")
+                      if (conversation.message!.messageStatus == "offline")
                         Icon(
                           Icons.error_outline,
                           color: Colors.red,

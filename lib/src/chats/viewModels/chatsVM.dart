@@ -22,7 +22,7 @@ class ChatsVM extends ChangeNotifier {
 
   //mutable values
   String selectedDepartmentId = "-2";
-  bool loading = false;
+  bool loading = true;
   bool loadingMoreConversations = false;
   int _offset = 0;
   List<SMSConversation> conversations = [];
@@ -32,6 +32,8 @@ class ChatsVM extends ChangeNotifier {
   List<Contact> conversationsSearchContacts = [];
   List<CrmContact> conversationsSearchCrmContacts = [];
   List<SMSConversation> foundConversations = [];
+  int unreadsCount = 0;
+
   ChatsVM({
     required this.fusionConnection,
     required this.softPhone,
@@ -42,6 +44,16 @@ class ChatsVM extends ChangeNotifier {
     lookupMessages();
     notificationsStream =
         FirebaseMessaging.onMessage.listen(_onForegroundNotificationReceived);
+    _updateUnreadCount();
+  }
+
+  _updateUnreadCount() {
+    fusionConnection.unreadMessages.getUnreads((unreads, fromServer) {
+      if (fromServer) {
+        unreadsCount = unreads.length;
+        notifyListeners();
+      }
+    });
   }
 
   void cancelNotificationsStream() {
@@ -52,12 +64,15 @@ class ChatsVM extends ChangeNotifier {
     print("MDBM ChatsVM _onForegroundNotificationReceived");
     if (remoteMessage.notification != null) {
       lookupMessages(limit: 20);
+      _updateUnreadCount();
     }
   }
 
   void refreshView() {
     print("MDBM ChatsVM refreshView");
     lookupMessages(limit: 20, getAllMessages: true);
+    _updateUnreadCount();
+    notifyListeners();
   }
 
   void onAppStateChanged(AppLifecycleState state) {
@@ -67,7 +82,8 @@ class ChatsVM extends ChangeNotifier {
     }
     if (state == AppLifecycleState.resumed && applicationPaused) {
       applicationPaused = false;
-      lookupMessages(limit: 20, getAllMessages: true);
+      lookupMessages(limit: 20);
+      _updateUnreadCount();
     }
   }
 
@@ -77,7 +93,6 @@ class ChatsVM extends ChangeNotifier {
       selectedDepartmentId,
       (departmentName) {
         dpName = departmentName;
-        notifyListeners();
       },
     );
     return dpName;
@@ -149,6 +164,9 @@ class ChatsVM extends ChangeNotifier {
       },
     );
     loading = false;
+    if (_offset > conversations.length) {
+      _offset = conversations.length;
+    }
     print("MDBM conversations offset $_offset");
     notifyListeners();
   }
@@ -216,6 +234,13 @@ class ChatsVM extends ChangeNotifier {
 
   void markConversationAsRead(SMSConversation conversation) {
     fusionConnection.conversations.markRead(conversation);
+    SMSConversation? matchedConvo = conversations
+        .where(
+            (element) => element.conversationId == conversation.conversationId)
+        .firstOrNull;
+    if (matchedConvo != null) {
+      unreadsCount = 0;
+    }
     notifyListeners();
   }
 
@@ -223,6 +248,7 @@ class ChatsVM extends ChangeNotifier {
     if (selectedDepartmentId == DepartmentIds.FusionChats) {
       fusionConnection.coworkers.search(query, (p0) {
         conversationsSearchContacts = p0;
+        loading = false;
         notifyListeners();
       });
     } else {
@@ -233,14 +259,18 @@ class ChatsVM extends ChangeNotifier {
           fusionConnection.integratedContacts.search(query, 50, 0,
               (List<Contact> crmContacts, bool fromServer, bool? hasMore) {
             conversationsSearchContacts = [...contacts, ...crmContacts];
+            loading = false;
+
             notifyListeners();
           });
         });
       } else {
         fusionConnection.contacts.searchV2(query, 50, 0, false,
             (List<Contact> contacts, bool fromServer, bool fromPhonebook) {
-          conversationsSearchContacts = contacts;
           if (fromServer) {
+            conversationsSearchContacts = contacts;
+            loading = false;
+
             notifyListeners();
           }
         });
@@ -254,9 +284,9 @@ class ChatsVM extends ChangeNotifier {
     notifyListeners();
 
     debounce(() {
-      loading = false;
       if (query.trim().isEmpty) {
         searchingForConversation = false;
+        loading = false;
         notifyListeners();
         return;
       }
@@ -265,12 +295,41 @@ class ChatsVM extends ChangeNotifier {
         List<SMSConversation> convos,
         List<CrmContact> crmContacts,
         List<Contact> contacts,
+        bool fromServer,
       ) {
-        //FIXME:
-        print("MDBM convos ${convos.length}");
-        foundConversations = convos;
+        if (fromServer) {
+          foundConversations = convos;
+          loading = false;
+        }
         notifyListeners();
       });
     });
+  }
+
+  String getMyNumber() {
+    String myPhoneNumber = "";
+    SMSDepartment department = fusionConnection.smsDepartments.getDepartment(
+      selectedDepartmentId == DepartmentIds.AllMessages
+          ? DepartmentIds.Personal
+          : selectedDepartmentId,
+    );
+    if (department.numbers.length > 0 &&
+        department.id != DepartmentIds.AllMessages) {
+      myPhoneNumber = department.numbers[0];
+    }
+    return myPhoneNumber;
+  }
+
+  Future<SMSConversation> getConversation(
+    Contact contact,
+    String number,
+    String myNumber,
+  ) async {
+    return await fusionConnection.messages.checkExistingConversation(
+      selectedDepartmentId,
+      myNumber,
+      [number],
+      [contact],
+    );
   }
 }

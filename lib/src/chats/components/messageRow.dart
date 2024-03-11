@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fusion_mobile_revamped/src/backend/fusion_connection.dart';
+import 'package:fusion_mobile_revamped/src/chats/components/mediaGallery.dart';
 import 'package:fusion_mobile_revamped/src/chats/components/messageBody.dart';
 import 'package:fusion_mobile_revamped/src/chats/components/pictureMessageBody.dart';
 import 'package:fusion_mobile_revamped/src/chats/viewModels/conversation.dart';
@@ -17,11 +18,13 @@ import 'package:overlay_support/overlay_support.dart';
 class MessageRow extends StatelessWidget {
   final SMSMessage message;
   final SMSConversation conversation;
+  final ConversationVM conversationVM;
   final DateTime messageTime;
   const MessageRow({
     required this.message,
     required this.conversation,
     required this.messageTime,
+    required this.conversationVM,
     super.key,
   });
 
@@ -36,13 +39,16 @@ class MessageRow extends StatelessWidget {
   Contact _getAvatar(String from, bool isMe) {
     final FusionConnection fusionConnection = FusionConnection.instance;
     if (isMe) {
-      //FIXME: figure out unknown coworker
-      return message.user == null || !message.user!.contains("@")
+      return message.user == null
           ? Contact.fake(from, firstName: "", lastName: "")
-          : fusionConnection.coworkers
-              .lookupCoworker(
-                  "${message.user?.split('@')[0]}@${fusionConnection.getDomain()}")
-              ?.toContact();
+          : fusionConnection.coworkers.lookupCoworker(
+                      "${message.user?.split('@')[0]}@${fusionConnection.getDomain()}") !=
+                  null
+              ? fusionConnection.coworkers
+                  .lookupCoworker(
+                      "${message.user?.split('@')[0]}@${fusionConnection.getDomain()}")!
+                  .toContact()
+              : Contact.fake(from, firstName: "Unknown", lastName: "Coworker");
     } else {
       return _getContactAvatar(from);
     }
@@ -214,6 +220,19 @@ class MessageRow extends StatelessWidget {
         : title + ' is typing...';
   }
 
+  _openMedia(BuildContext context) {
+    showModalBottomSheet(
+        context: context,
+        backgroundColor: translucentBlack(0.3),
+        isScrollControlled: true,
+        builder: (context) {
+          return MediaGallery(
+            conversationVM: conversationVM,
+            tappedMessage: message,
+          );
+        });
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool isMe = message.from == conversation.myNumber;
@@ -321,7 +340,11 @@ class MessageRow extends StatelessWidget {
                         constraints: BoxConstraints(
                             maxWidth: MediaQuery.of(context).size.width - 90),
                         child: isPicture
-                            ? PictureMessageBody(isMe: isMe, message: message)
+                            ? PictureMessageBody(
+                                isMe: isMe,
+                                message: message,
+                                openMedia: _openMedia,
+                              )
                             : MessageBody(
                                 isMe: isMe,
                                 maxWidth: maxWidth,

@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:fusion_mobile_revamped/src/chats/components/mediaGallery.dart';
 import 'package:fusion_mobile_revamped/src/models/messages.dart';
+import 'package:fusion_mobile_revamped/src/styles.dart';
 import 'package:fusion_mobile_revamped/src/utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class PictureMessageBody extends StatelessWidget {
   final SMSMessage message;
   final bool isMe;
+  final Function(BuildContext context) openMedia;
   const PictureMessageBody({
     required this.message,
     required this.isMe,
+    required this.openMedia,
     super.key,
   });
 
@@ -35,7 +39,7 @@ class PictureMessageBody extends StatelessWidget {
     final GlobalKey<TooltipState> toolTipKey = GlobalKey<TooltipState>();
     return GestureDetector(
         onLongPress: () => _copy(toolTipKey),
-        onTap: () => print("_openMedia"), //FIXME:
+        onTap: () => openMedia(context),
         child: ClipRRect(
             borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(isMe ? 8 : 0),

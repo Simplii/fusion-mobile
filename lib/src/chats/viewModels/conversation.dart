@@ -69,9 +69,14 @@ class ConversationVM with ChangeNotifier {
       SMSMessage? messageToUpdate = conversationMessages
           .where((m) => int.parse(m.id) == message.id)
           .firstOrNull;
+      print("MDBM _updateFromWS $messageToUpdate");
       if (messageToUpdate != null) {
         messageToUpdate.messageStatus = message.messageStatus;
         messageToUpdate.errorMessage = message.errorMessage;
+        notifyListeners();
+      } else {
+        SMSMessage newMessage = SMSMessage.fromWsMessageObj(message);
+        conversationMessages.insert(0, newMessage);
         notifyListeners();
       }
     }
@@ -155,6 +160,10 @@ class ConversationVM with ChangeNotifier {
       conversationDepartmentId,
     );
     loadingMessages = false;
+    if (_offset > conversationMessages.length) {
+      _offset = conversationMessages.length;
+    }
+    print("MDBM ConversationMessages offset = $_offset");
     notifyListeners();
   }
 
@@ -166,7 +175,6 @@ class ConversationVM with ChangeNotifier {
   }
 
   void updateView() {
-    //TODO:update conversationListView too
     notifyListeners();
   }
 
@@ -256,10 +264,16 @@ class ConversationVM with ChangeNotifier {
           (SMSMessage message) {
             //success callback
             print("MDBM send message callback");
-            conversationMessages.insert(
-              0,
-              message,
-            );
+            SMSMessage? lastMessageVisiable = conversationMessages
+                .where((element) => element.id == message.id)
+                .firstOrNull;
+            if (lastMessageVisiable == null) {
+              //incase wsMessage wasn't received right after sending new message
+              conversationMessages.insert(
+                0,
+                message,
+              );
+            }
             notifyListeners();
             _chatsVM?.refreshView();
           },

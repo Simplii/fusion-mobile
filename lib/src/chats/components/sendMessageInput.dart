@@ -20,7 +20,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path/path.dart' as p;
 
-//TODO::CLEAN UP
 class SendMessageInput extends StatefulWidget {
   final ConversationVM conversationVM;
   final ChatsVM? chatsVM;
@@ -43,7 +42,7 @@ class _SendMessageInputState extends State<SendMessageInput> {
   FusionConnection fusionConnection = FusionConnection.instance;
   TextEditingController _messageInputController = TextEditingController();
 
-  //FIXME: Switch to copy image in natve since its not supported by flutter
+  //TODO: Switch to copy image in natve since its not supported by flutter
   Timer? _debounceMessageInput;
   int textLength = 0;
   bool isSavedMessage = false;

@@ -53,7 +53,7 @@ class MessagesList2 extends StatefulWidget {
 
 class _MessagesList2State extends State<MessagesList2> {
   ScrollController _scrollController = ScrollController();
-  ConversationVM get _conversatiionVM => widget.conversationVM;
+  ConversationVM get _conversationVM => widget.conversationVM;
   @override
   void initState() {
     super.initState();
@@ -69,11 +69,10 @@ class _MessagesList2State extends State<MessagesList2> {
   void _loadMoreMessages() {
     if (_scrollController.position.pixels ==
             _scrollController.position.maxScrollExtent &&
-        !_conversatiionVM.loadingMessages) {
+        !_conversationVM.loadingMessages) {
       // User has reached the end of the list
       // Load more data or trigger pagination in flutter
-      print('MDBM end of list');
-      _conversatiionVM.loadMore();
+      _conversationVM.loadMore();
     }
   }
 
@@ -215,6 +214,7 @@ class _MessagesList2State extends State<MessagesList2> {
                   message: message,
                   conversation: widget.conversation,
                   messageTime: messageTime,
+                  conversationVM: _conversationVM,
                 ),
               ),
             ),

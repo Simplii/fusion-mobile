@@ -84,10 +84,11 @@ class _ConversationListViewState extends State<ConversationListView> {
                   ),
                 );
               }
+              SMSConversation convo = _conversations[index];
               return GestureDetector(
-                onTap: () => _openConversation(_conversations[index]),
+                onTap: () => _openConversation(convo),
                 child: Dismissible(
-                  key: ValueKey<SMSConversation>(_conversations[index]),
+                  key: ValueKey<SMSConversation>(convo),
                   direction: DismissDirection.endToStart,
                   background: Container(
                     color: crimsonDark,
@@ -131,7 +132,7 @@ class _ConversationListViewState extends State<ConversationListView> {
                     );
                   },
                   child: ConversationRow(
-                    convo: _conversations[index],
+                    conversation: convo,
                     chatsVM: _chatsVM,
                   ),
                 ),

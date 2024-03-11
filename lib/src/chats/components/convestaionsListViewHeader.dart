@@ -30,51 +30,58 @@ class ConversationsListViewHeader extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          FusionDropdown(
-            selectedNumber: "",
-            onChange: chatsVM.onGroupChange,
-            value: chatsVM.selectedDepartmentId,
-            options: chatsVM.groupOptions(),
-            label: "Select a Department",
-            button: Stack(children: [
-              Container(
-                margin: EdgeInsets.only(right: 24, top: 16),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: translucentSmoke,
-                ),
-                padding: EdgeInsets.all(2),
-                child: Icon(
-                  Icons.expand_more,
-                  size: 30,
-                ),
-              ),
-              if (chatsVM.selectedDepartmentId != DepartmentIds.AllMessages)
-                Positioned(
-                  right: 19,
-                  top: 11,
-                  child: Container(
-                    constraints: BoxConstraints(minWidth: 20, maxHeight: 20),
-                    decoration: BoxDecoration(
-                        color: crimsonLight,
-                        borderRadius: BorderRadius.circular(16)),
-                    child: Padding(
-                      padding: const EdgeInsets.all(4.0),
-                      child: Center(
-                          child: LimitedBox(
-                        maxWidth: 28,
-                        child: Text("12",
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w900,
-                                color: Colors.white)),
-                      )),
+          ListenableBuilder(
+              listenable: chatsVM,
+              builder: (context, child) {
+                return FusionDropdown(
+                  selectedNumber: "",
+                  onChange: chatsVM.onGroupChange,
+                  value: chatsVM.selectedDepartmentId,
+                  options: chatsVM.groupOptions(),
+                  label: "Select a Department",
+                  button: Stack(children: [
+                    Container(
+                      margin: EdgeInsets.only(right: 24, top: 16),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: translucentSmoke,
+                      ),
+                      padding: EdgeInsets.all(2),
+                      child: Icon(
+                        Icons.expand_more,
+                        size: 30,
+                      ),
                     ),
-                  ),
-                ),
-            ]),
-          )
+                    if (chatsVM.selectedDepartmentId !=
+                            DepartmentIds.AllMessages &&
+                        chatsVM.unreadsCount > 0)
+                      Positioned(
+                        right: 19,
+                        top: 11,
+                        child: Container(
+                          constraints:
+                              BoxConstraints(minWidth: 20, maxHeight: 20),
+                          decoration: BoxDecoration(
+                              color: crimsonLight,
+                              borderRadius: BorderRadius.circular(16)),
+                          child: Padding(
+                            padding: const EdgeInsets.all(4.0),
+                            child: Center(
+                                child: LimitedBox(
+                              maxWidth: 28,
+                              child: Text(chatsVM.unreadsCount.toString(),
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w900,
+                                      color: Colors.white)),
+                            )),
+                          ),
+                        ),
+                      ),
+                  ]),
+                );
+              })
         ],
       ),
     );

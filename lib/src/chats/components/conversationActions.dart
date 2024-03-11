@@ -165,7 +165,7 @@ class ConversationActions extends StatelessWidget {
                   "addContact-${index} "
                 ],
             growable: false);
-    //TODO: passdown softphone & fusionconnection
+    //TODO: Move to conversationVM
     Softphone? _softphone = Softphone.instance;
     FusionConnection _fusionConnection = FusionConnection.instance;
 

@@ -784,7 +784,7 @@ class _SearchMessagesViewState extends State<SearchMessagesView> {
 
         _fusionConnection!.messages.searchV2(query,
             (List<SMSConversation> convos, List<CrmContact> crmContacts,
-                List<Contact> contacts) {
+                List<Contact> contacts, bool fromServer) {
           if (!mounted) return;
           if (mounted && query == _searchingFor) {
             this._onHasResults(convos, crmContacts, contacts);
