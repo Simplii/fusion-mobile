@@ -826,8 +826,8 @@ class FusionConnection {
     _sendToSocket({'heartbeat': beat});
     Future.delayed(const Duration(seconds: 15), () {
       if (_heartbeats[beat] != null && !_heartbeats[beat]!) {
-        // socketChannel.sink.close();
-        // setupSocket();
+        socketChannel.sink.close();
+        setupSocket();
       }
       _heartbeats.remove(beat);
       _sendHeartbeat();
@@ -839,12 +839,10 @@ class FusionConnection {
   }
 
   setupSocket() {
-    print("MDBM setup socket");
     int messageNum = 0;
     final wsUrl = Uri.parse('wss://fusioncom.co:8443/');
     socketChannel = WebSocketChannel.connect(wsUrl);
-    websocketStream.addStream(socketChannel.stream).onError(
-        (error, stackTrace) => print("MDBM wsMessage error  ${error}"));
+    websocketStream.addStream(socketChannel.stream);
     websocketStream.stream.listen((messageData) async {
       print("MDBM wsMessage ${messageData}");
       Map<String, dynamic> message = convert.jsonDecode(messageData);

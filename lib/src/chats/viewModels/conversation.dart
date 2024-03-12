@@ -34,6 +34,7 @@ class ConversationVM with ChangeNotifier {
   int _offset = 0;
   bool loadingMoreMessages = false;
   Map<String, Timer> usersTimers = {};
+  bool showLargeMMSErrorMessage = false;
 
   ConversationVM({required this.conversation, ChatsVM? chatsVM}) {
     _chatsVM = chatsVM;
@@ -69,7 +70,6 @@ class ConversationVM with ChangeNotifier {
       SMSMessage? messageToUpdate = conversationMessages
           .where((m) => int.parse(m.id) == message.id)
           .firstOrNull;
-      print("MDBM _updateFromWS $messageToUpdate");
       if (messageToUpdate != null) {
         messageToUpdate.messageStatus = message.messageStatus;
         messageToUpdate.errorMessage = message.errorMessage;
@@ -77,6 +77,14 @@ class ConversationVM with ChangeNotifier {
       } else {
         SMSMessage newMessage = SMSMessage.fromWsMessageObj(message);
         conversationMessages.insert(0, newMessage);
+        //TODO:Test receving a message while typingstatus is active
+        // SMSMessage? isTypingMessage =
+        //     conversationMessages.where((e) => e.id == "-3").firstOrNull;
+        // if (isTypingMessage != null) {
+        //   conversationMessages
+        //       .removeAt(conversationMessages.indexOf(isTypingMessage));
+        //   conversationMessages.insert(0, isTypingMessage);
+        // }
         notifyListeners();
       }
     }
@@ -103,7 +111,7 @@ class ConversationVM with ChangeNotifier {
           to: typingStatus.to,
           user: typingStatus.username,
           messageId: "-3",
-          domain: "simpliidev",
+          domain: fusionConnection.getDomain(),
         );
         conversationMessages.insert(0, typingMessage);
       }
@@ -152,6 +160,7 @@ class ConversationVM with ChangeNotifier {
         conversationMessages.sort((SMSMessage m1, SMSMessage m2) {
           return m1.unixtime > m2.unixtime ? -1 : 1;
         });
+        notifyListeners();
         if (fromServer) {
           loadingMoreMessages = false;
           notifyListeners();
@@ -164,7 +173,6 @@ class ConversationVM with ChangeNotifier {
       _offset = conversationMessages.length;
     }
     print("MDBM ConversationMessages offset = $_offset");
-    notifyListeners();
   }
 
   void loadMore() {
@@ -250,6 +258,34 @@ class ConversationVM with ChangeNotifier {
     }
   }
 
+  void _sendMessageCallback(SMSMessage message) {
+    //success callback
+    print("MDBM send message callback");
+    SMSMessage? lastMessageVisiable = conversationMessages
+        .where((element) => element.id == message.id)
+        .firstOrNull;
+    if (lastMessageVisiable == null) {
+      //incase wsMessage wasn't received right after sending new message
+      conversationMessages.insert(
+        0,
+        message,
+      );
+    }
+    sendingMessage = false;
+    notifyListeners();
+    _chatsVM?.refreshView();
+  }
+
+  void _showLargeMMSError() {
+    showSnackBar = true;
+    sendingMessage = false;
+    notifyListeners();
+    Future.delayed(const Duration(seconds: 3), () {
+      showSnackBar = false;
+      notifyListeners();
+    });
+  }
+
   void sendMessage({
     required SMSConversation conversation,
     required String messageText,
@@ -257,56 +293,49 @@ class ConversationVM with ChangeNotifier {
     if (messageText.isNotEmpty) {
       if (FusionConnection.isInternetActive) {
         fusionConnection.messages.sendMessage(
-          messageText,
-          conversation,
-          conversationDepartmentId,
-          null,
-          (SMSMessage message) {
-            //success callback
-            print("MDBM send message callback");
-            SMSMessage? lastMessageVisiable = conversationMessages
-                .where((element) => element.id == message.id)
-                .firstOrNull;
-            if (lastMessageVisiable == null) {
-              //incase wsMessage wasn't received right after sending new message
-              conversationMessages.insert(
-                0,
-                message,
-              );
-            }
-            notifyListeners();
-            _chatsVM?.refreshView();
-          },
-          () {
-            //TODO::handle failed callback: LargeMMS
-          },
-          scheduledAt,
+          conversation: conversation,
+          text: messageText,
+          departmentId: conversationDepartmentId,
+          callback: _sendMessageCallback,
+          schedule: scheduledAt,
         );
       } else {
-        //TODO:Send offline message
-        print("MDBM send offline message ");
-        print("MDBM internet active= ${FusionConnection.isInternetActive}");
+        fusionConnection.messages.offlineMessage(
+          conversation: conversation,
+          departmentId: conversationDepartmentId,
+          text: messageText,
+          callback: _sendMessageCallback,
+          schedule: scheduledAt,
+        );
       }
     }
     if (mediaToSend.isNotEmpty) {
+      sendingMessage = true;
+      notifyListeners();
       for (XFile file in mediaToSend) {
-        fusionConnection.messages.sendMessage(
-          '',
-          conversation,
-          conversationDepartmentId,
-          file,
-          (message) {
-            //success callback
-          },
-          () {
-            // failed callback: LargeMMS
-          },
-          scheduledAt,
-        );
+        if (FusionConnection.isInternetActive) {
+          fusionConnection.messages.sendMessage(
+            conversation: conversation,
+            departmentId: conversationDepartmentId,
+            mediaFile: file,
+            callback: _sendMessageCallback,
+            largeMMSCallback: _showLargeMMSError,
+            schedule: scheduledAt,
+          );
+        } else {
+          fusionConnection.messages.offlineMessage(
+            conversation: conversation,
+            departmentId: conversationDepartmentId,
+            text: messageText,
+            callback: _sendMessageCallback,
+            largeMMSCallback: _showLargeMMSError,
+            schedule: scheduledAt,
+            mediaFile: file,
+          );
+        }
       }
       mediaToSend = [];
     }
-    print("MDBM send message");
     notifyListeners();
   }
 

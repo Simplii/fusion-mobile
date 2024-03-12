@@ -375,15 +375,15 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
     persist(message);
   }
 
-  _sendMediaMessage(
-    XFile file,
-    SMSConversation conversation,
+  _sendMediaMessage({
+    required XFile file,
+    required SMSConversation conversation,
     String? departmentId,
     dynamic generatedConvoId,
     Function? callback,
-    Function largeMMSCallback,
-    schedule,
-  ) async {
+    Function? largeMMSCallback,
+    DateTime? schedule,
+  }) async {
     int fileSize = await file.length();
     bool _canSendLargeMMS = true;
 
@@ -392,7 +392,7 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
         if (key == "enabled_features" &&
             !value.contains("Large MMS Messages")) {
           _canSendLargeMMS = false;
-          largeMMSCallback();
+          if (largeMMSCallback != null) largeMMSCallback();
         }
       });
     }
@@ -421,7 +421,9 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
         if (conversation.conversationId != null) {
           fusionConnection.conversations.storeRecord(conversation);
         }
-        callback!();
+        if (callback != null) {
+          callback(message);
+        }
       });
     }
   }
@@ -468,25 +470,25 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
     return convo;
   }
 
-  sendMessage(
+  sendMessage({
     String? text,
-    SMSConversation conversation,
+    required SMSConversation conversation,
     String? departmentId,
     XFile? mediaFile,
     Function(SMSMessage)? callback,
-    Function largeMMSCallback,
+    Function? largeMMSCallback,
     DateTime? schedule,
-  ) async {
+  }) async {
     if (conversation.conversationId != null) {
       if (mediaFile != null) {
         _sendMediaMessage(
-          mediaFile,
-          conversation,
-          departmentId,
-          null,
-          callback,
-          largeMMSCallback,
-          schedule,
+          file: mediaFile,
+          conversation: conversation,
+          departmentId: departmentId,
+          callback: callback,
+          generatedConvoId: null,
+          largeMMSCallback: largeMMSCallback,
+          schedule: schedule,
         );
       } else {
         fusionConnection.apiV2Call(
@@ -523,13 +525,13 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
         if (mediaFile != null) {
           var generatedConvoId = data['groupId'];
           _sendMediaMessage(
-            mediaFile,
-            conversation,
-            departmentId,
-            generatedConvoId,
-            callback,
-            largeMMSCallback,
-            schedule,
+            file: mediaFile,
+            conversation: conversation,
+            departmentId: departmentId,
+            callback: callback,
+            generatedConvoId: generatedConvoId,
+            largeMMSCallback: largeMMSCallback,
+            schedule: schedule,
           );
         } else {
           fusionConnection.apiV2Call(
@@ -818,19 +820,20 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
         callback: null);
   }
 
-  offlineMessage(
-      String text,
-      SMSConversation conversation,
-      String departmentId,
-      XFile? mediaFile,
-      Function? callback,
-      Function largeMMSCallback,
-      DateTime? schedule) {
+  offlineMessage({
+    String? text,
+    required SMSConversation conversation,
+    required String departmentId,
+    XFile? mediaFile,
+    Function? callback,
+    Function? largeMMSCallback,
+    DateTime? schedule,
+  }) {
     SMSMessage message = SMSMessage.offline(
       from: conversation.myNumber,
       to: conversation.number,
       isGroup: conversation.isGroup,
-      text: text,
+      text: text ?? "",
       user: fusionConnection.getExtension(),
       messageId: (int.parse(conversation.message!.id!) + 1).toString(),
       schedule: schedule != null ? schedule.toUtc().toString() : null,

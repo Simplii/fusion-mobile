@@ -1141,14 +1141,14 @@ class _SMSConversationViewState extends State<SMSConversationView> {
       if (_messageInputController.value.text.trim().length > 0) {
         if (!_fusionConnection!.internetAvailable) {
           if (_conversation!.message != null) {
-            _fusionConnection!.messages.offlineMessage(
-                _messageInputController.value.text,
-                _conversation!,
-                _selectedGroupId,
-                null,
-                _setOnMessagePosted,
-                () => null,
-                secheduleIsSet);
+            // _fusionConnection!.messages.offlineMessage(
+            //     _messageInputController.value.text,
+            //     _conversation!,
+            //     _selectedGroupId,
+            //     null,
+            //     _setOnMessagePosted,
+            //     () => null,
+            //     secheduleIsSet);
           } else {
             toast("unable to connect to the internet".toUpperCase());
           }
