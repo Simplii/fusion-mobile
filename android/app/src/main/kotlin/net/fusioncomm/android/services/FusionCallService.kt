@@ -51,9 +51,9 @@ class FusionCallService : Service() {
                 )
                 NotificationsManager.onCallServiceStart(this, startId,notificationId)
                 //FIXME: this won't work when accepting multiple calls from notification
-                if (answerCall == true) {
-                    CallsManager.answerCall()
-                }
+//                if (answerCall == true) {
+//                    CallsManager.answerCall()
+//                }
             } catch (e:  Exception) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
                     && e is ForegroundServiceStartNotAllowedException

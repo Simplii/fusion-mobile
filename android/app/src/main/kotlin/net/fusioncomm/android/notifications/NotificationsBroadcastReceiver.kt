@@ -73,7 +73,7 @@ class NotificationsBroadcastReceiver: BroadcastReceiver()  {
                 NotificationsManager.callServiceStartedFormBR = true
             }
             //FIXME:: call need to be answered after the service start
-//            call.accept()
+            call.accept()
         } else if (intent.action == NotificationsManager.INTENT_UNHOLD_CALL_NOTIF_ACTION) {
             Log.d(debugTag, "unhold call")
             FMCore.callsManager.resumeCall(call)

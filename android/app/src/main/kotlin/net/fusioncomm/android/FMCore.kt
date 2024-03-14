@@ -122,6 +122,10 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
         }
         core.config.setBool("audio", "android_pause_calls_when_audio_focus_lost", false)
         _lifecycleRegistry.currentState = Lifecycle.State.CREATED
+        for ( audioType in core.audioPayloadTypes){
+            Log.d(debugTag, "codec ${audioType.mimeType}")
+
+        }
     }
 
     private fun unregister() {

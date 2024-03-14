@@ -328,7 +328,7 @@ class NotificationsManager(private val context: Context, private val callsManage
                 Log.w(debugTag, "missing POST_NOTIFICATIONS permission")
                 return
             }
-            notify(notifiable.notificationId, notification!!)
+            notify(notifiable.notificationId, notification)
             activeNotification[notifiable.notificationId] = notification
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
                 !callServiceStartedFormBR &&

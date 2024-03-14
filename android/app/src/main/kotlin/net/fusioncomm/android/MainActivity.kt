@@ -10,9 +10,14 @@ import android.view.KeyEvent
 import com.google.gson.Gson
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.EventChannel
+import io.flutter.plugin.common.EventChannel.EventSink
 import io.flutter.plugin.common.MethodChannel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import net.fusioncomm.android.FusionMobileApplication.Companion.engine
-import net.fusioncomm.android.FusionMobileApplication.Companion.fmCore
 import net.fusioncomm.android.compatibility.Compatibility
 import net.fusioncomm.android.telecom.CallsManager
 import org.linphone.core.*
@@ -28,6 +33,10 @@ class MainActivity : FlutterFragmentActivity() {
 
     private lateinit var audioManager:AudioManager
     private lateinit var telephonyManager: TelephonyManager
+
+    //TODO: testing
+    private val callInfoStream = CallInfoStream()
+    private val eventChannel = EventChannel(engine.dartExecutor.binaryMessenger, "channel/callInfo")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
@@ -52,6 +61,7 @@ class MainActivity : FlutterFragmentActivity() {
             appOpenedFromBackground = true
             intent.removeExtra("payload")
         }
+        eventChannel.setStreamHandler(callInfoStream)
     }
 
     override fun onResume() {
@@ -406,4 +416,40 @@ class MainActivity : FlutterFragmentActivity() {
     override fun provideFlutterEngine(context: Context): FlutterEngine? {
         return engine
     }
+}
+
+//TODO:move class
+class CallInfoStream : EventChannel.StreamHandler {
+    private val scope = MainScope()
+    private var job: Job? = null
+
+    override fun onListen(arguments: Any?, eventSink: EventSink) {
+        Log.d("MDBM CallInfoStream", "onListen")
+        val call: Call = FMCore.core.currentCall ?: return
+        job = scope.launch {
+            Log.d("MDBM CallInfoStream", "${call.state.name}")
+
+            var callActive = true
+
+            while(callActive) {
+                Log.d("MDBM CallInfoStream", "call quility = ${call.currentQuality}")
+                delay(5000)
+                eventSink.success(call.currentQuality)
+                if( call.state == Call.State.Released ||
+                    call.state == Call.State.End ||
+                    call.state == Call.State.Error
+                )   {
+                    Log.d("MDBM CallInfoStream", "call not active")
+                    job?.cancel()
+                    callActive = false
+                }
+            }
+        }
+
+    }
+    override fun onCancel(arguments: Any?) {
+        Log.d("MDBM CallInfoStream", "on cancel")
+        job?.cancel()
+    }
+
 }
