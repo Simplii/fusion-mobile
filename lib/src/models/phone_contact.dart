@@ -348,14 +348,16 @@ class PhoneContactsStore extends FusionStore<PhoneContact> {
   }
 
   Future<List<PhoneContact>> getAddressBookContacts(String query) async {
+    if (syncing) return [];
     List<PhoneContact> contacts = getRecords();
     if (contacts.isNotEmpty && query.isEmpty) {
       return contacts;
     } else {
-      final database = openDatabase(join(await getDatabasesPath(), "fusion.db"));
+      final database =
+          openDatabase(join(await getDatabasesPath(), "fusion.db"));
       final db = await database;
 
-      List<Map<String,dynamic>> results = await db.query(
+      List<Map<String, dynamic>> results = await db.query(
         'phone_contacts',
         where: 'searchString Like ?',
         whereArgs: ["%" + query + "%"],
@@ -363,7 +365,7 @@ class PhoneContactsStore extends FusionStore<PhoneContact> {
       );
 
       List<PhoneContact> list = [];
-      
+
       for (Map<String, dynamic> result in results) {
         PhoneContact phoneContact = PhoneContact.unserialize(result['raw']);
         phoneContact.profileImage = result['profileImage'];
@@ -372,7 +374,7 @@ class PhoneContactsStore extends FusionStore<PhoneContact> {
       }
 
       contacts = list;
-      
+
       if (list.isEmpty && query.isEmpty && !syncing) {
         initSync = true;
         syncPhoneContacts();
