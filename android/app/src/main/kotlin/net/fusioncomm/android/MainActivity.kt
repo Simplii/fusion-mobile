@@ -2,11 +2,14 @@ package net.fusioncomm.android
 
 import android.Manifest
 import android.app.ActivityManager
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.content.pm.PackageManager.FEATURE_TELEPHONY_SUBSCRIPTION
+import android.content.pm.ServiceInfo
 import android.media.AudioDeviceInfo
 import android.media.AudioManager
 import android.os.Build
@@ -38,15 +41,22 @@ import android.net.Uri
 import android.telephony.SubscriptionManager
 import android.telephony.SubscriptionManager.DEFAULT_SUBSCRIPTION_ID
 import android.view.KeyEvent
+import androidx.core.app.NotificationCompat
 import androidx.core.content.getSystemService
-
+@Suppress("DEPRECATION")
 class MainActivity : FlutterFragmentActivity() {
     private lateinit var core: Core
+    private lateinit var context:Context
     // private lateinit var channel: MethodChannel
     // switched it to companion obj to be able to invoke flutter methods from
     // native boradcastRecivers and services
     companion object {
+        private var callService: FusionCallService? = null
         lateinit var channel: MethodChannel
+        fun onCallServiceStart (service: FusionCallService) {
+            callService = service
+            Log.d("MDBM", "service started ")
+        }
     }
     private var username: String = ""
     private var password: String = ""
@@ -61,8 +71,10 @@ class MainActivity : FlutterFragmentActivity() {
     lateinit var telephonyManager: TelephonyManager;
     var myPhoneNumber:String = ""
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState);
+        context = this
         telephonyManager = getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
         setupCore();
 //        setupBroadcastReciver()
@@ -70,6 +82,17 @@ class MainActivity : FlutterFragmentActivity() {
         if(incomingCallId != null){
             appOpenedFromBackground = true
             getIntent().removeExtra("payload");
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val mChannel = NotificationChannel(
+                "calling_service",
+                "Call Service",
+                NotificationManager.IMPORTANCE_LOW
+            )
+            mChannel.description = "This service keeps the mic active when fusion mobile is in the background"
+
+            val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(mChannel)
         }
     }
 
@@ -126,6 +149,12 @@ class MainActivity : FlutterFragmentActivity() {
     }
 
     private val coreListener = object : CoreListenerStub() {
+        override fun onLastCallEnded(core: Core) {
+            callService?.stopForeground(true)
+            Log.d("MDBM", "last call ended")
+            super.onLastCallEnded(core)
+        }
+
         override fun onAccountRegistrationStateChanged(
             core: Core,
             account: Account,
@@ -268,6 +297,12 @@ class MainActivity : FlutterFragmentActivity() {
                         "lnStreamsRunning",
                         mapOf(Pair("uuid", uuid))
                     )
+
+                    if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R){
+                        val intent = Intent(context, FusionCallService::class.java)
+                        context.startService(intent)
+                    }
+
                 }
                 Call.State.Pausing -> {
                     channel.invokeMethod(

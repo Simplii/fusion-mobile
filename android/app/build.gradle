@@ -27,7 +27,7 @@ apply plugin: 'kotlin-android'
 apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
 
 android {
-    compileSdkVersion 33
+    compileSdk 34
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
@@ -87,8 +87,9 @@ repositories {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-        implementation 'org.linphone:linphone-sdk-android:5.0+'
-implementation 'com.google.code.gson:gson:2.8.7'
-
+    implementation 'org.linphone:linphone-sdk-android:5.0+'
+    implementation 'com.google.code.gson:gson:2.8.7'
+    // Kotlin
+    implementation("androidx.core:core-ktx:1.12.0")
 
 }
