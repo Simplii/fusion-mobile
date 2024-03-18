@@ -353,15 +353,13 @@ class _ContactsSearchListState extends State<ContactsSearchList> {
                 .getAddressBookContacts(_query)
                 .then((List<PhoneContact> contacts) {
               setState(() {
-                print(
-                    "MDBM ${_fusionConnection.phoneContacts.initSync} ${contacts.isEmpty}");
                 if (contacts.isEmpty &&
                     _fusionConnection.phoneContacts.initSync &&
                     _typeFilter == "Phone Contacts") {
                   lookupState = 2;
                   _contacts = [];
                 } else {
-                  _contacts = []; // FIXME:
+                  _contacts = [];
                   Map<String, Contact> list = {};
                   _contacts.forEach((Contact c) {
                     list[c.id] = c;
@@ -371,6 +369,7 @@ class _ContactsSearchListState extends State<ContactsSearchList> {
                   });
                   _contacts = list.values.toList().cast<Contact>();
                   _sortList(_contacts);
+                  lookupState = 2;
                 }
               });
             });
@@ -687,11 +686,15 @@ class _ContactsSearchListState extends State<ContactsSearchList> {
                       ? _spinner()
                       : _contacts.isEmpty
                           ? Center(
-                              child: Text(
-                                _emptyContactsMessage(),
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                    fontWeight: FontWeight.w600, height: 1.5),
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 16),
+                                child: Text(
+                                  _emptyContactsMessage(),
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.w600, height: 1.5),
+                                ),
                               ),
                             )
                           : ListView.builder(

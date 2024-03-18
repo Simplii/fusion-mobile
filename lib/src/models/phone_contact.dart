@@ -265,8 +265,6 @@ class PhoneContactsStore extends FusionStore<PhoneContact> {
   }
 
   Future<PhoneContact?> searchDb(String phoneNumber) async {
-    PhoneContact? contact;
-
     List<Map<String, dynamic>> results = await fusionConnection.db.query(
       'phone_contacts',
       // where: 'phoneNumbers LIKE (${List.filled([phoneNumber].length, '?').join(',')})',
@@ -276,13 +274,12 @@ class PhoneContactsStore extends FusionStore<PhoneContact> {
       whereArgs: ["%$phoneNumber%"],
     );
 
-    if (results != null && results.length > 0) {
-      Map<String, dynamic> result = results.first;
-      PhoneContact phoneContact = PhoneContact.unserialize(result['raw']);
-      phoneContact.profileImage = result['profileImage'];
-      contact = phoneContact;
-    }
-    return contact;
+    if (results.isEmpty) return null;
+
+    Map<String, dynamic> result = results.first;
+    PhoneContact phoneContact = PhoneContact.unserialize(result['raw']);
+    phoneContact.profileImage = result['profileImage'];
+    return phoneContact;
   }
 
   Future<PhoneContact?> getPhoneContact(phoneNumber) async {
