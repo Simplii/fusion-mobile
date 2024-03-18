@@ -1606,21 +1606,26 @@ class Softphone implements SipUaHelperListener {
       } else if (data != null) {
         if (data.getName().trim().length > 0 && data.contacts.length > 0)
           return data.getName();
-        else if (!_fusionConnection.phoneContacts.noPhoneContacts) {
-          _fusionConnection.phoneContacts
-              .searchDb(data.phoneNumber)
-              .then((value) {
-            phoneContactName
-                .addAll({call.id!: value?.name ?? "Unknown phone contact"});
-          });
-          return phoneContactName.containsKey(call.id!)
-              ? phoneContactName[call.id!]!
-              : "Unknwon";
-        } else
-          return call.remote_display_name != null &&
-                  !call.remote_display_name!.startsWith("sip:")
-              ? call.remote_display_name!
-              : "Unknown";
+        else {
+          if (phoneContactName.isNotEmpty &&
+              phoneContactName.containsKey(call.id!)) {
+            return phoneContactName[call.id!]!;
+          } else {
+            _fusionConnection.phoneContacts
+                .searchDb(data.phoneNumber)
+                .then((value) {
+              if (value != null) {
+                phoneContactName.addAll({call.id!: value.name});
+              }
+            });
+            return phoneContactName.containsKey(call.id!)
+                ? phoneContactName[call.id!]!
+                : call.remote_display_name != null &&
+                        !call.remote_display_name!.startsWith("sip:")
+                    ? call.remote_display_name!
+                    : "Unknown";
+          }
+        }
       } else {
         if (call.remote_display_name != null &&
             call.remote_display_name!.trim().length > 0) {
