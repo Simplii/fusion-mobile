@@ -233,6 +233,7 @@ class PhoneContactsStore extends FusionStore<PhoneContact> {
       : super(fusionConnection, methodChannel: contactsChannel);
   bool syncing = false;
   bool initSync = false;
+  bool noPhoneContacts = false;
   Function? updateView;
 
   persist(
@@ -324,6 +325,9 @@ class PhoneContactsStore extends FusionStore<PhoneContact> {
         }
         syncing = false;
         initSync = false;
+        if (result.isEmpty) {
+          noPhoneContacts = true;
+        }
         if (updateView != null) updateView!();
         break;
       default:

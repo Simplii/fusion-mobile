@@ -336,34 +336,45 @@ class _ContactsSearchListState extends State<ContactsSearchList> {
       if (thisLookup != _lookedUpQuery) return;
       if (!mounted) return;
       if (!mounted || _typeFilter != 'Phone Contacts') return;
-      print("MDBM SS $_typeFilter");
       _checkContactsPermission().then((PermissionStatus status) {
         if (status.isGranted) {
-          _fusionConnection.phoneContacts
-              .getAddressBookContacts(_query)
-              .then((List<PhoneContact> contacts) {
+          if (_fusionConnection.phoneContacts.syncing) {
             setState(() {
-              print(
-                  "MDBM ${_fusionConnection.phoneContacts.initSync} ${contacts.isEmpty}");
-              if (contacts.isEmpty &&
-                  _fusionConnection.phoneContacts.initSync &&
-                  _typeFilter == "Phone Contacts") {
-                lookupState = 2;
-                _contacts = [];
-              } else {
-                _contacts = []; // FIXME:
-                Map<String, Contact> list = {};
-                _contacts.forEach((Contact c) {
-                  list[c.id] = c;
-                });
-                contacts.forEach((PhoneContact c) {
-                  list[c.id] = c.toContact();
-                });
-                _contacts = list.values.toList().cast<Contact>();
-                _sortList(_contacts);
-              }
+              lookupState = 2;
+              _contacts = [];
             });
-          });
+          } else if (_fusionConnection.phoneContacts.noPhoneContacts) {
+            setState(() {
+              lookupState = 2;
+              _contacts = [];
+            });
+          } else {
+            _fusionConnection.phoneContacts
+                .getAddressBookContacts(_query)
+                .then((List<PhoneContact> contacts) {
+              setState(() {
+                print(
+                    "MDBM ${_fusionConnection.phoneContacts.initSync} ${contacts.isEmpty}");
+                if (contacts.isEmpty &&
+                    _fusionConnection.phoneContacts.initSync &&
+                    _typeFilter == "Phone Contacts") {
+                  lookupState = 2;
+                  _contacts = [];
+                } else {
+                  _contacts = []; // FIXME:
+                  Map<String, Contact> list = {};
+                  _contacts.forEach((Contact c) {
+                    list[c.id] = c;
+                  });
+                  contacts.forEach((PhoneContact c) {
+                    list[c.id] = c.toContact();
+                  });
+                  _contacts = list.values.toList().cast<Contact>();
+                  _sortList(_contacts);
+                }
+              });
+            });
+          }
         } else if (status.isPermanentlyDenied || status.isDenied) {
           setState(() {
             _contacts = [];
@@ -559,7 +570,6 @@ class _ContactsSearchListState extends State<ContactsSearchList> {
   }
 
   _isSpinning() {
-    print("MDBM $lookupState ${_contacts.length}");
     return lookupState < 2 &&
         _contacts.length == 0 &&
         (_typeFilter != 'Coworkers' ||
@@ -567,16 +577,23 @@ class _ContactsSearchListState extends State<ContactsSearchList> {
   }
 
   String _emptyContactsMessage() {
-    String message = "No Match Was Found";
+    String message = _typeFilter == "Coworkers"
+        ? "No coworkers found"
+        : "No fusion contacts found";
     if (_typeFilter == "fusion") return message;
     if (_typeFilter == "Phone Contacts" && _contactsPermissionNotAllowed) {
       message =
           "Please allow Fusion Mobile access to your contacts from settings for this feature to work";
     }
     if (_typeFilter == "Phone Contacts" &&
-        _fusionConnection.phoneContacts.initSync) {
+        (_fusionConnection.phoneContacts.initSync ||
+            _fusionConnection.phoneContacts.syncing)) {
       message =
           "Contacts sync has started, this might take a while feel free to navigate away from this screen but don't close the app";
+    }
+    if (_typeFilter == "Phone Contacts" &&
+        _fusionConnection.phoneContacts.noPhoneContacts) {
+      message = "No phone contacts found";
     }
     return message;
   }
