@@ -53,7 +53,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_PHONE_CALL" />
 
     <application
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@mipmap/new_app_icon"
         android:label="Fusion"
         android:usesCleartextTraffic="true">
 
