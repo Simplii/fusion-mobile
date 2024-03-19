@@ -6,24 +6,19 @@ import android.content.ContentUris
 import android.content.res.AssetFileDescriptor
 import android.database.Cursor
 import android.net.Uri
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.provider.ContactsContract
 import android.telephony.PhoneNumberUtils
-import android.util.Log
 import com.google.gson.Gson
 import io.flutter.plugin.common.MethodChannel
 import java.io.IOException
 import java.io.InputStream
 
 @SuppressLint("Range")
-class ContactsThread constructor(private var channel: MethodChannel, private var contentResolver: ContentResolver): Thread() {
-    private val gson = Gson();
-    private val displayNameCol: String =
-            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
-                ContactsContract.Contacts.DISPLAY_NAME_PRIMARY
-            else ContactsContract.Contacts.DISPLAY_NAME
+class ContactsThread (private var channel: MethodChannel, private var contentResolver: ContentResolver): Thread() {
+    private val gson = Gson()
+    private val displayNameCol: String = ContactsContract.Contacts.DISPLAY_NAME_PRIMARY
     override fun run() {
         val contacts: List<Map<String,Any?>> = getContacts()
         Handler(Looper.getMainLooper()).post {
@@ -33,7 +28,7 @@ class ContactsThread constructor(private var channel: MethodChannel, private var
 
 
     private fun getContacts() : List<Map<String,Any?>>{
-        var cursor: Cursor? = contentResolver.query(
+        val cursor: Cursor? = contentResolver.query(
                 ContactsContract.Contacts.CONTENT_URI,
                 null,
                 null,
@@ -73,7 +68,7 @@ class ContactsThread constructor(private var channel: MethodChannel, private var
                     Pair("phoneNumbers", phoneNumbersArray),
                     Pair("emails", emailsArray),
                     Pair("addresses", addressesArray),
-                    Pair("profileImage", image ?: null),
+                    Pair("profileImage", image),
                     Pair("company", company),
                     Pair("jobTitle", jobTitle)
                 )
@@ -82,7 +77,7 @@ class ContactsThread constructor(private var channel: MethodChannel, private var
             }
             cursor.close()
         }
-        return contacts;
+        return contacts
     }
 
     private fun getContactPhoneNumbers (contactId:String): Array<Map<String,Any>> {
@@ -132,7 +127,7 @@ class ContactsThread constructor(private var channel: MethodChannel, private var
             }
             contactPhoneCursor.close()
         }
-        return phoneNumbers.toTypedArray();
+        return phoneNumbers.toTypedArray()
     }
 
     private fun getContactStructuredName (contactId:String): Triple<String, String, String> {
@@ -190,7 +185,7 @@ class ContactsThread constructor(private var channel: MethodChannel, private var
             }
             structuredNameCursor.close()
         }
-        return Triple(firstName,lastName,name);
+        return Triple(firstName,lastName,name)
     }
 
     private fun getContactEmails (contactId:String): Array<Map<String,Any>> {
@@ -232,7 +227,7 @@ class ContactsThread constructor(private var channel: MethodChannel, private var
             }
             contactEmailCursor.close()
         }
-        return phoneEmails.toTypedArray();
+        return phoneEmails.toTypedArray()
     }
 
     private fun getContactAddresses (contactId:String): Array<Map<String,Any>> {
@@ -299,7 +294,7 @@ class ContactsThread constructor(private var channel: MethodChannel, private var
             }
             addressesCursor.close()
         }
-        return addresses.toTypedArray();
+        return addresses.toTypedArray()
     }
 
 //    private fun getProfileImage(contactId: Long): ByteArray? {
@@ -375,7 +370,7 @@ class ContactsThread constructor(private var channel: MethodChannel, private var
             }
             contactCompanyCursor.close()
         }
-        return Pair(companyName,jobTitle);
+        return Pair(companyName,jobTitle)
     }
 
     private fun getPhoneNumberType (phoneType:Int):String {

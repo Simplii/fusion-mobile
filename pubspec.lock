@@ -121,13 +121,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.1"
-  callkeep:
-    dependency: "direct main"
-    description:
-      path: callkeap
-      relative: true
-    source: path
-    version: "0.3.2"
   characters:
     dependency: transitive
     description:

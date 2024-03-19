@@ -5,6 +5,11 @@
 
     <uses-feature android:name="android.hardware.camera" />
     <uses-feature android:name="android.hardware.camera.autofocus" />
+    <uses-feature android:name="android.hardware.telephony" android:required="false" />
+
+    <!-- Needed for Telecom Manager -->
+    <uses-permission android:name="android.permission.MANAGE_OWN_CALLS"/>
+    <uses-permission android:name="android.permission.READ_PHONE_NUMBERS" />
 
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
@@ -13,25 +18,14 @@
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission
         android:name="android.permission.BLUETOOTH"
-        android:maxSdkVersion="50"
-        tools:replace="android:maxSdkVersion" />
+        tools:replace="android:maxSdkVersion"
+        android:maxSdkVersion="50" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
-    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
-    <uses-permission android:name="android.permission.BIND_TELECOM_CONNECTION_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <!-- Grants the READ_PHONE_STATE permission only on devices that run
-         Android 10 (API level 29) and lower. -->
-    <uses-permission
-        android:name="android.permission.READ_PHONE_STATE"
-        android:maxSdkVersion="29" />
-    <uses-permission android:name="android.permission.CALL_PHONE" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
-    <uses-permission android:name="android.permission.MANAGE_OWN_CALLS" />
-    <uses-permission android:name="android.permission.READ_PHONE_NUMBERS" />
-    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
 
@@ -43,17 +37,22 @@
     <uses-permission android:name="android.permission.WRITE_CALENDAR" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.WRITE_SETTINGS" />
+<!--    <uses-permission android:name="android.permission.WRITE_SETTINGS" />-->
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
-
+    <!-- Needed for Android 14 -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_PHONE_CALL" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+
+    <uses-permission android:name="android.permission.CALL_PHONE" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
 
     <application
-        android:icon="@mipmap/new_app_icon"
+        android:name=".FusionMobileApplication"
+        android:icon="@mipmap/ic_launcher"
         android:label="Fusion"
         android:usesCleartextTraffic="true">
 
@@ -65,9 +64,9 @@
             android:exported="true"
             android:hardwareAccelerated="true"
             android:launchMode="singleTop"
-            android:showWhenLocked="true"
+            android:showOnLockScreen="true"
             android:theme="@style/LaunchTheme"
-            android:turnScreenOn="true"
+            android:exported="true"
             android:windowSoftInputMode="adjustResize">
             <!-- Specifies an Android theme to apply to this Activity as soon as
                  the Android process has started. This theme is visible to the user
@@ -102,40 +101,34 @@
             android:exported="true"
             android:value="2" />
 
-        <service
-            android:name="io.wazo.callkeep.VoiceConnectionService"
-            android:exported="false"
-            android:foregroundServiceType="camera|microphone"
-            android:label="Wazo"
-            android:permission="android.permission.BIND_TELECOM_CONNECTION_SERVICE">
+        <service android:name=".telecom.TelecomConnectionService"
+            android:permission="android.permission.BIND_TELECOM_CONNECTION_SERVICE"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.telecom.ConnectionService" />
             </intent-filter>
         </service>
 
         <service
-            android:name=".FusionService"
-            android:enabled="true"
-            android:exported="false"
-            android:stopWithTask="false" />
-        <!--<service android:name="com.example.flutter_voip_kit.VoipConnectionService"-->
-        <!--android:label="VoipConnectionService"-->
-        <!--android:permission="android.permission.BIND_TELECOM_CONNECTION_SERVICE">-->
-        <!--<intent-filter>-->
-        <!--<action android:name="android.telecom.ConnectionService" />-->
-        <!--</intent-filter>-->
-        <!--</service>-->
-        <!--        <service android:name="net.fusioncomm.android.FlutterMessagingService">-->
-        <!--            <intent-filter>-->
-        <!--                <action android:name="com.google.firebase.MESSAGING_EVENT" />-->
-        <!--            </intent-filter>-->
-        <!--        </service>-->
+            android:name=".services.FirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
         <!-- Needed for Android 14 to keep mic active while app is in the background -->
         <service
-            android:name=".FusionCallService"
+            android:name=".services.FusionCallService"
             android:enabled="true"
             android:exported="true"
             android:foregroundServiceType="microphone|phoneCall"
             android:stopWithTask="true" />
+
+        <receiver
+            android:name=".notifications.NotificationsBroadcastReceiver"
+            android:enabled="true"
+            android:exported="false" />
+
     </application>
 </manifest>
