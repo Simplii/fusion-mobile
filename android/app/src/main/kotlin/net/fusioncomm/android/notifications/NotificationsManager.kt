@@ -78,6 +78,7 @@ class NotificationsManager(private val context: Context, private val callsManage
         var contacts : HashMap<String, Contact> = HashMap()
         val callServiceStartId: HashMap<Int,Int> = HashMap()
         var callService: FusionCallService? = null
+        var incomingNotification: Boolean = false
         const val INTENT_NOTIF_ID = "NOTIFICATION_ID"
         const val INTENT_REPLY_NOTIF_ACTION = "fusion.REPLY_ACTION"
         const val INTENT_HANGUP_CALL_NOTIF_ACTION = "fusion.HANGUP_CALL_ACTION"
@@ -98,9 +99,6 @@ class NotificationsManager(private val context: Context, private val callsManage
             Log.d(debugTag, " service with notif id $notificationId")
             callServiceStartId[notificationId] = startId
         }
-
-        var incomingNotification: Boolean = false
-        var callServiceStartedFormBR :Boolean = false
     }
 
     init {
@@ -331,28 +329,27 @@ class NotificationsManager(private val context: Context, private val callsManage
                 Log.w(debugTag, "missing POST_NOTIFICATIONS permission")
                 return
             }
-            notify(notifiable.notificationId, notification!!)
+            notify(notifiable.notificationId, notification)
             activeNotification[notifiable.notificationId] = notification
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
-                !callServiceStartedFormBR &&
                 call.state == Call.State.Connected) {
-                    //start the service
-                   if(callService != null) {
-                       callService?.startForeground(
-                           notifiable.notificationId,
-                           notification,
-                           if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                               ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE or ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL
-                           } else {
-                               0
-                           },
-                       )
-                   } else {
-                       val intent = Intent(context, FusionCallService::class.java)
-                       intent.putExtra(INTENT_NOTIF_ID, notifiable.notificationId)
-                       context.startService(intent)
-                       Log.d(debugTag, "callService = $callService")
-                   }
+                    Log.d(debugTag, "call Connected")
+                    // start the FusionCall service snd if its running, make sure to keep it running
+                    val intent = Intent(context, FusionCallService::class.java)
+                    intent.putExtra(INTENT_NOTIF_ID, notifiable.notificationId)
+                    context.startService(intent)
+
+                    // then startForground to make it work harder and keep the mic active at all time
+                    callService?.startForeground(
+                       notifiable.notificationId,
+                       notification,
+                       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                           ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE or ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL
+                       } else {
+                           0
+                       },
+                    )
+
             }
 
             Log.d(debugTag, "notified ongoing")
@@ -372,7 +369,7 @@ class NotificationsManager(private val context: Context, private val callsManage
             val callerNumber: String = FMUtils.getPhoneNumber(call.remoteAddress)
             contacts.remove(callerNumber)
             //stop stopForeground service by its notification id
-            Log.d(debugTag, "remining calls whe dissmissed ${FMCore.core.callsNb} $callService $callServiceStartId ${notifiable.notificationId}")
+            Log.d(debugTag, "remining calls whe dissmissed ${callServiceStartId} $callService $callServiceStartId ${notifiable.notificationId}")
             notificationManager.cancel(notifiable.notificationId)
             callService?.stopSelf(callServiceStartId[notifiable.notificationId]!!)
         } else {

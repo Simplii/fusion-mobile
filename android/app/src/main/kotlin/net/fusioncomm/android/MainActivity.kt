@@ -16,7 +16,6 @@ import net.fusioncomm.android.FusionMobileApplication.Companion.engine
 import net.fusioncomm.android.FusionMobileApplication.Companion.fmCore
 import net.fusioncomm.android.compatibility.Compatibility
 import net.fusioncomm.android.notifications.NotificationsManager
-import net.fusioncomm.android.services.FusionCallService
 import net.fusioncomm.android.telecom.CallsManager
 import org.linphone.core.*
 

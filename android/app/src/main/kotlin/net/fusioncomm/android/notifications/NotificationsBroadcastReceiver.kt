@@ -7,7 +7,6 @@ import android.os.Build
 import android.util.Log
 import net.fusioncomm.android.FMCore
 import net.fusioncomm.android.MainActivity
-import net.fusioncomm.android.services.FusionCallService
 import org.linphone.core.Call
 
 class NotificationsBroadcastReceiver: BroadcastReceiver()  {
@@ -68,9 +67,6 @@ class NotificationsBroadcastReceiver: BroadcastReceiver()  {
 
         } else if (intent.action == NotificationsManager.INTENT_UNHOLD_CALL_NOTIF_ACTION) {
             Log.d(debugTag, "unhold call")
-            val intent = Intent(context, FusionCallService::class.java)
-            intent.putExtra(NotificationsManager.INTENT_NOTIF_ID, notificationId)
-            context.startService(intent)
             FMCore.callsManager.resumeCall(call)
         } else {
             if (call.state == Call.State.IncomingReceived ||
