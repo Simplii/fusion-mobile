@@ -63,6 +63,12 @@ class MainActivity : FlutterFragmentActivity() {
         checkAnswerCallIntent(intent)
     }
 
+    override fun onDestroy() {
+        for (call in core.calls) {
+            call.terminate()
+        }
+        super.onDestroy()
+    }
     override fun onResume() {
         super.onResume()
         checkPushIncomingCall()
