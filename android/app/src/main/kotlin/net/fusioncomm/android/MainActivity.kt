@@ -29,6 +29,7 @@ class MainActivity : FlutterFragmentActivity() {
     private lateinit var audioManager:AudioManager
     private lateinit var telephonyManager: TelephonyManager
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             Compatibility.setShowWhenLocked(this, true)
@@ -51,6 +52,17 @@ class MainActivity : FlutterFragmentActivity() {
         if(incomingCallId != null){
             appOpenedFromBackground = true
             intent.removeExtra("payload")
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val mChannel = NotificationChannel(
+                "calling_service",
+                "Call Service",
+                NotificationManager.IMPORTANCE_LOW
+            )
+            mChannel.description = "This service keeps the mic active when fusion mobile is in the background"
+
+            val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(mChannel)
         }
     }
 
@@ -127,6 +139,12 @@ class MainActivity : FlutterFragmentActivity() {
    }
 
     private val coreListener = object : CoreListenerStub() {
+        override fun onLastCallEnded(core: Core) {
+            callService?.stopForeground(true)
+            Log.d("MDBM", "last call ended")
+            super.onLastCallEnded(core)
+        }
+
         override fun onAccountRegistrationStateChanged(
             core: Core,
             account: Account,
@@ -273,6 +291,12 @@ class MainActivity : FlutterFragmentActivity() {
                         "lnStreamsRunning",
                         mapOf(Pair("uuid", uuid))
                     )
+
+                    if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R){
+                        val intent = Intent(context, FusionCallService::class.java)
+                        context.startService(intent)
+                    }
+
                 }
                 Call.State.Pausing -> {
                     channel.invokeMethod(

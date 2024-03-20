@@ -81,9 +81,9 @@ class CallHistory extends FusionModel {
       data['id'] = data['uid'];
       coworker = Coworker.fromV2(data);
     }
-    cdrIdHash = obj.containsKey('cdrIdHash') 
-      ? obj['cdrIdHash'].toString()
-      : obj['id'].toString();
+    cdrIdHash = obj.containsKey('cdrIdHash')
+        ? obj['cdrIdHash'].toString()
+        : obj['id'].toString();
     missed = obj['missed'].runtimeType == String
         ? obj['missed'] == 'true'
             ? true
@@ -234,8 +234,7 @@ class CallHistoryStore extends FusionStore<CallHistory> {
                       .cast<String>();
                   if (obj.isInbound() && numbers.contains(obj.fromDid)) {
                     obj.phoneContact = phoneContact;
-                  } else if (!obj.isInbound() &&
-                      numbers.contains(obj.toDid)) {
+                  } else if (!obj.isInbound() && numbers.contains(obj.toDid)) {
                     obj.phoneContact = phoneContact;
                   }
                 }

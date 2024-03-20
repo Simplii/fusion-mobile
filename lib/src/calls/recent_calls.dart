@@ -162,9 +162,10 @@ class _RecentCallsListState extends State<RecentCallsList> {
             (List<CallHistory> history, bool fromServer, bool presisted) {
       if (!mounted) return;
       if (!fromServer && _page > 0) return;
-
       this.setState(() {
         if (fromServer) {
+          print(
+              "MDBM ${history.length} ${history.first.from} ${history.first.fromDid} ${history.first.toDid}");
           lookupState = 2;
         }
         Map<String?, CallHistory> oldHistory = new Map<String?, CallHistory>();
@@ -532,14 +533,14 @@ class _CallHistorySummaryViewState extends State<CallHistorySummaryView> {
     } else if (_historyItem.phoneContact != null) {
       String linePrefix = _getLinePrefix(_historyItem.callerId);
       return linePrefix != ""
-          ? linePrefix + "_" + _historyItem.phoneContact!.name.toTitleCase() 
+          ? linePrefix + "_" + _historyItem.phoneContact!.name.toTitleCase()
           : _historyItem.phoneContact!.name.toTitleCase();
     } else if (_historyItem.callerId != null && _historyItem.callerId != '') {
-      String linePrefix =  _getLinePrefix(_historyItem.callerId);
-      return _historyItem.callerId!.startsWith(linePrefix) && 
-             _historyItem.callerId!.replaceAll(linePrefix + "_", "") != "" 
-                ? _historyItem.callerId
-                : _historyItem.callerId! + "Unknown";
+      String linePrefix = _getLinePrefix(_historyItem.callerId);
+      return _historyItem.callerId!.startsWith(linePrefix) &&
+              _historyItem.callerId!.replaceAll(linePrefix + "_", "") != ""
+          ? _historyItem.callerId
+          : _historyItem.callerId! + "Unknown";
     } else {
       return _historyItem.direction == 'inbound'
           ? _historyItem.fromDid!.formatPhone()

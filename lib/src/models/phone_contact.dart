@@ -233,6 +233,7 @@ class PhoneContactsStore extends FusionStore<PhoneContact> {
       : super(fusionConnection, methodChannel: contactsChannel);
   bool syncing = false;
   bool initSync = false;
+  bool noPhoneContacts = false;
   Function? updateView;
 
   persist(
@@ -264,8 +265,6 @@ class PhoneContactsStore extends FusionStore<PhoneContact> {
   }
 
   Future<PhoneContact?> searchDb(String phoneNumber) async {
-    PhoneContact? contact;
-
     List<Map<String, dynamic>> results = await fusionConnection.db.query(
       'phone_contacts',
       // where: 'phoneNumbers LIKE (${List.filled([phoneNumber].length, '?').join(',')})',
@@ -275,13 +274,12 @@ class PhoneContactsStore extends FusionStore<PhoneContact> {
       whereArgs: ["%$phoneNumber%"],
     );
 
-    if (results != null && results.length > 0) {
-      Map<String, dynamic> result = results.first;
-      PhoneContact phoneContact = PhoneContact.unserialize(result['raw']);
-      phoneContact.profileImage = result['profileImage'];
-      contact = phoneContact;
-    }
-    return contact;
+    if (results.isEmpty) return null;
+
+    Map<String, dynamic> result = results.first;
+    PhoneContact phoneContact = PhoneContact.unserialize(result['raw']);
+    phoneContact.profileImage = result['profileImage'];
+    return phoneContact;
   }
 
   Future<PhoneContact?> getPhoneContact(phoneNumber) async {
@@ -324,6 +322,9 @@ class PhoneContactsStore extends FusionStore<PhoneContact> {
         }
         syncing = false;
         initSync = false;
+        if (result.isEmpty) {
+          noPhoneContacts = true;
+        }
         if (updateView != null) updateView!();
         break;
       default:
@@ -348,14 +349,16 @@ class PhoneContactsStore extends FusionStore<PhoneContact> {
   }
 
   Future<List<PhoneContact>> getAddressBookContacts(String query) async {
+    if (syncing) return [];
     List<PhoneContact> contacts = getRecords();
     if (contacts.isNotEmpty && query.isEmpty) {
       return contacts;
     } else {
-      final database = openDatabase(join(await getDatabasesPath(), "fusion.db"));
+      final database =
+          openDatabase(join(await getDatabasesPath(), "fusion.db"));
       final db = await database;
 
-      List<Map<String,dynamic>> results = await db.query(
+      List<Map<String, dynamic>> results = await db.query(
         'phone_contacts',
         where: 'searchString Like ?',
         whereArgs: ["%" + query + "%"],
@@ -363,7 +366,7 @@ class PhoneContactsStore extends FusionStore<PhoneContact> {
       );
 
       List<PhoneContact> list = [];
-      
+
       for (Map<String, dynamic> result in results) {
         PhoneContact phoneContact = PhoneContact.unserialize(result['raw']);
         phoneContact.profileImage = result['profileImage'];
@@ -372,7 +375,7 @@ class PhoneContactsStore extends FusionStore<PhoneContact> {
       }
 
       contacts = list;
-      
+
       if (list.isEmpty && query.isEmpty && !syncing) {
         initSync = true;
         syncPhoneContacts();

@@ -209,6 +209,7 @@ class FusionConnection {
       });
     });
   }
+
   // need to change this in the future to use database versioning and run migrations
   getDatabase() {
     getDatabasesPath().then((String path) {
