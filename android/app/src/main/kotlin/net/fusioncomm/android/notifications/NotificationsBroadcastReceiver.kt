@@ -59,21 +59,26 @@ class NotificationsBroadcastReceiver: BroadcastReceiver()  {
                 "MDBM Notification BR",
                 "Answer call"
             )
-            // to have access to microphone while app in the background in Android 14 and up
+            // to have access to microphone while app in the background in Android 11 and up
             // we must start a foregroundService with type mic, but we can't start a foregroundService
             // that needs while-in-use permission unless it falls in one of the exemptions ref#
             // https://developer.android.com/develop/background-work/services/foreground-services#bg-access-restrictions
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 // here we're tackling this exemption, The user performs an action on a UI element related to your app.
                 // Since we know the user has tapped on callStyle notification to get here
                 val intent = Intent(context, FusionCallService::class.java)
                 intent.putExtra(NotificationsManager.INTENT_NOTIF_ID, notificationId)
-                context.startForegroundService(intent)
+                intent.putExtra("callUUID", callUUID)
+                context.startService(intent)
                 NotificationsManager.callServiceStartedFormBR = true
+            } else {
+                call.accept()
             }
-            call.accept()
         } else if (intent.action == NotificationsManager.INTENT_UNHOLD_CALL_NOTIF_ACTION) {
             Log.d(debugTag, "unhold call")
+            val intent = Intent(context, FusionCallService::class.java)
+            intent.putExtra(NotificationsManager.INTENT_NOTIF_ID, notificationId)
+            context.startService(intent)
             FMCore.callsManager.resumeCall(call)
         } else {
             if (call.state == Call.State.IncomingReceived ||

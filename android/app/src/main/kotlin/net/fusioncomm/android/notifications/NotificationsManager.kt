@@ -99,10 +99,6 @@ class NotificationsManager(private val context: Context, private val callsManage
             callServiceStartId[notificationId] = startId
         }
 
-        fun onCallServiceDestroyed () {
-            callService = null
-        }
-
         var incomingNotification: Boolean = false
         var callServiceStartedFormBR :Boolean = false
     }
@@ -198,6 +194,13 @@ class NotificationsManager(private val context: Context, private val callsManage
                 else -> displayCallNotification(call)
             }
         }
+
+        override fun onLastCallEnded(core: Core) {
+            super.onLastCallEnded(core)
+            Log.d(debugTag, "$callService")
+            callService?.stopForeground(Service.STOP_FOREGROUND_REMOVE)
+
+        }
     }
 
     private fun stopUpdates() {
@@ -245,7 +248,7 @@ class NotificationsManager(private val context: Context, private val callsManage
         val notifiable = getNotifiableForCall(call, uuid)
 
         val incomingCallIntent = Intent(context, MainActivity::class.java)
-
+        incomingCallIntent.putExtra("incomingCallUUID", uuid)
         Log.d(debugTag, "incmoing rec ${notifiable.notificationId}" )
 
         incomingCallIntent.addFlags(
@@ -332,23 +335,11 @@ class NotificationsManager(private val context: Context, private val callsManage
             activeNotification[notifiable.notificationId] = notification
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
                 !callServiceStartedFormBR &&
-                call.state == Call.State.Connected) {
-                    if(callService != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE){
-                        callService?.startForeground(
-                            notifiable.notificationId,
-                            notification!!,
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                                ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE or ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL
-                            } else {
-                                0
-                            },
-                        )
-                    } else {
-                        //start the service
-                        val intent = Intent(context, FusionCallService::class.java)
-                        intent.putExtra(INTENT_NOTIF_ID, notifiable.notificationId)
-                        context.startForegroundService(intent)
-                    }
+                call.state == Call.State.StreamsRunning) {
+                    //start the service
+                    val intent = Intent(context, FusionCallService::class.java)
+                    intent.putExtra(INTENT_NOTIF_ID, notifiable.notificationId)
+                    context.startService(intent)
                     Log.d(debugTag, "callService = $callService")
             }
 
