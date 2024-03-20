@@ -23,7 +23,6 @@ class FusionCallService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d(debugTag, "call service started")
         val notificationId: Int = intent?.getIntExtra(NotificationsManager.INTENT_NOTIF_ID, 0) ?: 0
-        val callUUID: String = intent?.getStringExtra("callUUID") ?: ""
         val notification: Notification? = NotificationsManager.activeNotification[notificationId]
         if (notification != null) {
             Log.d(debugTag,"notificationId = $notificationId ")
@@ -38,11 +37,6 @@ class FusionCallService : Service() {
                 },
             )
             NotificationsManager.onCallServiceStart(this, startId,notificationId)
-
-            if (callUUID.isNotEmpty()) {
-                val call = FMCore.callsManager.findCallByUuid(callUUID)
-                call?.accept()
-            }
         }
         return super.onStartCommand(intent, flags, startId)
     }

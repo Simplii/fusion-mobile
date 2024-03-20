@@ -305,7 +305,7 @@ class NotificationsManager(private val context: Context, private val callsManage
         callNotificationIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         val pendingIntent = PendingIntent.getActivity(
             context,
-            0,
+            FMCore.core.callsNb,
             callNotificationIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -335,12 +335,24 @@ class NotificationsManager(private val context: Context, private val callsManage
             activeNotification[notifiable.notificationId] = notification
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
                 !callServiceStartedFormBR &&
-                call.state == Call.State.StreamsRunning) {
+                call.state == Call.State.Connected) {
                     //start the service
-                    val intent = Intent(context, FusionCallService::class.java)
-                    intent.putExtra(INTENT_NOTIF_ID, notifiable.notificationId)
-                    context.startService(intent)
-                    Log.d(debugTag, "callService = $callService")
+                   if(callService != null) {
+                       callService?.startForeground(
+                           notifiable.notificationId,
+                           notification,
+                           if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                               ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE or ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL
+                           } else {
+                               0
+                           },
+                       )
+                   } else {
+                       val intent = Intent(context, FusionCallService::class.java)
+                       intent.putExtra(INTENT_NOTIF_ID, notifiable.notificationId)
+                       context.startService(intent)
+                       Log.d(debugTag, "callService = $callService")
+                   }
             }
 
             Log.d(debugTag, "notified ongoing")

@@ -6,6 +6,7 @@ import android.content.Intent
 import android.os.Build
 import android.util.Log
 import net.fusioncomm.android.FMCore
+import net.fusioncomm.android.MainActivity
 import net.fusioncomm.android.services.FusionCallService
 import org.linphone.core.Call
 
@@ -51,7 +52,7 @@ class NotificationsBroadcastReceiver: BroadcastReceiver()  {
             return
         }
         Log.d(
-            "MDBM Notification BR",
+            debugTag,
             "intent action ${intent.action.toString()}"
         )
         if (intent.action == NotificationsManager.INTENT_ANSWER_CALL_NOTIF_ACTION) {
@@ -59,21 +60,12 @@ class NotificationsBroadcastReceiver: BroadcastReceiver()  {
                 "MDBM Notification BR",
                 "Answer call"
             )
-            // to have access to microphone while app in the background in Android 11 and up
-            // we must start a foregroundService with type mic, but we can't start a foregroundService
-            // that needs while-in-use permission unless it falls in one of the exemptions ref#
-            // https://developer.android.com/develop/background-work/services/foreground-services#bg-access-restrictions
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                // here we're tackling this exemption, The user performs an action on a UI element related to your app.
-                // Since we know the user has tapped on callStyle notification to get here
-                val intent = Intent(context, FusionCallService::class.java)
-                intent.putExtra(NotificationsManager.INTENT_NOTIF_ID, notificationId)
-                intent.putExtra("callUUID", callUUID)
-                context.startService(intent)
-                NotificationsManager.callServiceStartedFormBR = true
-            } else {
-                call.accept()
-            }
+            val openAppIntent = Intent(context, MainActivity::class.java)
+            openAppIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            openAppIntent.putExtra(NotificationsManager.INTENT_ANSWER_CALL_NOTIF_ACTION, true)
+            openAppIntent.putExtra(NotificationsManager.INTENT_CALL_UUID, callUUID)
+            context.startActivity(openAppIntent)
+
         } else if (intent.action == NotificationsManager.INTENT_UNHOLD_CALL_NOTIF_ACTION) {
             Log.d(debugTag, "unhold call")
             val intent = Intent(context, FusionCallService::class.java)
