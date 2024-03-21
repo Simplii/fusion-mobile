@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:fusion_mobile_revamped/src/backend/fusion_connection.dart';
 import 'package:fusion_mobile_revamped/src/backend/softphone.dart';
 import 'package:fusion_mobile_revamped/src/callpop/call_action_buttons.dart';
@@ -13,6 +14,7 @@ import 'package:fusion_mobile_revamped/src/callpop/call_footer_details.dart';
 import 'package:fusion_mobile_revamped/src/callpop/call_header_details.dart';
 import 'package:fusion_mobile_revamped/src/callpop/incoming_while_on_call.dart';
 import 'package:fusion_mobile_revamped/src/callpop/transfer_call_popup.dart';
+import 'package:fusion_mobile_revamped/src/callpop/viewModel.dart';
 import 'package:fusion_mobile_revamped/src/components/disposition.dart';
 import 'package:fusion_mobile_revamped/src/components/popup_menu.dart';
 import 'package:fusion_mobile_revamped/src/dialpad/dialpad_modal.dart';
@@ -49,8 +51,15 @@ class _CallViewState extends State<CallView> {
   late Timer _timer;
   bool TextBtnPressed = false;
   bool _showDisposition = false;
+  final CallVM callVM = CallVM();
+  String _myPhoneNumber = "";
+  int lowScore = 0;
+  bool openCallQualityPill = false;
+  bool userOverride = false;
+
   initState() {
     super.initState();
+    _myPhoneNumber = _fusionConnection.settings.myCellPhoneNumber;
     _timer = new Timer.periodic(
       Duration(seconds: 1),
       (Timer timer) {
@@ -64,6 +73,7 @@ class _CallViewState extends State<CallView> {
   @override
   dispose() {
     _timer.cancel();
+    callVM.dispose();
     super.dispose();
   }
 
@@ -147,8 +157,8 @@ class _CallViewState extends State<CallView> {
   _onVidBtnPress() {}
 
   _onTextBtnPress() async {
-    if(TextBtnPressed)return;
-    
+    if (TextBtnPressed) return;
+
     setState(() {
       TextBtnPressed = true;
     });
@@ -158,76 +168,73 @@ class _CallViewState extends State<CallView> {
     List<Coworker> coworker =
         coworkers.where((coworker) => coworker.extension == ext).toList();
     CallpopInfo? callPopInfo = _softphone!.getCallpopInfo(_activeCall!.id);
-    SMSDepartment personal = _fusionConnection!.smsDepartments.getDepartment(DepartmentIds.Personal);
-    List<SMSDepartment> depts = _fusionConnection!.smsDepartments.allDepartments();
+    SMSDepartment personal =
+        _fusionConnection!.smsDepartments.getDepartment(DepartmentIds.Personal);
+    List<SMSDepartment> depts =
+        _fusionConnection!.smsDepartments.allDepartments();
 
-    if(personal.numbers.isEmpty && depts.isEmpty ||
-      (depts[1].numbers.isEmpty || coworker.isNotEmpty)){
+    if (personal.numbers.isEmpty && depts.isEmpty ||
+        (depts[1].numbers.isEmpty || coworker.isNotEmpty)) {
       setState(() {
         TextBtnPressed = false;
       });
       return showDialog(
-        context: context, 
-        builder: (BuildContext context){
-          return AlertDialog(
-            title: const Text('Woops!'),
-            content: Text(coworker.isNotEmpty 
-              ? "Internal messaging not supported"
-              : "Looks like you don't have messaging numbers setup yet."),
-            actions: <Widget>[
-              TextButton(
-              onPressed: (){
-                Navigator.of(context).pop();
-              }, 
-              child: Text("Okay", style: TextStyle(color: crimsonDark),))
-            ]
-          );
-        }
-      ); 
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+                title: const Text('Woops!'),
+                content: Text(coworker.isNotEmpty
+                    ? "Internal messaging not supported"
+                    : "Looks like you don't have messaging numbers setup yet."),
+                actions: <Widget>[
+                  TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      child: Text(
+                        "Okay",
+                        style: TextStyle(color: crimsonDark),
+                      ))
+                ]);
+          });
     }
 
-    SMSConversation? convo = await _fusionConnection!.messages.checkExistingConversation(
-      personal.numbers.isNotEmpty 
-        ? personal.id! 
-        : depts[1].id!,
-      personal.numbers.isNotEmpty 
-        ? personal.numbers[0] 
-        : depts[1].numbers[0],
-      callPopInfo != null && callPopInfo.phoneNumber.isNotEmpty
-        ? [callPopInfo.phoneNumber]
-        : [_softphone!.getCallerNumber(_softphone!.activeCall!)],
-      callPopInfo != null 
-        ? callPopInfo.contacts 
-        : []
-    );
+    SMSConversation? convo = await _fusionConnection!.messages
+        .checkExistingConversation(
+            personal.numbers.isNotEmpty ? personal.id! : depts[1].id!,
+            personal.numbers.isNotEmpty
+                ? personal.numbers[0]
+                : depts[1].numbers[0],
+            callPopInfo != null && callPopInfo.phoneNumber.isNotEmpty
+                ? [callPopInfo.phoneNumber]
+                : [_softphone!.getCallerNumber(_softphone!.activeCall!)],
+            callPopInfo != null ? callPopInfo.contacts : []);
 
     setState(() {
       TextBtnPressed = false;
     });
 
     showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) =>
-        StatefulBuilder(
-          builder: (BuildContext context, StateSetter setState){
-            SMSConversation? displayingConvo = convo;
-            return SMSConversationView(
-              fusionConnection: _fusionConnection, 
-              softphone: _softphone, 
-              smsConversation: displayingConvo, 
-              deleteConvo: null,
-              setOnMessagePosted: null,
-              changeConvo:(SMSConversation updatedConvo){
-                setState(() {
-                  displayingConvo = updatedConvo;
-                },);
-              }
-            );
-          } 
-        )
-    );
+        context: context,
+        backgroundColor: Colors.transparent,
+        isScrollControlled: true,
+        builder: (context) => StatefulBuilder(
+                builder: (BuildContext context, StateSetter setState) {
+              SMSConversation? displayingConvo = convo;
+              return SMSConversationView(
+                  fusionConnection: _fusionConnection,
+                  softphone: _softphone,
+                  smsConversation: displayingConvo,
+                  deleteConvo: null,
+                  setOnMessagePosted: null,
+                  changeConvo: (SMSConversation updatedConvo) {
+                    setState(
+                      () {
+                        displayingConvo = updatedConvo;
+                      },
+                    );
+                  });
+            }));
   }
 
   _changeDefaultInputDevice() {
@@ -387,8 +394,8 @@ class _CallViewState extends State<CallView> {
                                       blurRadius: 36)
                                 ]),
                             child: Text(
-                                callDefaultOutputDeviceId!.replaceAll(
-                                    'Microphone', 'Earpiece'),
+                                callDefaultOutputDeviceId!
+                                    .replaceAll('Microphone', 'Earpiece'),
                                 style: TextStyle(
                                   color: Colors.white70,
                                   fontWeight: FontWeight.w700,
@@ -585,10 +592,167 @@ class _CallViewState extends State<CallView> {
     ));
   }
 
-  void _openDisposition(){
+  void _openDisposition() {
     setState(() {
       _showDisposition = !_showDisposition;
     });
+  }
+
+  Color _callQualityColor(double rating) {
+    return rating > 4
+        ? successGreen
+        : rating > 3
+            ? Colors.amber
+            : Colors.red;
+  }
+
+  String _callQualityTitle(double rating) {
+    return rating > 4
+        ? "Good"
+        : rating > 3
+            ? "Average"
+            : "Poor";
+  }
+
+  double _getPillWidth(double rating) {
+    return rating > 4
+        ? 190
+        : rating > 3
+            ? 210
+            : MediaQuery.of(context).size.width - 10;
+  }
+
+  Widget _callPillClosed(double rating) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          height: 10,
+          width: 10,
+          child: DecoratedBox(
+              decoration: BoxDecoration(
+                  color: _callQualityColor(rating), shape: BoxShape.circle)),
+        ),
+        SizedBox(
+          width: 5,
+        ),
+        Text(
+          _callQualityTitle(rating),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+      ],
+    );
+  }
+
+  Widget _callPillOpen(double rating) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+                height: 10,
+                width: 10,
+                child: DecoratedBox(
+                    decoration: BoxDecoration(
+                        color: _callQualityColor(rating),
+                        shape: BoxShape.circle))),
+            SizedBox(width: 5),
+            Text(
+              _callQualityTitle(rating) +
+                  ": call score ${rating.toStringAsFixed(1)}/5",
+              style:
+                  TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+            Spacer(),
+            if (rating <= 3)
+              TextButton(
+                onPressed: _dialog,
+                child: Text("XFER TO CARRIER"),
+                style: ElevatedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                    foregroundColor: Colors.white,
+                    backgroundColor: char,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(6))),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Future<void> _dialog() async {
+    return showDialog<void>(
+        context: context,
+        builder: (BuildContext context) {
+          return StatefulBuilder(
+              builder: (BuildContext context, StateSetter setDialogState) {
+            return AlertDialog(
+              contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 24),
+              title: Text("Transfer to Carrier"),
+              content: Container(
+                child: Wrap(
+                  runSpacing: 16,
+                  children: [
+                    Text("This active call is about to be transferred to"),
+                    TextFormField(
+                      keyboardType: TextInputType.phone,
+                      maxLength: 14,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        InputPhoneFormatter()
+                      ],
+                      decoration: InputDecoration(
+                        labelText: "Phone number",
+                        counterText: "",
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 16),
+                      ),
+                      initialValue: _myPhoneNumber.formatPhone(),
+                      onChanged: (value) {
+                        setDialogState(
+                          () {
+                            setState(() {
+                              _myPhoneNumber = value.onlyNumbers();
+                            });
+                          },
+                        );
+                      },
+                    )
+                  ],
+                ),
+              ),
+              actions: [
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: crimsonLight),
+                  onPressed: _myPhoneNumber.length < 10
+                      ? null
+                      : () {
+                          _softphone.transfer(
+                              _activeCall!, _makeXferUrl(_myPhoneNumber));
+                          Navigator.of(context).pop();
+                        },
+                  child: Text("Transfer"),
+                ),
+                TextButton(
+                  style: TextButton.styleFrom(
+                      padding: EdgeInsets.all(0), foregroundColor: coal),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Text("Cancel"),
+                ),
+              ],
+            );
+          });
+        });
   }
 
   @override
@@ -631,7 +795,7 @@ class _CallViewState extends State<CallView> {
         incomingCall = c;
       else if (c != _activeCall) connectedCalls.add(c);
     }
-
+    print("MDBM ${_activeCall?.state}");
     return WillPopScope(
         onWillPop: () async {
           return false;
@@ -646,18 +810,20 @@ class _CallViewState extends State<CallView> {
           child: Container(
               decoration: BoxDecoration(
                   image: DecorationImage(
-                    colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.8), BlendMode.dstATop),
+                      colorFilter: ColorFilter.mode(
+                          Colors.black.withOpacity(0.8), BlendMode.dstATop),
                       image: _softphone!.getCallerPic(_activeCall),
-                      fit: BoxFit.cover
-                  )
-                ),
+                      fit: BoxFit.cover)),
               child: Scaffold(
                 backgroundColor: Colors.transparent,
                 body: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: _showDisposition ? 21 : 0, sigmaY: _showDisposition ?21 :0),
+                  filter: ImageFilter.blur(
+                      sigmaX: _showDisposition ? 21 : 0,
+                      sigmaY: _showDisposition ? 21 : 0),
                   child: Stack(
                     children: [
-                      if (_softphone!.getHoldState(_activeCall) || dialpadVisible)
+                      if (_softphone!.getHoldState(_activeCall) ||
+                          dialpadVisible)
                         Container(
                             child: Container(
                           decoration: BoxDecoration(
@@ -667,16 +833,17 @@ class _CallViewState extends State<CallView> {
                             colors: [translucentWhite(0.0), Colors.black],
                           )),
                         )),
-                      if (_softphone!.getHoldState(_activeCall) || dialpadVisible)
+                      if (_softphone!.getHoldState(_activeCall) ||
+                          dialpadVisible)
                         ClipRect(
                             child: BackdropFilter(
-                                filter: ImageFilter.blur(sigmaX: 21, sigmaY: 21),
+                                filter:
+                                    ImageFilter.blur(sigmaX: 21, sigmaY: 21),
                                 child: Container())),
                       SafeArea(
                           bottom: false,
                           child: Container(
                             child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 // if (Platform.isIOS && isIncoming && isRinging)
                                 //   CallActionButtons(
@@ -704,34 +871,107 @@ class _CallViewState extends State<CallView> {
                                     callerNumber:
                                         callerNumber.toString().formatPhone(),
                                     isRinging: isRinging,
-                                    prefix: _activeCall!.direction == "INCOMING" || 
-                                    _activeCall!.direction == "inbound" 
-                                      ? _linePrefix
-                                      : "",
-                                    callIsRecording:
-                                        _softphone!.getRecordState(_activeCall!),
+                                    prefix: _activeCall!.direction ==
+                                                "INCOMING" ||
+                                            _activeCall!.direction == "inbound"
+                                        ? _linePrefix
+                                        : "",
+                                    callIsRecording: _softphone!
+                                        .getRecordState(_activeCall!),
                                     callRunTime: callRunTime),
                                 if (_softphone!.getHoldState(_activeCall))
                                   _onHoldView()
                                 else
-                                   _showDisposition 
-                                   ?  Expanded(
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 5),
+                                  _showDisposition
+                                      ? Expanded(
+                                          child: Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 24, vertical: 5),
                                           child: DispositionListView(
-                                            fromCallView: true,
-                                            softphone: _softphone, 
-                                            fusionConnection: _fusionConnection, 
-                                            call: _activeCall, 
-                                            phoneNumber: callerNumber, 
-                                            onDone: _openDisposition),
-                                        )
-                                      ) 
-                                   : Spacer(),
+                                              fromCallView: true,
+                                              softphone: _softphone,
+                                              fusionConnection:
+                                                  _fusionConnection,
+                                              call: _activeCall,
+                                              phoneNumber: callerNumber,
+                                              onDone: _openDisposition),
+                                        ))
+                                      : Spacer(),
                                 if (!_softphone!.getHoldState(_activeCall) &&
                                     dialpadVisible)
                                   CallDialPad(_softphone, _activeCall),
-                                if ((!Platform.isIOS || !isIncoming || !isRinging )&& !_showDisposition)
+                                if (_activeCall != null &&
+                                    _activeCall?.state == CallStateEnum.STREAM)
+                                  Container(
+                                    alignment: Alignment.topRight,
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        setState(() {
+                                          openCallQualityPill =
+                                              !openCallQualityPill;
+                                          userOverride = !userOverride;
+                                        });
+                                      },
+                                      child: StreamBuilder(
+                                          stream: callVM.eventStream,
+                                          builder: (context, snapshot) {
+                                            if (!snapshot.hasData)
+                                              return Container();
+                                            double rating = snapshot.data;
+                                            if (rating < 3) {
+                                              lowScore += 1;
+                                            } else {
+                                              lowScore = 0;
+                                              if (openCallQualityPill &&
+                                                  !userOverride) {
+                                                openCallQualityPill = false;
+                                              }
+                                            }
+
+                                            if (lowScore > 3 && !userOverride) {
+                                              openCallQualityPill = true;
+                                            }
+
+                                            print(
+                                                "MDBM cc s=$userOverride o=$openCallQualityPill");
+                                            return AnimatedContainer(
+                                              margin: EdgeInsets.only(
+                                                  bottom: 10,
+                                                  right: openCallQualityPill
+                                                      ? 5
+                                                      : 20),
+                                              curve: openCallQualityPill
+                                                  ? Curves.ease
+                                                  : Curves.easeIn,
+                                              width: openCallQualityPill
+                                                  ? _getPillWidth(rating)
+                                                  : 100,
+                                              decoration: BoxDecoration(
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                        openCallQualityPill
+                                                            ? 16
+                                                            : 100),
+                                                color: translucentBlack(1.5),
+                                              ),
+                                              duration: const Duration(
+                                                  milliseconds: 500),
+                                              child: Container(
+                                                  padding: EdgeInsets.symmetric(
+                                                      vertical: 10,
+                                                      horizontal: 16),
+                                                  child: openCallQualityPill
+                                                      ? _callPillOpen(rating)
+                                                      : _callPillClosed(
+                                                          rating)),
+                                            );
+                                          }),
+                                    ),
+                                  ),
+                                if ((!Platform.isIOS ||
+                                        !isIncoming ||
+                                        !isRinging) &&
+                                    !_showDisposition)
                                   CallActionButtons(
                                       actions: actions,
                                       isRinging: isRinging,
@@ -744,14 +984,17 @@ class _CallViewState extends State<CallView> {
                                           dialpadVisible = isOpen;
                                         });
                                       },
-                                      currentAudioSource: _softphone.outputDevice,
+                                      currentAudioSource:
+                                          _softphone.outputDevice,
                                       loading: TextBtnPressed,
-                                      callIsRecording:
-                                          _softphone!.getRecordState(_activeCall!),
-                                      callIsMuted: _softphone!.getMuted(_activeCall!),
-                                      callOnHold:
-                                          _softphone!.getHoldState(_activeCall)),
-                                CallFooterDetails( _softphone, _activeCall, _openDisposition)
+                                      callIsRecording: _softphone!
+                                          .getRecordState(_activeCall!),
+                                      callIsMuted:
+                                          _softphone!.getMuted(_activeCall!),
+                                      callOnHold: _softphone!
+                                          .getHoldState(_activeCall)),
+                                CallFooterDetails(
+                                    _softphone, _activeCall, _openDisposition)
                               ],
                             ),
                           )),

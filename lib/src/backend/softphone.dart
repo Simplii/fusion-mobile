@@ -28,6 +28,7 @@ import 'fusion_connection.dart';
 import 'package:uuid/uuid.dart';
 
 class Softphone implements SipUaHelperListener {
+  static final callInfoChannel = EventChannel('channel/callInfo');
   String outputDevice = "Phone";
   MediaStream? _localStream;
   MediaStream? _remoteStream;

@@ -24,7 +24,6 @@ import java.security.MessageDigest
 class CallsManager(private val context: Context) {
     private val debugTag = "MDBM CallsManager"
     val telecomManager: TelecomManager = context.getSystemService(Context.TELECOM_SERVICE) as TelecomManager
-    private val core: Core = FMCore.core
     private val phoneAccount:PhoneAccount
     private val phoneAccountHandle: PhoneAccountHandle
     private var conferenceStarting: Boolean = false
@@ -42,6 +41,7 @@ class CallsManager(private val context: Context) {
     }
 
     companion object {
+        private val core: Core = FMCore.core
         @SuppressLint("StaticFieldLeak")
         @Volatile private var instance: CallsManager? = null // Volatile modifier is necessary
         fun getInstance(context: Context) = instance ?: synchronized(this) {
@@ -59,6 +59,10 @@ class CallsManager(private val context: Context) {
             return connections.find { connection ->
                 connection.callId == callId
             }
+        }
+        //FIXME::testing
+        fun answerCall() {
+            core.currentCall?.accept();
         }
 
     }
