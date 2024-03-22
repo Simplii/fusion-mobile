@@ -337,6 +337,7 @@ class Softphone implements SipUaHelperListener {
           break;
 
         case "setAppVersion":
+          print("MDBM getAppVersion args $args");
           args = [json.decode(args)];
           break;
         case "setMyPhoneNumber":

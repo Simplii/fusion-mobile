@@ -18,6 +18,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import net.fusioncomm.android.FusionMobileApplication.Companion.engine
 import net.fusioncomm.android.compatibility.Compatibility
 import net.fusioncomm.android.notifications.NotificationsManager
@@ -30,10 +31,9 @@ class MainActivity : FlutterFragmentActivity() {
     private val core: Core = FMCore.core
     private val channel: MethodChannel = FusionMobileApplication.callingChannel
     private val eventChannel: EventChannel = FusionMobileApplication.callEventChannel
-    private val versionName = BuildConfig.VERSION_NAME
     private var appOpenedFromBackground : Boolean = false
     private val callsManager: CallsManager = CallsManager.getInstance(this)
-    private var myPhoneNumber:String = ""
+
     lateinit private var context:Context
     private lateinit var audioManager:AudioManager
     private lateinit var telephonyManager: TelephonyManager
@@ -101,10 +101,6 @@ class MainActivity : FlutterFragmentActivity() {
     }
 
     private  fun checkPushIncomingCall(){
-        sendDevices()
-        getAppVersion()
-        getMyPhoneNumber()
-
         for (call in core.calls){
             val uuid: String = callsManager.findUuidByCall(call)
 
@@ -215,7 +211,6 @@ class MainActivity : FlutterFragmentActivity() {
                 mapOf(Pair("devicesList", gson.toJson(devicesList)),
                     Pair("defaultInput", core.defaultInputAudioDevice.id),
                     Pair("defaultOutput", core.defaultOutputAudioDevice.id)))
-            // sendDevices()
         }
 
         override fun onCallStateChanged(
@@ -397,42 +392,6 @@ class MainActivity : FlutterFragmentActivity() {
             }
         }
 
-    }
-
-    private fun sendDevices() {
-        var devicesList: Array<Array<String>> = arrayOf()
-        for (device in core.extendedAudioDevices) {
-            devicesList = devicesList.plus(
-                arrayOf(device.deviceName, device.id, device.type.name)
-            )
-            if(device.type == AudioDevice.Type.Microphone && device.id.contains("openSLES")){
-                core.defaultInputAudioDevice = device
-            }
-
-            if(device.type == AudioDevice.Type.Speaker && device.id.contains("openSLES")){
-                core.defaultOutputAudioDevice = device
-            }
-        }
-
-        val gson = Gson()
-        channel.invokeMethod(
-            "lnNewDevicesList",
-            mapOf(Pair("devicesList", gson.toJson(devicesList)),
-                Pair("echoLimiterEnabled", core.echoLimiterEnabled()),
-                Pair("echoCancellationEnabled", core.echoCancellationEnabled()),
-                Pair("echoCancellationFilterName", core.echoCancellerFilterName),
-                Pair("defaultInput", core.defaultInputAudioDevice.id),
-                Pair("defaultOutput", core.defaultOutputAudioDevice.id)))
-    }
-
-    private fun getAppVersion(){
-        val gson = Gson()
-        channel.invokeMethod("setAppVersion",  gson.toJson(versionName) )
-    }
-
-    private fun getMyPhoneNumber(){
-        val gson = Gson()
-        channel.invokeMethod("setMyPhoneNumber",  gson.toJson(myPhoneNumber) )
     }
 
     override fun provideFlutterEngine(context: Context): FlutterEngine? {
