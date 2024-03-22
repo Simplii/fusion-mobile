@@ -615,16 +615,17 @@ class _CallViewState extends State<CallView> {
   }
 
   double _getPillWidth(double rating) {
-    return rating > 4
-        ? 190
-        : rating > 3
-            ? 210
-            : MediaQuery.of(context).size.width - 10;
+    Size text = textSize(
+        _callQualityTitle(rating) +
+            ": call quality ${rating.toStringAsFixed(1)}/5.0",
+        TextStyle(fontSize: 20));
+    return rating > 3 ? text.width : MediaQuery.of(context).size.width - 10;
   }
 
   Widget _callPillClosed(double rating) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
       mainAxisSize: MainAxisSize.min,
       children: [
         SizedBox(
@@ -646,42 +647,35 @@ class _CallViewState extends State<CallView> {
   }
 
   Widget _callPillOpen(double rating) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisAlignment: MainAxisAlignment.start,
+    return Row(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-                height: 10,
-                width: 10,
-                child: DecoratedBox(
-                    decoration: BoxDecoration(
-                        color: _callQualityColor(rating),
-                        shape: BoxShape.circle))),
-            SizedBox(width: 5),
-            Text(
-              _callQualityTitle(rating) +
-                  ": call score ${rating.toStringAsFixed(1)}/5",
-              style:
-                  TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-            ),
-            Spacer(),
-            if (rating <= 3)
-              TextButton(
-                onPressed: _dialog,
-                child: Text("XFER TO CARRIER"),
-                style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                    foregroundColor: Colors.white,
-                    backgroundColor: char,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(6))),
-              ),
-          ],
+        SizedBox(
+            height: 10,
+            width: 10,
+            child: DecoratedBox(
+                decoration: BoxDecoration(
+                    color: _callQualityColor(rating), shape: BoxShape.circle))),
+        SizedBox(width: 5),
+        Text(
+          _callQualityTitle(rating) +
+              ": call quality ${rating.toStringAsFixed(1)}/5.0",
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
+        Spacer(),
+        if (rating <= 3)
+          TextButton(
+            onPressed: _dialog,
+            child: Text("XFER TO CARRIER"),
+            style: ElevatedButton.styleFrom(
+                padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                foregroundColor: Colors.white,
+                backgroundColor: char,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(6))),
+          ),
       ],
     );
   }
@@ -795,7 +789,7 @@ class _CallViewState extends State<CallView> {
         incomingCall = c;
       else if (c != _activeCall) connectedCalls.add(c);
     }
-    print("MDBM ${_activeCall?.state}");
+
     return WillPopScope(
         onWillPop: () async {
           return false;
@@ -931,9 +925,6 @@ class _CallViewState extends State<CallView> {
                                             if (lowScore > 3 && !userOverride) {
                                               openCallQualityPill = true;
                                             }
-
-                                            print(
-                                                "MDBM cc s=$userOverride o=$openCallQualityPill");
                                             return AnimatedContainer(
                                               margin: EdgeInsets.only(
                                                   bottom: 10,
@@ -945,7 +936,7 @@ class _CallViewState extends State<CallView> {
                                                   : Curves.easeIn,
                                               width: openCallQualityPill
                                                   ? _getPillWidth(rating)
-                                                  : 100,
+                                                  : 105,
                                               decoration: BoxDecoration(
                                                 borderRadius:
                                                     BorderRadius.circular(

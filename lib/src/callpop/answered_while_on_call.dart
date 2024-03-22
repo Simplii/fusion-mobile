@@ -13,7 +13,8 @@ import 'package:sip_ua/sip_ua.dart';
 enum Views { Main, DialPad, Hold }
 
 class AnsweredWhileOnCall extends StatefulWidget {
-  AnsweredWhileOnCall({Key? key,required this.activeCall, this.softphone, this.calls})
+  AnsweredWhileOnCall(
+      {Key? key, required this.activeCall, this.softphone, this.calls})
       : super(key: key);
 
   final Softphone? softphone;
@@ -47,11 +48,13 @@ class _AnsweredWhileOnCallState extends State<AnsweredWhileOnCall> {
 
     return switchGestureDetector(
         Padding(
-          padding: const EdgeInsets.only(top:4.0),
+          padding: const EdgeInsets.only(top: 4.0),
           child: Row(children: [
-
-            ContactCircle.withDiameterAndMargin(info != null ? info.contacts : [],
-                info != null ? info.crmContacts : [], 24, 8),
+            ContactCircle.withDiameterAndMargin(
+                info != null ? info.contacts : [],
+                info != null ? info.crmContacts : [],
+                24,
+                8),
 
             Text(softphone!.getCallerName(call), style: textStyle),
             Expanded(child: switchGestureDetector(Container(), call)),
@@ -68,7 +71,9 @@ class _AnsweredWhileOnCallState extends State<AnsweredWhileOnCall> {
             //           padding: EdgeInsets.only(left: 12, top: 2, bottom: 2),
             //           child: Image.asset("assets/icons/call_view/merge.png",
             //               width: 20, height: 20))),
-            Container(width: 12,),
+            Container(
+              width: 12,
+            ),
             _hangupButton(call)
           ]),
         ),
@@ -92,8 +97,8 @@ class _AnsweredWhileOnCallState extends State<AnsweredWhileOnCall> {
                   decoration: BoxDecoration(
                       borderRadius: BorderRadius.all(Radius.circular(50.0)),
                       color: crimsonLight),
-                  child: Image.asset("assets/icons/phone.png",
-                      width: 14, height: 14)))),
+                  child: Image.asset("assets/icons/phone_filled_white.png",
+                      width: 12, height: 12)))),
     );
   }
 
@@ -116,42 +121,43 @@ class _AnsweredWhileOnCallState extends State<AnsweredWhileOnCall> {
                       .map((Call c) => _callRow(c))
                       .toList()
                       .cast<Widget>()))),
-      if(softphone!.assistedTransferInit &&  activeCall.state == CallStateEnum.STREAM)
-      Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          GestureDetector(
-            onTap: () {
-              Call newCall =
-                  calls!.where((call) => call.id != activeCall!.id).first;
-              softphone!.completeAssistedTransfer(activeCall,newCall);
-            },
-            child: Container(
-              margin: EdgeInsets.only(right: 15, top: 10),
-              alignment: Alignment.centerRight,
-              decoration: BoxDecoration(
-                  color: bgBlend,
-                  borderRadius: BorderRadius.all(Radius.circular(6))),
-              padding: EdgeInsets.all(10),
-              child: Column(children: [
-                Image.asset(
-                  "assets/icons/call_view/merge.png",
-                  width: 28,
-                  height: 28,
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(top:5),
-                  child: Text(
-                    'Complete',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.white),
+      if (softphone!.assistedTransferInit &&
+          activeCall.state == CallStateEnum.STREAM)
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            GestureDetector(
+              onTap: () {
+                Call newCall =
+                    calls!.where((call) => call.id != activeCall!.id).first;
+                softphone!.completeAssistedTransfer(activeCall, newCall);
+              },
+              child: Container(
+                margin: EdgeInsets.only(right: 15, top: 10),
+                alignment: Alignment.centerRight,
+                decoration: BoxDecoration(
+                    color: bgBlend,
+                    borderRadius: BorderRadius.all(Radius.circular(6))),
+                padding: EdgeInsets.all(10),
+                child: Column(children: [
+                  Image.asset(
+                    "assets/icons/call_view/merge.png",
+                    width: 28,
+                    height: 28,
                   ),
-                )
-              ]),
-            ),
-          )
-        ],
-      )
+                  Padding(
+                    padding: const EdgeInsets.only(top: 5),
+                    child: Text(
+                      'Complete',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  )
+                ]),
+              ),
+            )
+          ],
+        )
     ]);
   }
 }
