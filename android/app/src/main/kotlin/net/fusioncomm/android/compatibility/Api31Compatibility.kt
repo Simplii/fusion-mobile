@@ -1,5 +1,6 @@
 package net.fusioncomm.android.compatibility
 
+import android.annotation.TargetApi
 import android.app.Notification
 import android.app.PendingIntent
 import android.content.Context
@@ -27,6 +28,7 @@ import net.fusioncomm.android.notifications.NotificationsManager
 import org.linphone.core.Call
 import java.net.URL
 
+@TargetApi(31)
 class Api31Compatibility {
 
     companion object {
@@ -140,6 +142,7 @@ class Api31Compatibility {
             val builder = NotificationCompat.Builder(context, context.getString(R.string.notification_channel_call_service_id))
                 .setFullScreenIntent(pendingIntent, false)
                 .setContentText(notificationText)
+                .setContentIntent(pendingIntent)
                 .setCategory(NotificationCompat.CATEGORY_CALL)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setAutoCancel(false)

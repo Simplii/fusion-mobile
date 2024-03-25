@@ -534,13 +534,13 @@ class ContactsStore extends FusionStore<Contact> {
       'enterprise': false,
     }, callback: (List<dynamic> datas) {
       List<Contact> response = [];
-
+      print("MDBM dara $datas");
       datas.forEach((dynamic c) {
         Contact contact = Contact(c as Map<String, dynamic>);
         response.add(contact);
         storeRecord(contact);
       });
-      if (!fromPhone) callback(response, true, false);
+      callback(response, true, false);
     });
   }
 

@@ -1,6 +1,7 @@
 package net.fusioncomm.android
 
 import android.content.Context
+import android.content.Intent
 import android.media.AudioManager
 import android.os.Build
 import android.os.Bundle
@@ -14,6 +15,7 @@ import io.flutter.plugin.common.MethodChannel
 import net.fusioncomm.android.FusionMobileApplication.Companion.engine
 import net.fusioncomm.android.FusionMobileApplication.Companion.fmCore
 import net.fusioncomm.android.compatibility.Compatibility
+import net.fusioncomm.android.notifications.NotificationsManager
 import net.fusioncomm.android.telecom.CallsManager
 import org.linphone.core.*
 
@@ -25,9 +27,10 @@ class MainActivity : FlutterFragmentActivity() {
     private var appOpenedFromBackground : Boolean = false
     private val callsManager: CallsManager = CallsManager.getInstance(this)
     private var myPhoneNumber:String = ""
-
+    lateinit private var context:Context
     private lateinit var audioManager:AudioManager
     private lateinit var telephonyManager: TelephonyManager
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
@@ -36,26 +39,38 @@ class MainActivity : FlutterFragmentActivity() {
             Compatibility.requestDismissKeyguard(this)
         }
         super.onCreate(savedInstanceState)
-
+        context = this
         audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
         telephonyManager = getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
         // Create Contacts Provider Channel
         ContactsProvider(this)
         Log.d(debugTag, "core started ${FMCore.coreStarted}")
         core.addListener(coreListener)
-        checkPushIncomingCall()
 
+        val incomingCallId : String? = intent.getStringExtra("incomingCallUUID")
+        Log.d(debugTag, "MainActivity created from incoming call = $incomingCallId")
         Log.d(debugTag, "MainActivity on create")
-
-        val incomingCallId : String? = intent.getStringExtra("payload")
         if(incomingCallId != null){
             appOpenedFromBackground = true
-            intent.removeExtra("payload")
+            intent.removeExtra("incomingCallUUID")
         }
+        checkAnswerCallIntent()
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        checkAnswerCallIntent(intent)
+    }
+
+    override fun onDestroy() {
+        for (call in core.calls) {
+            call.terminate()
+        }
+        super.onDestroy()
+    }
     override fun onResume() {
         super.onResume()
+        checkPushIncomingCall()
         val incomingCallId: String? = intent.getStringExtra("payload")
         if(!incomingCallId.isNullOrEmpty()){
             appOpenedFromBackground = true
@@ -63,15 +78,19 @@ class MainActivity : FlutterFragmentActivity() {
         }
     }
 
-//    override fun onDestroy() {
-//        if (core.callsNb > 0) {
-//            for(call in core.calls){
-//                call.terminate()
-//            }
-//        }
-//        fmCore.stop()
-//        super.onDestroy()
-//    }
+    private fun checkAnswerCallIntent(newIntent: Intent? = null) {
+        val activityIntent = newIntent ?: intent
+        val callUUID = activityIntent.getStringExtra(NotificationsManager.INTENT_CALL_UUID)
+        val isAnswerCallAction = activityIntent.getBooleanExtra(
+            NotificationsManager.INTENT_ANSWER_CALL_NOTIF_ACTION,
+            false
+        )
+        Log.d(debugTag, "is answer call itente = $isAnswerCallAction calluuid = $callUUID" )
+        if(isAnswerCallAction && callUUID != null ) {
+            val call: Call? = FMCore.callsManager.findCallByUuid(callUUID)
+            call?.accept()
+        }
+    }
 
     private  fun checkPushIncomingCall(){
         sendDevices()
@@ -127,6 +146,11 @@ class MainActivity : FlutterFragmentActivity() {
    }
 
     private val coreListener = object : CoreListenerStub() {
+        override fun onLastCallEnded(core: Core) {
+            Log.d("MDBM", "last call ended")
+            super.onLastCallEnded(core)
+        }
+
         override fun onAccountRegistrationStateChanged(
             core: Core,
             account: Account,

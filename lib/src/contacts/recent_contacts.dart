@@ -52,7 +52,8 @@ class _RecentContactsTabState extends State<RecentContactsTab> {
     }[_selectedTab];
   }
 
-  _tabIcon(String name, String icon, double width, double height, {IconData? iconData}) {
+  _tabIcon(String name, String icon, double width, double height,
+      {IconData? iconData}) {
     return Expanded(
         child: GestureDetector(
             onTapUp: (e) {},
@@ -67,17 +68,19 @@ class _RecentContactsTabState extends State<RecentContactsTab> {
                 child: Column(children: [
                   Container(
                       padding: EdgeInsets.only(top: 12, bottom: 12),
-                      child: iconData != null 
-                        ? Icon(
-                          iconData, 
-                          color: _selectedTab == name ? Colors.white : smoke,) 
-                        : Image.asset(
-                          "assets/icons/" +
-                              icon +
-                              (_selectedTab == name ? '_selected' : '') +
-                              ".png",
-                          width: width,
-                          height: height)),
+                      child: iconData != null
+                          ? Icon(
+                              iconData,
+                              color:
+                                  _selectedTab == name ? Colors.white : smoke,
+                            )
+                          : Image.asset(
+                              "assets/icons/" +
+                                  icon +
+                                  (_selectedTab == name ? '_selected' : '') +
+                                  ".png",
+                              width: width,
+                              height: height)),
                   bottomRedBar(_selectedTab != name),
                 ]))));
   }
@@ -85,20 +88,17 @@ class _RecentContactsTabState extends State<RecentContactsTab> {
   _tabBar() {
     return Container(
         padding: EdgeInsets.only(left: 12, right: 12),
-        child: Row(children: [
+        child: Row(
+            children: [
           //_tabIcon("all", "all", 23, 20.5),
           _tabIcon("coworkers", "briefcase", 23, 20.5),
-          if (!_fusionConnection.settings.usesV2) _tabIcon("integrated", "integrated", 23, 20.5),
+          if (!_fusionConnection.settings.usesV2)
+            _tabIcon("integrated", "integrated", 23, 20.5),
           _tabIcon("fusion", "personalcontact", 23, 20.5),
-          _tabIcon(
-            "addressBook", 
-            "Phone Contacts", 
-            23, 
-            20.5, 
-            iconData: _selectedTab == "addressBook" 
-              ? Icons.contact_phone 
-              : Icons.contact_phone_outlined
-          ),
+          _tabIcon("addressBook", "Phone Contacts", 23, 20.5,
+              iconData: _selectedTab == "addressBook"
+                  ? Icons.contact_phone
+                  : Icons.contact_phone_outlined),
         ].where((child) => child != null).toList().cast()));
   }
 
@@ -129,10 +129,7 @@ class ContactsSearchList extends StatefulWidget {
   bool? embedded = false;
 
   ContactsSearchList(
-      this._fusionConnection, 
-      this._softphone, 
-      this._query, 
-      this.selectedTab,
+      this._fusionConnection, this._softphone, this._query, this.selectedTab,
       {Key? key, this.embedded, this.onSelect, this.fromDialpad = false})
       : super(key: key);
 
@@ -156,10 +153,11 @@ class _ContactsSearchListState extends State<ContactsSearchList> {
   String? _subscriptionKey;
   int _page = 0;
   bool _hasPulledFromServer = false;
-  String _message = "No Match Was Found";
+  bool _contactsPermissionNotAllowed = false;
+
   initState() {
     super.initState();
-    _fusionConnection.phoneContacts.toUpdateView((){
+    _fusionConnection.phoneContacts.toUpdateView(() {
       _lookupQuery();
     });
   }
@@ -193,11 +191,12 @@ class _ContactsSearchListState extends State<ContactsSearchList> {
     if (_typeFilter == 'Fusion Contacts') {
       if (_page == -1) return;
       if (_fusionConnection.settings.usesV2) {
-        _fusionConnection.contacts.searchV2(_query, 100, _page * 100, _fromDialpad,
-          (List<Contact> contacts, bool fromServer, bool fromPhonebook) {
+        _fusionConnection.contacts
+            .searchV2(_query, 100, _page * 100, _fromDialpad,
+                (List<Contact> contacts, bool fromServer, bool fromPhonebook) {
           if (thisLookup != _lookedUpQuery) return;
           if (!mounted) return;
-          if (_typeFilter != 'Fusion Contacts') return;
+          if (_typeFilter != 'Fusion Contacts' || fromPhonebook) return;
           if (fromServer && !_hasPulledFromServer) {
             _hasPulledFromServer = true;
             _contacts = [];
@@ -229,10 +228,10 @@ class _ContactsSearchListState extends State<ContactsSearchList> {
         });
       } else {
         _fusionConnection.contacts.search(_query, 100, _page * 100,
-          (List<Contact> contacts, bool fromServer, bool fromPhonebook) {
+            (List<Contact> contacts, bool fromServer, bool fromPhonebook) {
           if (thisLookup != _lookedUpQuery) return;
           if (!mounted) return;
-          if (_typeFilter != 'Fusion Contacts') return;
+          if (_typeFilter != 'Fusion Contacts' || fromPhonebook) return;
           if (fromServer && !_hasPulledFromServer) {
             _hasPulledFromServer = true;
             _contacts = [];
@@ -334,18 +333,31 @@ class _ContactsSearchListState extends State<ContactsSearchList> {
         });
       });
     } else if (_typeFilter == "Phone Contacts") {
-
-        if (thisLookup != _lookedUpQuery) return;
-        if (!mounted) return;
-        if (!mounted || _typeFilter != 'Phone Contacts') return;
-        _checkContactsPermission().then((PermissionStatus status) {
-          if(status.isGranted){
-            _fusionConnection.phoneContacts.getAddressBookContacts(_query).then((List<PhoneContact> contacts){
+      if (thisLookup != _lookedUpQuery) return;
+      if (!mounted) return;
+      if (!mounted || _typeFilter != 'Phone Contacts') return;
+      _checkContactsPermission().then((PermissionStatus status) {
+        if (status.isGranted) {
+          if (_fusionConnection.phoneContacts.syncing) {
+            setState(() {
+              lookupState = 2;
+              _contacts = [];
+            });
+          } else if (_fusionConnection.phoneContacts.noPhoneContacts) {
+            setState(() {
+              lookupState = 2;
+              _contacts = [];
+            });
+          } else {
+            _fusionConnection.phoneContacts
+                .getAddressBookContacts(_query)
+                .then((List<PhoneContact> contacts) {
               setState(() {
-                if(contacts.isEmpty && _fusionConnection.phoneContacts.initSync){
+                if (contacts.isEmpty &&
+                    _fusionConnection.phoneContacts.initSync &&
+                    _typeFilter == "Phone Contacts") {
                   lookupState = 2;
                   _contacts = [];
-                  _message = "Contacts sync has started, this might take a while feel free to navigate away from this screen but don't close the app";
                 } else {
                   _contacts = [];
                   Map<String, Contact> list = {};
@@ -356,18 +368,20 @@ class _ContactsSearchListState extends State<ContactsSearchList> {
                     list[c.id] = c.toContact();
                   });
                   _contacts = list.values.toList().cast<Contact>();
-                  _sortList(_contacts); 
+                  _sortList(_contacts);
+                  lookupState = 2;
                 }
-              });  
-            });
-          } else if(status.isPermanentlyDenied || status.isDenied){
-            setState(() {
-              _contacts = [];
-              lookupState = 2;
-              _message = "Please allow Fusion Mobile access to your contacts from settings for this feature to work";
+              });
             });
           }
-        });
+        } else if (status.isPermanentlyDenied || status.isDenied) {
+          setState(() {
+            _contacts = [];
+            lookupState = 2;
+            _contactsPermissionNotAllowed = true;
+          });
+        }
+      });
     }
   }
 
@@ -377,7 +391,7 @@ class _ContactsSearchListState extends State<ContactsSearchList> {
       if (status.isDenied) {
         await Permission.contacts.request();
         status = await Permission.contacts.status;
-        setState(() {  
+        setState(() {
           lookupState = 0;
         });
       }
@@ -392,31 +406,25 @@ class _ContactsSearchListState extends State<ContactsSearchList> {
         context: context,
         backgroundColor: Colors.transparent,
         isScrollControlled: true,
-        builder: (context) =>
-            ContactProfileView(_fusionConnection, _softphone, contact,null)
-    ).whenComplete((){
-      setState(() {
-        
-      });
+        builder: (context) => ContactProfileView(
+            _fusionConnection, _softphone, contact, null)).whenComplete(() {
+      setState(() {});
     });
   }
-  
+
   _addContact() {
     Contact contact = Contact.fake("");
     showModalBottomSheet(
         context: context,
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height - 50
-        ),
+        constraints:
+            BoxConstraints(maxHeight: MediaQuery.of(context).size.height - 50),
         isScrollControlled: true,
-        builder: (context) =>
-            EditContactView(_fusionConnection, contact, () => Navigator.pop(context, true),(){
+        builder: (context) => EditContactView(
+                _fusionConnection, contact, () => Navigator.pop(context, true),
+                () {
               //oncreate
-            })
-    ).whenComplete((){
-      setState(() {
-        
-      });
+            })).whenComplete(() {
+      setState(() {});
     });
   }
 
@@ -434,23 +442,23 @@ class _ContactsSearchListState extends State<ContactsSearchList> {
         },
         child: Container(
             decoration: BoxDecoration(color: Colors.transparent),
-            padding: EdgeInsets.symmetric(vertical:4 ,horizontal: 8),
+            padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
             child: Row(
               children: [
-                if(!_fromDialpad)
+                if (!_fromDialpad)
                   Container(
-                    width: 32,
-                    height: 50,
-                    child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: letter.length > 0
-                            ? Text(letter.toUpperCase(),
-                                style: TextStyle(
-                                    color: smoke,
-                                    fontSize: 16,
-                                    height: 1,
-                                    fontWeight: FontWeight.w500))
-                            : Container())),
+                      width: 32,
+                      height: 50,
+                      child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: letter.length > 0
+                              ? Text(letter.toUpperCase(),
+                                  style: TextStyle(
+                                      color: smoke,
+                                      fontSize: 16,
+                                      height: 1,
+                                      fontWeight: FontWeight.w500))
+                              : Container())),
                 ContactCircle.withDiameter([contact], [], 36),
                 Expanded(
                     child: Column(children: [
@@ -464,32 +472,39 @@ class _ContactsSearchListState extends State<ContactsSearchList> {
                   Align(
                       alignment: Alignment.centerLeft,
                       child: Container(
-                        color: contact.coworker == null && contact.firstNumber() != null 
-                          ?  Color.fromARGB(255, 243, 242, 242)
-                          : null,
-                        padding: EdgeInsets.symmetric(vertical: 2, horizontal: 4),
+                        color: contact.coworker == null &&
+                                contact.firstNumber() != null
+                            ? Color.fromARGB(255, 243, 242, 242)
+                            : null,
+                        padding:
+                            EdgeInsets.symmetric(vertical: 2, horizontal: 4),
                         child: Wrap(
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          spacing: 5,
-                          children: [
-                            if(contact.coworker == null && contact.firstNumber() != null)
-                              Image.asset("assets/icons/phone_filled_dark.png", width: 10, height: 10),
-                            Text(
-                              contact.coworker != null
-                                  ? (contact.coworker!.statusMessage != null
-                                      ? contact.coworker!.statusMessage!
-                                      : '')
-                                  : contact.firstNumber() != null 
-                                    ? contact.firstNumber().toString().formatPhone() 
-                                    : "",
-                              style: TextStyle(
-                                  color: coal,
-                                  fontSize: 12,
-                                  height: 1.4,
-                                  fontWeight: FontWeight.w400)
-                            ),
-                          ]
-                        ),
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            spacing: 5,
+                            children: [
+                              if (contact.coworker == null &&
+                                  contact.firstNumber() != null)
+                                Image.asset(
+                                    "assets/icons/phone_filled_dark.png",
+                                    width: 10,
+                                    height: 10),
+                              Text(
+                                  contact.coworker != null
+                                      ? (contact.coworker!.statusMessage != null
+                                          ? contact.coworker!.statusMessage!
+                                          : '')
+                                      : contact.firstNumber() != null
+                                          ? contact
+                                              .firstNumber()
+                                              .toString()
+                                              .formatPhone()
+                                          : "",
+                                  style: TextStyle(
+                                      color: coal,
+                                      fontSize: 12,
+                                      height: 1.4,
+                                      fontWeight: FontWeight.w400)),
+                            ]),
                       ))
                 ]))
               ],
@@ -498,13 +513,12 @@ class _ContactsSearchListState extends State<ContactsSearchList> {
 
   _sortList(List<Contact> list) {
     _contacts.sort((a, b) {
-      if (_typeFilter == 'Integrated Contacts' || 
-        _typeFilter == 'Phone Contacts')
+      if (_typeFilter == 'Integrated Contacts' ||
+          _typeFilter == 'Phone Contacts')
         return a.name!
             .trim()
             .toLowerCase()
             .compareTo(b.name!.trim().toLowerCase());
-
       else
         return (a.lastName! + " " + a.firstName!)
             .trim()
@@ -561,6 +575,28 @@ class _ContactsSearchListState extends State<ContactsSearchList> {
             _fusionConnection.coworkers.hasntLoaded());
   }
 
+  String _emptyContactsMessage() {
+    String message = _typeFilter == "Coworkers"
+        ? "No coworkers found"
+        : "No fusion contacts found";
+    if (_typeFilter == "fusion") return message;
+    if (_typeFilter == "Phone Contacts" && _contactsPermissionNotAllowed) {
+      message =
+          "Please allow Fusion Mobile access to your contacts from settings for this feature to work";
+    }
+    if (_typeFilter == "Phone Contacts" &&
+        (_fusionConnection.phoneContacts.initSync ||
+            _fusionConnection.phoneContacts.syncing)) {
+      message =
+          "Contacts sync has started, this might take a while feel free to navigate away from this screen but don't close the app";
+    }
+    if (_typeFilter == "Phone Contacts" &&
+        _fusionConnection.phoneContacts.noPhoneContacts) {
+      message = "No phone contacts found";
+    }
+    return message;
+  }
+
   @override
   Widget build(BuildContext context) {
     String origType = _typeFilter;
@@ -572,8 +608,7 @@ class _ContactsSearchListState extends State<ContactsSearchList> {
       _typeFilter = 'Integrated Contacts';
     else if (_selectedTab == 'fusion')
       _typeFilter = 'Fusion Contacts';
-    else if(_selectedTab == 'addressBook')
-      _typeFilter = 'Phone Contacts';
+    else if (_selectedTab == 'addressBook') _typeFilter = 'Phone Contacts';
     if (_typeFilter != origType) {
       _contacts = [];
     }
@@ -587,59 +622,57 @@ class _ContactsSearchListState extends State<ContactsSearchList> {
       _lookupQuery();
     }
 
-    if(_fromDialpad){
+    if (_fromDialpad) {
       return Container(
         decoration: BoxDecoration(
-          color:Colors.white,
+          color: Colors.white,
         ),
-        child: _contacts.length == 0 
-        ? Center(
-          child: _isSpinning() 
-            ?  _spinner() 
-            : Text("No Match Was Found"),
-          )
-        : Column(
-          children: [
-            Expanded(
-              child: _isSpinning()
-                ? _spinner()
-                : ListView.builder(
-                    itemCount: _page == -1
-                        ? _contacts.length
-                        : _contacts.length + 1,
-                    itemBuilder: (BuildContext context, int index) {
-                       if(_contacts.length == 0)
-                          return Container(height: 20);
-                      if (index >= _contacts.length) {
-                        _loadMore();
+        child: _contacts.length == 0
+            ? Center(
+                child: _isSpinning() ? _spinner() : Text("No Match Was Found"),
+              )
+            : Column(
+                children: [
+                  Expanded(
+                      child: _isSpinning()
+                          ? _spinner()
+                          : ListView.builder(
+                              itemCount: _page == -1
+                                  ? _contacts.length
+                                  : _contacts.length + 1,
+                              itemBuilder: (BuildContext context, int index) {
+                                if (_contacts.length == 0)
+                                  return Container(height: 20);
+                                if (index >= _contacts.length) {
+                                  _loadMore();
 
-                        return Container(
-                          padding: EdgeInsets.symmetric(vertical: 8),
-                          child: Center(
-                            child: SizedBox(
-                              width: 20, 
-                              height: 20, 
-                              child:  _typeFilter != "Coworkers" 
-                                ? CircularProgressIndicator(
-                                    color: crimsonDark, 
-                                  )
-                                : null
-                            ),
-                          ),
-                        );
-                      } else {
-                        return _resultRow("", _contacts[index]);
-                      }
-                    },
-                    padding: _fromDialpad 
-                      ? null 
-                      : EdgeInsets.only(left: 12, right: 12, top: _embedded! ? 28 : 40)
-                  )
+                                  return Container(
+                                    padding: EdgeInsets.symmetric(vertical: 8),
+                                    child: Center(
+                                      child: SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: _typeFilter != "Coworkers"
+                                              ? CircularProgressIndicator(
+                                                  color: crimsonDark,
+                                                )
+                                              : null),
+                                    ),
+                                  );
+                                } else {
+                                  return _resultRow("", _contacts[index]);
+                                }
+                              },
+                              padding: _fromDialpad
+                                  ? null
+                                  : EdgeInsets.only(
+                                      left: 12,
+                                      right: 12,
+                                      top: _embedded! ? 28 : 40))),
+                ],
               ),
-          ],
-        ),
       );
-    } 
+    }
 
     return Expanded(
         child: Container(
@@ -651,37 +684,43 @@ class _ContactsSearchListState extends State<ContactsSearchList> {
               Container(
                   child: _isSpinning()
                       ? _spinner()
-                      : _contacts.isEmpty 
-                        ? Center(
-                            child: Text(
-                              _message, 
-                              textAlign: TextAlign.center, 
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                height: 1.5
-                              ),),
-                          )
-                        : ListView.builder(
-                          itemCount: _page == -1
-                              ? _contacts.length
-                              : _contacts.length + 1,
-                          itemBuilder: (BuildContext context, int index) {
-                            if(_contacts.length == 0)
-                              return Container(height: 20);
-                            if (index >= _contacts.length) {
-                              _loadMore();
-                              return Container(height: 20);
-                            } else {
-                              String letter = _letterFor(_contacts[index]);
-                              if (index != 0 &&
-                                  _letterFor(_contacts[index - 1]) == letter) {
-                                letter = "";
-                              }
-                              return _resultRow(letter, _contacts[index]);
-                            }
-                          },
-                          padding: EdgeInsets.only(
-                              left: 12, right: 12, top: _embedded! ? 28 : 40))),
+                      : _contacts.isEmpty
+                          ? Center(
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 16),
+                                child: Text(
+                                  _emptyContactsMessage(),
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.w600, height: 1.5),
+                                ),
+                              ),
+                            )
+                          : ListView.builder(
+                              itemCount: _page == -1
+                                  ? _contacts.length
+                                  : _contacts.length + 1,
+                              itemBuilder: (BuildContext context, int index) {
+                                if (_contacts.length == 0)
+                                  return Container(height: 20);
+                                if (index >= _contacts.length) {
+                                  _loadMore();
+                                  return Container(height: 20);
+                                } else {
+                                  String letter = _letterFor(_contacts[index]);
+                                  if (index != 0 &&
+                                      _letterFor(_contacts[index - 1]) ==
+                                          letter) {
+                                    letter = "";
+                                  }
+                                  return _resultRow(letter, _contacts[index]);
+                                }
+                              },
+                              padding: EdgeInsets.only(
+                                  left: 12,
+                                  right: 12,
+                                  top: _embedded! ? 28 : 40))),
               Container(
                   decoration: BoxDecoration(
                     boxShadow: [],
@@ -700,30 +739,24 @@ class _ContactsSearchListState extends State<ContactsSearchList> {
                               : translucentWhite(0.0)
                         ]),
                   ),
-                                    width: MediaQuery.of(context).size.width,
-
+                  width: MediaQuery.of(context).size.width,
                   padding: EdgeInsets.only(
                       left: 12, top: _embedded! ? 0 : 12, bottom: 32),
-                  child: Text(
-                      _typeFilter,
+                  child: Text(_typeFilter,
                       style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
                           color: coal))),
-                if(_selectedTab == "fusion")
+              if (_selectedTab == "fusion")
                 Positioned(
-                  bottom: 17,
-                  right: 17,
-                  child: FloatingActionButton(
-                    backgroundColor: crimsonLight,
-                    foregroundColor: Colors.white,
-                    child: Icon(Icons.add),
-                    onPressed: _addContact)
-                ),
-              ]
-            )
-        )
-      );
+                    bottom: 17,
+                    right: 17,
+                    child: FloatingActionButton(
+                        backgroundColor: crimsonLight,
+                        foregroundColor: Colors.white,
+                        child: Icon(Icons.add),
+                        onPressed: _addContact)),
+            ])));
   }
 }
 
@@ -789,7 +822,7 @@ class _ContactsListState extends State<ContactsList> {
 
     _subscriptionKey =
         _fusionConnection.coworkers.subscribe(null, (List<Coworker> coworkers) {
-          if (!mounted) return;
+      if (!mounted) return;
 
       this.setState(() {
         for (Coworker c in coworkers) {
@@ -800,7 +833,7 @@ class _ContactsListState extends State<ContactsList> {
 
     _fusionConnection.callHistory.getRecentHistory(100, 0, false,
         (List<CallHistory> history, bool fromServer, bool presisted) {
-          if (!mounted) return;
+      if (!mounted) return;
 
       this.setState(() {
         if (fromServer) {
@@ -839,11 +872,9 @@ class _ContactsListState extends State<ContactsList> {
         item.coworker = _coworkers[item.coworker!.uid]!;
       }
       return CallHistorySummaryView(_fusionConnection, _softphone, item,
-          expanded: _expandedId == item.id,
-          onExpand: () {
-            if (widget.onSelect == null)
-              expand(item);
-          },
+          expanded: _expandedId == item.id, onExpand: () {
+        if (widget.onSelect == null) expand(item);
+      },
           onSelect: widget.onSelect == null
               ? null
               : () {
@@ -877,7 +908,7 @@ class _ContactsListState extends State<ContactsList> {
     if (lookupState == 0) {
       _lookupHistory();
     }
-
+    print("MDBM ccc2 ${_selectedTab}");
     return Container(
         child: Container(
             decoration: BoxDecoration(
@@ -886,7 +917,7 @@ class _ContactsListState extends State<ContactsList> {
             padding: EdgeInsets.only(top: 0, left: 0, right: 0, bottom: 0),
             child: Stack(children: [
               Container(
-                  child:Column(
+                  child: Column(
                 children: [
                   Expanded(
                       child: _isSpinning()
@@ -912,7 +943,6 @@ class _ContactsListState extends State<ContactsList> {
                           colors: [Colors.white, translucentWhite(0.0)])),
                   height: 60,
                   width: MediaQuery.of(context).size.width,
-
                   padding: EdgeInsets.only(
                     bottom: 24,
                     top: 12,

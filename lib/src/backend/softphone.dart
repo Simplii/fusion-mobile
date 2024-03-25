@@ -102,6 +102,9 @@ class Softphone implements SipUaHelperListener {
   bool callInitiated = false;
   List<Call> endedCalls = []; // call dispositions
   static Softphone? instance;
+  Map<String, String> phoneContactName =
+      {}; //FIXME: change this temp fix for phoneContact
+
   Softphone(this._fusionConnection) {
     if (Platform.isIOS)
       _callKit = MethodChannel('net.fusioncomm.ios/callkit');
@@ -1247,6 +1250,10 @@ class Softphone implements SipUaHelperListener {
   _didDisplayCall() {}
 
   _removeCall(Call call) {
+    //FIXME: temp fix for phone contact name to show in call view
+    if (phoneContactName.containsKey(call.id)) {
+      phoneContactName.remove(call.id!);
+    }
     if (Platform.isIOS) {
       _getMethodChannel().invokeMethod("lpEndCall", [_uuidFor(call)]);
       _getMethodChannel().invokeMethod("endCall", [_uuidFor(call)]);
@@ -1556,38 +1563,32 @@ class Softphone implements SipUaHelperListener {
       String ext = call.remote_identity!.onlyNumbers();
       List<Coworker> coworker =
           coworkers.where((coworker) => coworker.extension == ext).toList();
-      List<PhoneContact> phoneContacts =
-          _fusionConnection.phoneContacts.getRecords();
       if (coworker.length > 0) {
         Coworker _coworker = coworker.first;
         return "${_coworker.firstName} ${_coworker.lastName}";
       } else if (data != null) {
         if (data.getName().trim().length > 0 && data.contacts.length > 0)
           return data.getName();
-        else if (phoneContacts.isNotEmpty)
-          //this loop is bad...
-          for (PhoneContact phoneContact in phoneContacts) {
-            for (Map<String, dynamic> phoneNumber
-                in phoneContact.phoneNumbers) {
-              String number = phoneNumber["number"];
-              number = number.startsWith("+1")
-                  ? number.replaceAll("+1", "")
-                  : number;
-              String otherNumber = data.phoneNumber.startsWith("+1")
-                  ? data.phoneNumber.replaceAll("+1", "")
-                  : data.phoneNumber;
-              if (number == otherNumber) {
-                return phoneContact.name;
-              } else {
-                return "Unknown";
+        else {
+          if (phoneContactName.isNotEmpty &&
+              phoneContactName.containsKey(call.id!)) {
+            return phoneContactName[call.id!]!;
+          } else {
+            _fusionConnection.phoneContacts
+                .searchDb(data.phoneNumber)
+                .then((value) {
+              if (value != null) {
+                phoneContactName.addAll({call.id!: value.name});
               }
-            }
+            });
+            return phoneContactName.containsKey(call.id!)
+                ? phoneContactName[call.id!]!
+                : call.remote_display_name != null &&
+                        !call.remote_display_name!.startsWith("sip:")
+                    ? call.remote_display_name!
+                    : "Unknown";
           }
-        else
-          return call.remote_display_name != null &&
-                  !call.remote_display_name!.startsWith("sip:")
-              ? call.remote_display_name!
-              : "Unknown";
+        }
       } else {
         if (call.remote_display_name != null &&
             call.remote_display_name!.trim().length > 0) {

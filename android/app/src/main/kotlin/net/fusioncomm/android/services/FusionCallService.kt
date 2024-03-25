@@ -9,7 +9,9 @@ import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.ServiceCompat
+import net.fusioncomm.android.FMCore
 import net.fusioncomm.android.notifications.NotificationsManager
+import net.fusioncomm.android.telecom.CallsManager
 
 class FusionCallService : Service() {
     private val debugTag = "MDBM CallService"
@@ -41,13 +43,7 @@ class FusionCallService : Service() {
 
     override fun onDestroy() {
         Log.d(debugTag, "call service stopped ")
-        NotificationsManager.onCallServiceDestroyed()
         super.onDestroy()
-    }
-
-    override fun onCreate() {
-        super.onCreate()
-//        Log.d(debugTag, "call service created ")
     }
 
 }

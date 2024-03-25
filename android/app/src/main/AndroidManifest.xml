@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="net.fusioncomm.android"
-    xmlns:tools="http://schemas.android.com/tools">
+    xmlns:tools="http://schemas.android.com/tools"
+    package="net.fusioncomm.android">
 
 
     <uses-feature android:name="android.hardware.camera" />
@@ -52,7 +52,7 @@
 
     <application
         android:name=".FusionMobileApplication"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@mipmap/new_app_icon"
         android:label="Fusion"
         android:usesCleartextTraffic="true">
 
@@ -61,11 +61,11 @@
         <activity
             android:name=".MainActivity"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+            android:exported="true"
             android:hardwareAccelerated="true"
             android:launchMode="singleTop"
             android:showOnLockScreen="true"
             android:theme="@style/LaunchTheme"
-            android:exported="true"
             android:windowSoftInputMode="adjustResize">
             <!-- Specifies an Android theme to apply to this Activity as soon as
                  the Android process has started. This theme is visible to the user
@@ -88,7 +88,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-                        <intent-filter>
+            <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
