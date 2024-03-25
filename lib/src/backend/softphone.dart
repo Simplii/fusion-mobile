@@ -337,7 +337,6 @@ class Softphone implements SipUaHelperListener {
           break;
 
         case "setAppVersion":
-          print("MDBM getAppVersion args $args");
           args = [json.decode(args)];
           break;
         case "setMyPhoneNumber":
@@ -507,8 +506,6 @@ class Softphone implements SipUaHelperListener {
         if (activeCall == null) {
           makeActiveCall(call);
         }
-        print(
-            "MDBM answeredWhileOnCallFromNotification ${call} ${calls.length}");
         setCallOutput(call, outputDevice.toLowerCase());
         if (bluetoothDeviceId != '') {
           setActiveCallOutputDevice(bluetoothDeviceId);
