@@ -42,8 +42,8 @@ class _IncomingWhileOnCallState extends State<IncomingWhileOnCall> {
                   decoration: BoxDecoration(
                       borderRadius: BorderRadius.all(Radius.circular(50.0)),
                       color: crimsonLight),
-                  child: Image.asset("assets/icons/phone.png",
-                      width: 28, height: 28)))),
+                  child: Image.asset("assets/icons/phone_filled_white.png",
+                      width: 24, height: 24)))),
     );
   }
 
@@ -90,41 +90,39 @@ class _IncomingWhileOnCallState extends State<IncomingWhileOnCall> {
             child: Column(children: [
               Row(
                 children: [
-                  ContactCircle.withDiameter(
-                      info != null ? info.contacts : [],
+                  ContactCircle.withDiameter(info != null ? info.contacts : [],
                       info != null ? info.crmContacts : [], 56),
                   Container(width: 0),
                   Column(
-                    mainAxisAlignment: MainAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.start,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                    Text(widget.softphone!.getCallerCompany(widget.call)!,
-                        style: TextStyle(
-                            fontSize: 12,
-                            color: translucentWhite(0.66),
-                            fontWeight: FontWeight.w700)),
-                    Text(widget.softphone!.getCallerName(widget.call),
-                        style: TextStyle(
-                            fontSize: 24,
-                            color: translucentWhite(1.0),
-                            fontWeight: FontWeight.w700)),
-                    Text(widget.softphone!.getCallerNumber(widget.call!),
-                        style: TextStyle(
-                            fontSize: 12,
-                            color: translucentWhite(0.66),
-                            fontWeight: FontWeight.w700)),
-                  ])
+                        Text(widget.softphone!.getCallerCompany(widget.call)!,
+                            style: TextStyle(
+                                fontSize: 12,
+                                color: translucentWhite(0.66),
+                                fontWeight: FontWeight.w700)),
+                        Text(widget.softphone!.getCallerName(widget.call),
+                            style: TextStyle(
+                                fontSize: 24,
+                                color: translucentWhite(1.0),
+                                fontWeight: FontWeight.w700)),
+                        Text(widget.softphone!.getCallerNumber(widget.call!),
+                            style: TextStyle(
+                                fontSize: 12,
+                                color: translucentWhite(0.66),
+                                fontWeight: FontWeight.w700)),
+                      ])
                 ],
               ),
               Container(height: 12),
               Row(children: [
-                Spacer() ,
+                Spacer(),
                 _hangupButton(),
-                if (widget.softphone!.isIncoming(widget.call!))
-                  Spacer(),
-                if (widget.softphone!.isIncoming(widget.call!))
-                  _answerButton(),
-                Spacer()])
+                if (widget.softphone!.isIncoming(widget.call!)) Spacer(),
+                if (widget.softphone!.isIncoming(widget.call!)) _answerButton(),
+                Spacer()
+              ])
             ])));
 
     return contents;

@@ -142,6 +142,8 @@ class ConversationRow extends StatelessWidget {
                         Align(
                             alignment: Alignment.centerLeft,
                             child: Text(conversationLabel,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16))),

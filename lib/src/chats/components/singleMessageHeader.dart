@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fusion_mobile_revamped/src/backend/softphone.dart';
 import 'package:fusion_mobile_revamped/src/components/contact_circle.dart';
 import 'package:fusion_mobile_revamped/src/models/conversations.dart';
 import 'package:fusion_mobile_revamped/src/models/coworkers.dart';
@@ -16,6 +17,7 @@ class SingleMessageHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final Softphone? softphone = Softphone.instance;
     return Expanded(
       child: Row(
         children: [
@@ -53,7 +55,7 @@ class SingleMessageHeader extends StatelessWidget {
                 )),
             onPressed: () {
               Navigator.pop(context);
-              // widget.softphone!.makeCall(_conversation!.number);
+              softphone?.makeCall(conversation.number);
             },
           ),
         ],

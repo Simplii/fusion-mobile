@@ -93,8 +93,8 @@ class CallHistory extends FusionModel {
       Map<String, dynamic> data = jsonDecode(obj['phoneContact']);
       phoneContact = PhoneContact(data);
     }
-    if (obj.containsKey("queue")) {
-      queue = obj["queue"].toString();
+    if (obj.containsKey("isQueue")) {
+      queue = (obj["isQueue"] == 1).toString();
     }
   }
 

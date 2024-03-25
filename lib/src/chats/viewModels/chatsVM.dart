@@ -12,6 +12,7 @@ import 'package:fusion_mobile_revamped/src/utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ChatsVM extends ChangeNotifier {
+  final String DebugTag = "MDBM ChatsVM";
   final FusionConnection fusionConnection;
   final Softphone softPhone;
   final SharedPreferences sharedPreferences;
@@ -50,7 +51,11 @@ class ChatsVM extends ChangeNotifier {
   _updateUnreadCount() {
     fusionConnection.unreadMessages.getUnreads((unreads, fromServer) {
       if (fromServer) {
-        unreadsCount = unreads.length;
+        int total = 0;
+        for (var unread in unreads) {
+          total += unread.unread!;
+        }
+        unreadsCount = total;
         notifyListeners();
       }
     });
@@ -61,7 +66,7 @@ class ChatsVM extends ChangeNotifier {
   }
 
   void _onForegroundNotificationReceived(RemoteMessage remoteMessage) {
-    print("MDBM ChatsVM _onForegroundNotificationReceived");
+    print("$DebugTag _onForegroundNotificationReceived");
     if (remoteMessage.notification != null) {
       lookupMessages(limit: 20);
       _updateUnreadCount();
@@ -69,7 +74,7 @@ class ChatsVM extends ChangeNotifier {
   }
 
   void refreshView() {
-    print("MDBM ChatsVM refreshView");
+    print("$DebugTag refreshView");
     lookupMessages(limit: 20, getAllMessages: true);
     _updateUnreadCount();
     notifyListeners();
@@ -123,6 +128,9 @@ class ChatsVM extends ChangeNotifier {
   void onGroupChange(String newGroupId) {
     sharedPreferences.setString('selectedGroupId', newGroupId);
     selectedDepartmentId = newGroupId;
+    if (_offset > 0) {
+      _offset = 0;
+    }
     lookupMessages();
     notifyListeners();
   }
@@ -191,7 +199,7 @@ class ChatsVM extends ChangeNotifier {
   void deleteConvoFromActions({
     required SMSConversation conversation,
   }) {
-    print("MDBM delete ${conversations.length}");
+    print("$DebugTag delete ${conversations.length}");
     fusionConnection.conversations.deleteConversation(
       conversation,
       selectedDepartmentId,
@@ -202,7 +210,7 @@ class ChatsVM extends ChangeNotifier {
         .firstOrNull;
     if (convo != null) {
       conversations.removeAt(conversations.indexOf(convo));
-      print("MDBM deleted ${conversations.length}");
+      print("$DebugTag deleted ${conversations.length}");
     }
 
     notifyListeners();
@@ -228,7 +236,7 @@ class ChatsVM extends ChangeNotifier {
       ) =>
           newConvos = convs,
     );
-    print("MDBM new ${newConvos.length}");
+    print("$DebugTag new ${newConvos.length}");
     return newConvos;
   }
 
