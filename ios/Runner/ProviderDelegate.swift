@@ -16,7 +16,7 @@ class ProviderDelegate: NSObject, CXCallObserverDelegate {
     private let theCallObserver = CXCallObserver()
     private var needsReport: String = "";
     private let speakerTurnedOn = false;
-    private var mCore: Core?;
+    var mCore: Core?;
     
     var username : String = "user"
     var passwd : String = "pwd"

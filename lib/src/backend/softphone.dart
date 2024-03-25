@@ -28,6 +28,7 @@ import 'fusion_connection.dart';
 import 'package:uuid/uuid.dart';
 
 class Softphone implements SipUaHelperListener {
+  static final callInfoChannel = EventChannel('channel/callInfo');
   String outputDevice = "Phone";
   MediaStream? _localStream;
   MediaStream? _remoteStream;
@@ -507,8 +508,6 @@ class Softphone implements SipUaHelperListener {
         if (activeCall == null) {
           makeActiveCall(call);
         }
-        print(
-            "MDBM answeredWhileOnCallFromNotification ${call} ${calls.length}");
         setCallOutput(call, outputDevice.toLowerCase());
         if (bluetoothDeviceId != '') {
           setActiveCallOutputDevice(bluetoothDeviceId);
@@ -2093,5 +2092,9 @@ class Softphone implements SipUaHelperListener {
     return activeCalls > 1 &&
         (activeCalls == incomingCalls || activeCalls == outgoingCalls) &&
         Platform.isAndroid;
+  }
+
+  String getCallUUID(Call call) {
+    return _uuidFor(call);
   }
 }

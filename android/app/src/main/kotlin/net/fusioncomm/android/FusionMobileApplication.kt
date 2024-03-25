@@ -6,7 +6,9 @@ import android.util.Log
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.FlutterEngineCache
 import io.flutter.embedding.engine.dart.DartExecutor
+import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
+import net.fusioncomm.android.telecom.CallQualityStream
 
 class FusionMobileApplication : Application() {
 
@@ -15,7 +17,7 @@ class FusionMobileApplication : Application() {
         lateinit var fmCore: FMCore
         lateinit var engine : FlutterEngine
         lateinit var callingChannel: MethodChannel
-
+        lateinit var callEventChannel: EventChannel
         fun ensureCoreExists(
             context: Context,
             skipCoreStart: Boolean = false
@@ -58,6 +60,11 @@ class FusionMobileApplication : Application() {
             engine.dartExecutor.binaryMessenger,
             "net.fusioncomm.android/calling"
         );
+
+        callEventChannel = EventChannel(
+            engine.dartExecutor.binaryMessenger,
+            "channel/callInfo"
+        )
 
         fmCore = FMCore(applicationContext, callingChannel)
 
