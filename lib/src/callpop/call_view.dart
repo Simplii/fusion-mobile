@@ -53,7 +53,6 @@ class _CallViewState extends State<CallView> {
   bool _showDisposition = false;
   final CallVM callVM = CallVM();
   String _myPhoneNumber = "";
-  int lowScore = 0;
   bool openCallQualityPill = false;
   bool userOverride = false;
 
@@ -601,7 +600,7 @@ class _CallViewState extends State<CallView> {
   Color _callQualityColor(double rating) {
     return rating > 4
         ? successGreen
-        : rating > 3
+        : rating > 3 || (rating < 3 && callVM.lowScore < 2)
             ? Colors.amber
             : Colors.red;
   }
@@ -609,7 +608,7 @@ class _CallViewState extends State<CallView> {
   String _callQualityTitle(double rating) {
     return rating > 4
         ? "Good"
-        : rating > 3
+        : rating > 3 || (rating < 3 && callVM.lowScore < 2)
             ? "Average"
             : "Poor";
   }
@@ -912,19 +911,19 @@ class _CallViewState extends State<CallView> {
                                             if (!snapshot.hasData)
                                               return Container();
                                             double rating = snapshot.data;
-                                            if (rating < 3) {
-                                              lowScore += 1;
+
+                                            if (callVM.lowScore > 2 &&
+                                                !userOverride) {
+                                              openCallQualityPill = true;
                                             } else {
-                                              lowScore = 0;
                                               if (openCallQualityPill &&
                                                   !userOverride) {
                                                 openCallQualityPill = false;
                                               }
                                             }
+                                            print(
+                                                "MDBM CallInfoStream st ${callVM.lowScore}");
 
-                                            if (lowScore > 3 && !userOverride) {
-                                              openCallQualityPill = true;
-                                            }
                                             return AnimatedContainer(
                                               margin: EdgeInsets.only(
                                                   bottom: 10,
