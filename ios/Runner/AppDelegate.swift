@@ -14,6 +14,7 @@ import Foundation
     var providerDelegate: ProviderDelegate!
     var callkitChannel: FlutterMethodChannel!
     var contactsChannel: FlutterMethodChannel!
+    var callInfoEventChannel: FlutterEventChannel?
     var timer = Timer()
     override func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
         print("opened from url")
@@ -65,7 +66,7 @@ import Foundation
 //        print(intent.identifier)
 //        print(intent)
 //    }
-//    
+//
 //    func application(
 //        _ application: UIApplication,
 //        handlerFor intent: INIntent) {
@@ -105,9 +106,12 @@ import Foundation
         setupCallkitFlutterLink()
         providerDelegate = ProviderDelegate(channel: callkitChannel)
         ContactsProvider(channel: contactsChannel)
+        let callQualityStream = CallInfoStream(providerDelegate: providerDelegate)
+        callInfoEventChannel?.setStreamHandler(callQualityStream)
         FirebaseApp.configure() //add this before the code below
 
         GeneratedPluginRegistrant.register(with: self)
+        
         let mainQueue = DispatchQueue.main
         let voipRegistry: PKPushRegistry = PKPushRegistry(queue: mainQueue)
         voipRegistry.delegate = self
@@ -161,6 +165,10 @@ import Foundation
         contactsChannel = FlutterMethodChannel(
             name: "net.fusioncomm.ios/contacts",
             binaryMessenger: controller.binaryMessenger)
+        callInfoEventChannel = FlutterEventChannel(
+            name: "channel/callInfo",
+            binaryMessenger: controller.binaryMessenger
+        )
     }
 
     

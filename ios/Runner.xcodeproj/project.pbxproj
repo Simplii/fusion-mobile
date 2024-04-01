@@ -14,6 +14,7 @@
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
+		B81AAFCD2BADDC28005850E3 /* CallQualityStream.swift in Sources */ = {isa = PBXBuildFile; fileRef = B81AAFCC2BADDC28005850E3 /* CallQualityStream.swift */; };
 		B86F1D9E2B1A495A009B6B8C /* StartCallIntentHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B86F1D9D2B1A495A009B6B8C /* StartCallIntentHandler.swift */; };
 		B86F1DA52B1A4B48009B6B8C /* StartCallConvertible.swift in Sources */ = {isa = PBXBuildFile; fileRef = B86F1DA42B1A4B48009B6B8C /* StartCallConvertible.swift */; };
 		B87203F02B1E352F00D12701 /* Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = B87203EF2B1E352F00D12701 /* Utils.swift */; };
@@ -78,6 +79,7 @@
 		97C146FD1CF9000F007C117D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		97C147001CF9000F007C117D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		97C147021CF9000F007C117D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B81AAFCC2BADDC28005850E3 /* CallQualityStream.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallQualityStream.swift; sourceTree = "<group>"; };
 		B86F1D8F2B1A4781009B6B8C /* Intents.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Intents.framework; path = System/Library/Frameworks/Intents.framework; sourceTree = SDKROOT; };
 		B86F1D9D2B1A495A009B6B8C /* StartCallIntentHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartCallIntentHandler.swift; sourceTree = "<group>"; };
 		B86F1DA42B1A4B48009B6B8C /* StartCallConvertible.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartCallConvertible.swift; sourceTree = "<group>"; };
@@ -178,6 +180,7 @@
 				B8C0ABEE2AD9C1F600B8666F /* ContactsProvider.swift */,
 				B87203EF2B1E352F00D12701 /* Utils.swift */,
 				B87204082B1E939700D12701 /* AppIntentVocabulary.plist */,
+				B81AAFCC2BADDC28005850E3 /* CallQualityStream.swift */,
 			);
 			path = Runner;
 			sourceTree = "<group>";
@@ -397,6 +400,7 @@
 				B86F1D9E2B1A495A009B6B8C /* StartCallIntentHandler.swift in Sources */,
 				B8ED2FD7293A9BDE00AA03DA /* ProviderDelegate.swift in Sources */,
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
+				B81AAFCD2BADDC28005850E3 /* CallQualityStream.swift in Sources */,
 				B87203F02B1E352F00D12701 /* Utils.swift in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 				B86F1DA52B1A4B48009B6B8C /* StartCallConvertible.swift in Sources */,

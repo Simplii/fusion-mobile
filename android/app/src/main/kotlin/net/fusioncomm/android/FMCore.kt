@@ -2,18 +2,26 @@
 
 package net.fusioncomm.android
 
+import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
 import android.media.AudioDeviceCallback
 import android.media.AudioDeviceInfo
 import android.media.AudioManager
 import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
+import android.telephony.SubscriptionManager
+import android.telephony.TelephonyManager
 import android.util.Log
+import androidx.core.app.ActivityCompat
+import androidx.core.content.getSystemService
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
+import com.google.gson.Gson
 import io.flutter.plugin.common.MethodChannel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -38,6 +46,8 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
     private val factory: Factory = Factory.instance()
     private val server: String = "services.fusioncom.co"
     private val audioManager:AudioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+    private val telephonyManager = context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
+    private val telephonySubscriptionManager: SubscriptionManager = context.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE) as SubscriptionManager
     private val sharedPref:SharedPreferences = context.getSharedPreferences(
         "net.fusioncomm.android.fusionValues",
         Context.MODE_PRIVATE
@@ -122,6 +132,10 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
         }
         core.config.setBool("audio", "android_pause_calls_when_audio_focus_lost", false)
         _lifecycleRegistry.currentState = Lifecycle.State.CREATED
+        for ( audioType in core.audioPayloadTypes){
+            Log.d(debugTag, "codec ${audioType.mimeType}")
+
+        }
     }
 
     private fun unregister() {
@@ -320,6 +334,36 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
                     // returned user
                     Log.d(debugTag, "Linphone should be registered from sharedpref")
                 }
+                sendDevices()
+                val gson = Gson()
+                channel.invokeMethod(
+                    "setAppVersion",
+                    gson.toJson(BuildConfig.VERSION_NAME)
+                )
+                var myPhoneNumber = ""
+
+                if (ActivityCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.READ_SMS
+                    ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.READ_PHONE_NUMBERS
+                    ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.READ_PHONE_STATE
+                    ) != PackageManager.PERMISSION_GRANTED
+                ) {
+                    // TODO: Consider calling
+                    //    ActivityCompat#requestPermissions
+                }
+                if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    myPhoneNumber = telephonySubscriptionManager.getPhoneNumber(
+                        SubscriptionManager.DEFAULT_SUBSCRIPTION_ID
+                    )
+                } else {
+                    myPhoneNumber = telephonyManager.line1Number
+                }
+                channel.invokeMethod("setMyPhoneNumber",  gson.toJson(myPhoneNumber) )
             } else if (call.method == "lpUnregister") {
                 //this is not being hit from flutter
                 Log.d(debugTag, "lpUnregister")
@@ -421,6 +465,32 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
                 core.reloadSoundDevices()
             }
         }
+    }
+
+    private fun sendDevices() {
+        var devicesList: Array<Array<String>> = arrayOf()
+        for (device in core.extendedAudioDevices) {
+            devicesList = devicesList.plus(
+                arrayOf(device.deviceName, device.id, device.type.name)
+            )
+            if(device.type == AudioDevice.Type.Microphone && device.id.contains("openSLES")){
+                core.defaultInputAudioDevice = device
+            }
+
+            if(device.type == AudioDevice.Type.Speaker && device.id.contains("openSLES")){
+                core.defaultOutputAudioDevice = device
+            }
+        }
+
+        val gson = Gson()
+        channel.invokeMethod(
+            "lnNewDevicesList",
+            mapOf(Pair("devicesList", gson.toJson(devicesList)),
+                Pair("echoLimiterEnabled", core.echoLimiterEnabled()),
+                Pair("echoCancellationEnabled", core.echoCancellationEnabled()),
+                Pair("echoCancellationFilterName", core.echoCancellerFilterName),
+                Pair("defaultInput", core.defaultInputAudioDevice.id),
+                Pair("defaultOutput", core.defaultOutputAudioDevice.id)))
     }
 
 //   TODO: implement stop core method

@@ -2,16 +2,13 @@ package net.fusioncomm.android.services
 
 import android.app.Notification
 import android.app.Service
-import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.ServiceCompat
-import net.fusioncomm.android.FMCore
 import net.fusioncomm.android.notifications.NotificationsManager
-import net.fusioncomm.android.telecom.CallsManager
 
 class FusionCallService : Service() {
     private val debugTag = "MDBM CallService"

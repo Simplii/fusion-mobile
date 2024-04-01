@@ -10,7 +10,7 @@ import 'package:uuid/uuid.dart';
 import 'dart:ui' as ui;
 import 'dart:async';
 import 'package:http/http.dart' as http;
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' as intl;
 
 uuidFromString(String str) {
   if (str.length == 0)
@@ -220,7 +220,7 @@ String getDateTime(DateTime dateTime) {
     // }
     if (differenceInHours > 0) {
       // return '$differenceInHours ${differenceInHours > 1 ? 'hours' : 'hour'} ';
-      return DateFormat(
+      return intl.DateFormat(
         'h:mm a',
       ).format(localDateTime);
     } else if (differenceInMins > 0) {
@@ -247,7 +247,7 @@ String getDateTime(DateTime dateTime) {
   // }
 
   if (now.difference(localDateTime).inDays < 4) {
-    String weekday = DateFormat(
+    String weekday = intl.DateFormat(
       'EEE',
     ).format(localDateTime);
 
@@ -256,9 +256,9 @@ String getDateTime(DateTime dateTime) {
   }
 
   if (now.difference(localDateTime).inDays > 365) {
-    return DateFormat('MM/dd/yyyy').format(localDateTime);
+    return intl.DateFormat('MM/dd/yyyy').format(localDateTime);
   }
-  String month = DateFormat('MMM d').format(localDateTime);
+  String month = intl.DateFormat('MMM d').format(localDateTime);
   // return "$month, $timeString";
   return "$month";
 }
@@ -271,4 +271,13 @@ Uint8List? getImageBinary(dynamicList) {
     return data;
   }
   return null;
+}
+
+Size textSize(String text, TextStyle style) {
+  final TextPainter textPainter = TextPainter(
+      text: TextSpan(text: text, style: style),
+      maxLines: 1,
+      textDirection: TextDirection.ltr)
+    ..layout(minWidth: 0, maxWidth: double.infinity);
+  return textPainter.size;
 }

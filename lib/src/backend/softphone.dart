@@ -28,6 +28,7 @@ import 'fusion_connection.dart';
 import 'package:uuid/uuid.dart';
 
 class Softphone implements SipUaHelperListener {
+  static final callInfoChannel = EventChannel('channel/callInfo');
   String outputDevice = "Phone";
   MediaStream? _localStream;
   MediaStream? _remoteStream;
@@ -80,7 +81,7 @@ class Softphone implements SipUaHelperListener {
   String? devicePhoneNumber = "";
 
   bool assistedTransferInit = false;
-  
+
   final _outboundAudioPath = "audio/outgoing.wav";
   final _callWaitingAudioPath = "audio/call_waiting.mp3";
   final _inboundAudioPath = "audio/inbound.mp3";
@@ -169,14 +170,16 @@ class Softphone implements SipUaHelperListener {
             RingtonePlayer.ringtone(
                 alarmMeta: AlarmMeta("net.fusioncomm.android.MainActivity",
                     "ic_alarm_notification",
-                    contentTitle: "Phone Call",contentText: "IncomingPhoneCall"),
+                    contentTitle: "Phone Call",
+                    contentText: "IncomingPhoneCall"),
                 volume: 1.0);
           }
         } else {
           _inboundPlayer = Aps.AudioPlayer();
         }
       } else if (path == _callWaitingAudioPath) {
-        _inboundPlayer = Aps.AudioPlayer();;
+        _inboundPlayer = Aps.AudioPlayer();
+        ;
       }
     }
   }
@@ -466,9 +469,9 @@ class Softphone implements SipUaHelperListener {
         if (domainPrefixes != null) {
           domainPrefixes.forEach((prefix) {
             if (callerId.startsWith(prefix)) {
-              callerId = callerId.replaceAll(prefix + "_", "") != "" 
-                ? callerId.replaceAll(prefix + "_", "")
-                : "Unknown";
+              callerId = callerId.replaceAll(prefix + "_", "") != ""
+                  ? callerId.replaceAll(prefix + "_", "")
+                  : "Unknown";
               linePrefix = prefix;
             }
           });
@@ -490,9 +493,9 @@ class Softphone implements SipUaHelperListener {
         if (domainPrefixes != null) {
           domainPrefixes.forEach((prefix) {
             if (callerId.startsWith(prefix)) {
-              callerId = callerId.replaceAll(prefix + "_", "") != "" 
-                ? callerId.replaceAll(prefix + "_", "")
-                : "Unknown";
+              callerId = callerId.replaceAll(prefix + "_", "") != ""
+                  ? callerId.replaceAll(prefix + "_", "")
+                  : "Unknown";
               linePrefix = prefix;
             }
           });
@@ -503,7 +506,6 @@ class Softphone implements SipUaHelperListener {
         if (activeCall == null) {
           makeActiveCall(call);
         }
-        print("MDBM answeredWhileOnCallFromNotification ${call} ${calls.length}");
         setCallOutput(call, outputDevice.toLowerCase());
         if (bluetoothDeviceId != '') {
           setActiveCallOutputDevice(bluetoothDeviceId);
@@ -517,7 +519,9 @@ class Softphone implements SipUaHelperListener {
             //     displayName: data!.getName(defaul: call.remote_display_name!),
             //     handle: call.remote_identity!);
           }
-          if (call.direction == "outbound" || call.direction == "OUTGOING" || call.direction == "INCOMING")
+          if (call.direction == "outbound" ||
+              call.direction == "OUTGOING" ||
+              call.direction == "INCOMING")
             _setCallDataValue(call.id, "callPopInfo", data);
         });
         _setCallDataValue(call.id, "answerTime", DateTime.now());
@@ -2067,24 +2071,28 @@ class Softphone implements SipUaHelperListener {
     return data[name];
   }
 
-  bool isConferencable () {
+  bool isConferencable() {
     int activeCalls = 0;
     int incomingCalls = 0;
     int outgoingCalls = 0;
     for (var call in calls) {
       if (call.state == CallStateEnum.HOLD ||
           call.state == CallStateEnum.STREAM) {
-            if(call.direction == "INCOMING"){
-              incomingCalls ++;
-            } 
-            if (call.direction == "OUTGOING") {
-              outgoingCalls ++;
-            }
-            activeCalls ++;
+        if (call.direction == "INCOMING") {
+          incomingCalls++;
+        }
+        if (call.direction == "OUTGOING") {
+          outgoingCalls++;
+        }
+        activeCalls++;
       }
     }
-    return activeCalls > 1 && 
-      (activeCalls == incomingCalls || activeCalls == outgoingCalls) && 
-      Platform.isAndroid;
+    return activeCalls > 1 &&
+        (activeCalls == incomingCalls || activeCalls == outgoingCalls) &&
+        Platform.isAndroid;
+  }
+
+  String getCallUUID(Call call) {
+    return _uuidFor(call);
   }
 }
