@@ -16,6 +16,7 @@ import 'package:fusion_mobile_revamped/src/models/sms_departments.dart';
 import 'package:image_picker/image_picker.dart';
 
 class ConversationVM with ChangeNotifier {
+  String DebugTag = "MDBM ConversationVM";
   late String conversationDepartmentId;
   late StreamSubscription wsStream;
   late StreamSubscription<RemoteMessage> notificationStream;
@@ -76,7 +77,12 @@ class ConversationVM with ChangeNotifier {
         notifyListeners();
       } else {
         SMSMessage newMessage = SMSMessage.fromWsMessageObj(message);
-        conversationMessages.insert(0, newMessage);
+        print(
+            "$DebugTag ${message.to} ${message.from} ${conversation.number} ${conversation.myNumber}");
+        if (message.to == conversation.number &&
+            message.from == conversation.myNumber) {
+          conversationMessages.insert(0, newMessage);
+        }
         //TODO:Test receving a message while typingstatus is active
         // SMSMessage? isTypingMessage =
         //     conversationMessages.where((e) => e.id == "-3").firstOrNull;
@@ -273,7 +279,7 @@ class ConversationVM with ChangeNotifier {
     }
     sendingMessage = false;
     notifyListeners();
-    _chatsVM?.refreshView();
+    _chatsVM?.refreshView(departmentId: conversationDepartmentId);
   }
 
   void _showLargeMMSError() {

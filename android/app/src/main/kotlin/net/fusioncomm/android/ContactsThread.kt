@@ -3,6 +3,8 @@ package net.fusioncomm.android
 import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.content.ContentUris
+import android.content.Context
+import android.content.SharedPreferences
 import android.content.res.AssetFileDescriptor
 import android.database.Cursor
 import android.net.Uri
@@ -10,22 +12,98 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.ContactsContract
 import android.telephony.PhoneNumberUtils
+import android.util.Log
+import androidx.loader.content.CursorLoader
 import com.google.gson.Gson
 import io.flutter.plugin.common.MethodChannel
 import java.io.IOException
 import java.io.InputStream
+import java.util.Calendar
 
 @SuppressLint("Range")
-class ContactsThread (private var channel: MethodChannel, private var contentResolver: ContentResolver): Thread() {
+class ContactsThread (private var channel: MethodChannel, private var contentResolver: ContentResolver, private var context: Context): Thread() {
     private val gson = Gson()
     private val displayNameCol: String = ContactsContract.Contacts.DISPLAY_NAME_PRIMARY
+    private val sharedPref: SharedPreferences = context.getSharedPreferences(
+        "net.fusioncomm.android.fusionValues",
+        Context.MODE_PRIVATE
+    )
     override fun run() {
         val contacts: List<Map<String,Any?>> = getContacts()
         Handler(Looper.getMainLooper()).post {
             channel.invokeMethod("CONTACTS_LOADED",gson.toJson(contacts))
+            with(sharedPref.edit()) {
+                putString("contacts_last_sync", Calendar.getInstance().timeInMillis.toString())
+                apply()
+            }
         }
     }
 
+
+    fun syncNew(){
+        val lastSync = sharedPref.getString("contacts_last_sync", "")
+        with(sharedPref.edit()) {
+            putString("contacts_last_sync", Calendar.getInstance().timeInMillis.toString())
+            apply()
+        }
+        try {
+            val projection = arrayOf(
+                ContactsContract.Contacts.DISPLAY_NAME_PRIMARY,
+                ContactsContract.Contacts.HAS_PHONE_NUMBER,
+                ContactsContract.Contacts._ID
+            )
+            val selection = "${ContactsContract.Contacts.CONTACT_LAST_UPDATED_TIMESTAMP} >= ?"
+            val selectionArgs = arrayOf(lastSync)
+            val contacts:MutableList<Map<String,Any?>> = mutableListOf()
+            contentResolver.query(
+                ContactsContract.Contacts.CONTENT_URI,
+                projection,
+                selection,
+                selectionArgs,
+                null
+            )?.use {
+                val idCol = it.getColumnIndex(ContactsContract.Contacts._ID)
+
+                while (it.moveToNext()){
+                    val contactId = it.getString(idCol)
+                    val phoneNumbersArray = getContactPhoneNumbers(contactId)
+                    if(phoneNumbersArray.isEmpty()){
+                        it.close()
+                        continue
+                    }
+                    val (firstName, lastName, name) = getContactStructuredName(contactId)
+                    val (company, jobTitle) = getCompanyInfo(contactId)
+                    val image: ByteArray? = getDisplayPhoto(
+                        it.getLong(idCol)
+                    )
+
+                    val emailsArray = getContactEmails(contactId)
+                    val addressesArray = getContactAddresses(contactId)
+                    val contactObj = mapOf<String,Any?>(
+                        Pair("id",contactId),
+                        Pair("name", name),
+                        Pair("firstName", firstName),
+                        Pair("lastName", lastName),
+                        Pair("phoneNumbers", phoneNumbersArray),
+                        Pair("emails", emailsArray),
+                        Pair("addresses", addressesArray),
+                        Pair("profileImage", image),
+                        Pair("company", company),
+                        Pair("jobTitle", jobTitle)
+                    )
+//                Log.d("MDBM", "contactObj ${gson.toJson(contactObj)}")
+                    contacts.add(contactObj)
+                }
+            }
+            Log.d("MDBM Contacts", "${contacts.size}")
+            Handler(Looper.getMainLooper()).post {
+                channel.invokeMethod("CONTACTS_SYNCED",gson.toJson(contacts))
+            }
+
+        } catch (e: IllegalStateException) {
+            Log.e("MDBM Contacts", "${e.message}")
+        }
+    }
 
     private fun getContacts() : List<Map<String,Any?>>{
         val cursor: Cursor? = contentResolver.query(
@@ -134,6 +212,7 @@ class ContactsThread (private var channel: MethodChannel, private var contentRes
         var firstName = ""
         var lastName = ""
         var name = ""
+        var middle = ""
 
 
         val selection = ContactsContract.Data.MIMETYPE + " = ? AND " +
@@ -163,12 +242,18 @@ class ContactsThread (private var channel: MethodChannel, private var contentRes
                                 ContactsContract.CommonDataKinds.StructuredName.FAMILY_NAME
                         )
                 )
+                val middleName:String? = structuredNameCursor.getString(
+                        structuredNameCursor.getColumnIndex(
+                                ContactsContract.CommonDataKinds.StructuredName.MIDDLE_NAME
+                        )
+                )
                 val display:String? = structuredNameCursor.getString(
                         structuredNameCursor.getColumnIndex(displayNameCol)
                 )
                 firstName = given ?: ""
                 lastName = family ?: ""
                 name = display ?: ""
+                middle = middleName ?: ""
 
                 if(firstName.isEmpty() && name.isNotEmpty()){
                     firstName = name.split(" ")[0]
@@ -181,7 +266,9 @@ class ContactsThread (private var channel: MethodChannel, private var contentRes
                 if(lastName.isEmpty() && name.isNotEmpty() && name.split(" ").count() > 1){
                     lastName = name.split(" ")[1]
                 }
-
+                if(middle.isNotEmpty()) {
+                    lastName = "$middle $lastName"
+                }
             }
             structuredNameCursor.close()
         }

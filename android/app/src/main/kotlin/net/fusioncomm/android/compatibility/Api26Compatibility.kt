@@ -221,6 +221,7 @@ class Api26Compatibility {
                     )
                     .setContentTitle(title)
                     .setContentText(notificationText)
+                    .setContentIntent(pendingIntent)
                     .setSmallIcon(smallIcon)
                     .setLargeIcon(icon)
                     .addPerson(person)

@@ -217,7 +217,7 @@ class ConversationActions extends StatelessWidget {
             conversation,
             () => Navigator.pop(context),
           );
-          chatsVM?.refreshView();
+          chatsVM?.rebuildConversationListView();
         } else if (chosen == "assignConvo") {
           Coworker emptyCoworker = Coworker.empty();
           emptyCoworker.uid = "Unassigned";
@@ -357,7 +357,8 @@ class ConversationActions extends StatelessWidget {
                                     showError = true;
                                   } else {
                                     Navigator.of(context).pop();
-                                    chatsVM?.refreshView();
+                                    chatsVM?.refreshView(
+                                        departmentId: conversationDepartmentId);
                                   }
                                 },
                               );

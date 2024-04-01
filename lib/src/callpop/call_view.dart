@@ -15,6 +15,7 @@ import 'package:fusion_mobile_revamped/src/callpop/call_header_details.dart';
 import 'package:fusion_mobile_revamped/src/callpop/incoming_while_on_call.dart';
 import 'package:fusion_mobile_revamped/src/callpop/transfer_call_popup.dart';
 import 'package:fusion_mobile_revamped/src/callpop/viewModel.dart';
+import 'package:fusion_mobile_revamped/src/chats/conversationView.dart';
 import 'package:fusion_mobile_revamped/src/components/disposition.dart';
 import 'package:fusion_mobile_revamped/src/components/popup_menu.dart';
 import 'package:fusion_mobile_revamped/src/dialpad/dialpad_modal.dart';
@@ -217,23 +218,9 @@ class _CallViewState extends State<CallView> {
         context: context,
         backgroundColor: Colors.transparent,
         isScrollControlled: true,
-        builder: (context) => StatefulBuilder(
-                builder: (BuildContext context, StateSetter setState) {
-              SMSConversation? displayingConvo = convo;
-              return SMSConversationView(
-                  fusionConnection: _fusionConnection,
-                  softphone: _softphone,
-                  smsConversation: displayingConvo,
-                  deleteConvo: null,
-                  setOnMessagePosted: null,
-                  changeConvo: (SMSConversation updatedConvo) {
-                    setState(
-                      () {
-                        displayingConvo = updatedConvo;
-                      },
-                    );
-                  });
-            }));
+        builder: (context) => ConversationView(
+            conversation: convo,
+            isNewConversation: convo.conversationId == null));
   }
 
   _changeDefaultInputDevice() {
@@ -618,7 +605,9 @@ class _CallViewState extends State<CallView> {
         _callQualityTitle(rating) +
             ": call quality ${rating.toStringAsFixed(1)}/5.0",
         TextStyle(fontSize: 20));
-    return rating > 3 ? text.width : MediaQuery.of(context).size.width - 10;
+    return !openCallQualityPill
+        ? text.width
+        : MediaQuery.of(context).size.width - 10;
   }
 
   Widget _callPillClosed(double rating) {
@@ -664,17 +653,16 @@ class _CallViewState extends State<CallView> {
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         Spacer(),
-        if (rating <= 3)
-          TextButton(
-            onPressed: _dialog,
-            child: Text("XFER TO CARRIER"),
-            style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                foregroundColor: Colors.white,
-                backgroundColor: char,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(6))),
-          ),
+        TextButton(
+          onPressed: _dialog,
+          child: Text("XFER TO CARRIER"),
+          style: ElevatedButton.styleFrom(
+              padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+              foregroundColor: Colors.white,
+              backgroundColor: char,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(6))),
+        ),
       ],
     );
   }
@@ -894,7 +882,7 @@ class _CallViewState extends State<CallView> {
                                     dialpadVisible)
                                   CallDialPad(_softphone, _activeCall),
                                 if (_activeCall != null &&
-                                    _activeCall?.state == CallStateEnum.STREAM)
+                                    _softphone.isConnected(_activeCall!))
                                   Container(
                                     alignment: Alignment.topRight,
                                     child: GestureDetector(
@@ -922,7 +910,7 @@ class _CallViewState extends State<CallView> {
                                               }
                                             }
                                             print(
-                                                "MDBM CallInfoStream st ${callVM.lowScore}");
+                                                "MDBM CallInfoStream st ${_activeCall != null} ${_activeCall?.state == CallStateEnum.STREAM} $rating");
 
                                             return AnimatedContainer(
                                               margin: EdgeInsets.only(

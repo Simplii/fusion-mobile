@@ -71,7 +71,7 @@ class _MessagesList2State extends State<MessagesList2> {
             _scrollController.position.maxScrollExtent &&
         !_conversationVM.loadingMessages) {
       // User has reached the end of the list
-      // Load more data or trigger pagination in flutter
+      // Load more data or trigger pagination
       _conversationVM.loadMore();
     }
   }

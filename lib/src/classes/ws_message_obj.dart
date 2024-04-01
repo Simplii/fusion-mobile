@@ -81,4 +81,31 @@ class WsMessageObject {
       errorMessage: data["error_message"],
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      "id": id,
+      "mime": mime,
+      "from": from,
+      "to": to,
+      "time": time,
+      "media": media,
+      "messageStatus": messageStatus,
+      "type": type,
+      "convertedMMS": convertedMMS,
+      "isGroup": isGroup,
+      "read": read,
+      "unixtime": unixtime,
+      "smsWebhookId": smsWebhookId,
+      "user": user,
+      "domain": domain,
+      "message": message,
+      "scheduledAt": scheduledAt,
+      "smsCampaignId": smsCampaignId,
+      "flagged": flagged,
+      "flag": flag,
+      "flagLevel": flagLevel,
+      "errorMessage": errorMessage,
+    };
+  }
 }

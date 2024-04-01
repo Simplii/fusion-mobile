@@ -26,7 +26,7 @@ class SMSDepartment extends FusionModel {
       for (String n in obj['numbers']) {
         numbers.add(n);
       }
-      unreadCount = obj['unread'];
+      unreadCount = 0;
       usesDynamicOutbound = false;
       primaryUser = null;
       if (obj.containsKey('mms_numbers')) {
@@ -45,7 +45,7 @@ class SMSDepartment extends FusionModel {
         mmsNumbers.add(n);
       }
       primaryUser = obj['primary_user'];
-      unreadCount = obj['unread'];
+      unreadCount = 0;
       usesDynamicOutbound = obj['uses_dynamic_outbound'];
       protocol = obj['protocol'] ?? "sms";
       for (Map<String, dynamic> user in obj['users']) {
@@ -104,10 +104,8 @@ class SMSDepartmentsStore extends FusionStore<SMSDepartment> {
             fusionChatsNumber.isNotEmpty ? fusionChatsNumber : username;
         List<String> allNumbers = [fusionChatsNumber];
         List<String> allMMSNumbers = [];
-        int allUnread = 0;
 
         for (Map<String, dynamic> data in datas) {
-          allUnread += data['unread'] as int;
           for (String n in data['mms_numbers']) {
             allMMSNumbers.add(n);
           }
@@ -122,7 +120,7 @@ class SMSDepartmentsStore extends FusionStore<SMSDepartment> {
           'group_name': 'All Messages',
           'numbers': allNumbers,
           'mms_numbers': allMMSNumbers,
-          'unread': allUnread,
+          'unread': 0,
           'uses_dynamic_outbound': false,
           'primary_user': null,
           'users': []
@@ -160,7 +158,7 @@ class SMSDepartmentsStore extends FusionStore<SMSDepartment> {
       callback("");
       getDepartments((p0) {
         dep = p0.where((element) => element.id == 1).firstOrNull;
-        callback(dep?.groupName ?? "Unknwon");
+        callback(dep?.groupName ?? "Unknown");
       });
     }
   }

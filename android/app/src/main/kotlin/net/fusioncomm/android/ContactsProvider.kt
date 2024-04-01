@@ -30,7 +30,10 @@ class ContactsProvider(context: Context) {
             contactsChannel.setMethodCallHandler { call, result ->
                 when (call.method) {
                     "syncContacts" -> {
-                        ContactsThread(contactsChannel, contentResolver).start()
+                        ContactsThread(contactsChannel, contentResolver, context).start()
+                    }
+                    "sync" -> {
+                        ContactsThread(contactsChannel, contentResolver, context).syncNew()
                     }
                     else -> {
                         result.notImplemented()

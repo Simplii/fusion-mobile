@@ -1,15 +1,10 @@
-import 'dart:async';
-
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
-import 'package:fusion_mobile_revamped/src/backend/fusion_connection.dart';
 import 'package:fusion_mobile_revamped/src/chats/components/headerTopRow.dart';
 import 'package:fusion_mobile_revamped/src/chats/components/sendMessageInput.dart';
 import 'package:fusion_mobile_revamped/src/chats/messagesListView.dart';
 import 'package:fusion_mobile_revamped/src/chats/viewModels/chatsVM.dart';
 import 'package:fusion_mobile_revamped/src/chats/viewModels/conversation.dart';
 import 'package:fusion_mobile_revamped/src/models/conversations.dart';
-import 'package:fusion_mobile_revamped/src/models/coworkers.dart';
 import 'package:fusion_mobile_revamped/src/styles.dart';
 
 class ConversationView extends StatefulWidget {

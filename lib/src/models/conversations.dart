@@ -415,13 +415,15 @@ class SMSConversationsStore extends FusionStore<SMSConversation> {
     }
   }
 
-  void markRead(SMSConversation convo) {
+  Future<void> markRead(SMSConversation convo) async {
     convo.unread = 0;
     storeRecord(convo);
-    fusionConnection.refreshUnreads();
-    fusionConnection.apiV2Call("post", "/messaging/markRead", {
+    await fusionConnection.apiV2Call("post", "/messaging/markRead", {
       "from": convo.number,
       "to": convo.myNumber,
+    });
+    await Future.delayed(Duration(seconds: 2), () {
+      fusionConnection.refreshUnreads();
     });
   }
 

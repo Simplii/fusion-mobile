@@ -222,7 +222,8 @@ class FusionConnection {
   getDatabase() {
     getDatabasesPath().then((String path) {
       openDatabase(p.join(path, "fusion.db"), version: 1, onOpen: (db) {
-        print(db.execute('''
+        print(db.execute(
+            '''
           CREATE TABLE IF NOT EXISTS sms_conversation(
           conversationId int,
           id TEXT PRIMARY key,
@@ -239,7 +240,8 @@ class FusionConnection {
           assigneeUid TEXT
           );'''));
 
-        print(db.execute('''
+        print(db.execute(
+            '''
           CREATE TABLE IF NOT EXISTS sms_message(
           id TEXT PRIMARY key,
           `from` TEXT,
@@ -256,7 +258,8 @@ class FusionConnection {
           errorMessage TEXT
           );'''));
 
-        print(db.execute('''
+        print(db.execute(
+            '''
           CREATE TABLE IF NOT EXISTS call_history(
           cdrIdHash TEXT PRIMARY key,
           id TEXT,
@@ -275,7 +278,8 @@ class FusionConnection {
           phoneContact BLOB
           );'''));
 
-        print(db.execute('''
+        print(db.execute(
+            '''
           CREATE TABLE IF NOT EXISTS contacts(
           id TEXT PRIMARY key,
           company TEXT,
@@ -286,7 +290,8 @@ class FusionConnection {
           raw BLOB
           );
           '''));
-        print(db.execute('''
+        print(db.execute(
+            '''
           CREATE TABLE IF NOT EXISTS phone_contacts(
           id TEXT PRIMARY key,
           company TEXT,
@@ -596,7 +601,7 @@ class FusionConnection {
         print("MyDebugMessage apiCallV2 error ${e}");
       }
 
-      print("apirequest");
+      print("MDBM apirequest $url $urlParams");
       print(url);
       print(urlParams);
       print(data);
@@ -689,7 +694,7 @@ class FusionConnection {
     conversations.getConversations(
         "-2", 100, 0, (convos, fromServer, departmentId, errorMessage) {});
     refreshUnreads();
-    phoneContacts.syncPhoneContacts();
+    phoneContacts.sync();
     contactFields.getFields((List<ContactField> list, bool fromServer) {});
     setupSocket();
     if (callback != null) {

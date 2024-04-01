@@ -53,7 +53,10 @@ class ChatsVM extends ChangeNotifier {
       if (fromServer) {
         int total = 0;
         for (var unread in unreads) {
-          total += unread.unread!;
+          print("$DebugTag ${unread.unread} ${unread.departmentId}");
+          if (unread.departmentId != int.parse(selectedDepartmentId)) {
+            total += unread.unread!;
+          }
         }
         unreadsCount = total;
         notifyListeners();
@@ -73,10 +76,15 @@ class ChatsVM extends ChangeNotifier {
     }
   }
 
-  void refreshView() {
-    print("$DebugTag refreshView");
-    lookupMessages(limit: 20, getAllMessages: true);
-    _updateUnreadCount();
+  void refreshView({String? departmentId}) {
+    lookupMessages(
+        limit: 20,
+        getAllMessages: departmentId != null ? false : true,
+        departmentId: departmentId);
+    notifyListeners();
+  }
+
+  void rebuildConversationListView() {
     notifyListeners();
   }
 
@@ -132,17 +140,20 @@ class ChatsVM extends ChangeNotifier {
       _offset = 0;
     }
     lookupMessages();
-    notifyListeners();
+    _updateUnreadCount();
   }
 
-  lookupMessages({int? limit, bool? getAllMessages}) async {
+  lookupMessages(
+      {int? limit, bool? getAllMessages, String? departmentId}) async {
     loading = true;
     notifyListeners();
 
     await fusionConnection.conversations.getConversations(
       getAllMessages != null && getAllMessages
           ? DepartmentIds.AllMessages
-          : selectedDepartmentId,
+          : departmentId != null
+              ? departmentId
+              : selectedDepartmentId,
       limit ?? conversationsLimit,
       _offset,
       (
@@ -240,16 +251,9 @@ class ChatsVM extends ChangeNotifier {
     return newConvos;
   }
 
-  void markConversationAsRead(SMSConversation conversation) {
-    fusionConnection.conversations.markRead(conversation);
-    SMSConversation? matchedConvo = conversations
-        .where(
-            (element) => element.conversationId == conversation.conversationId)
-        .firstOrNull;
-    if (matchedConvo != null) {
-      unreadsCount = 0;
-    }
-    notifyListeners();
+  void markConversationAsRead(SMSConversation conversation) async {
+    await fusionConnection.conversations.markRead(conversation);
+    _updateUnreadCount();
   }
 
   void _searchContacts(String query) {

@@ -19,7 +19,7 @@ class CallVM extends ChangeNotifier {
       } else {
         lowScore = 0;
       }
-      print("MDBM CallInfoStream st $event $lowScore");
+      print("MDBM CallVM $event $lowScore");
       callMonitorReady = true;
       return event;
     });

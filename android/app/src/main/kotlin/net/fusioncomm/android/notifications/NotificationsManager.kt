@@ -246,7 +246,7 @@ class NotificationsManager(private val context: Context, private val callsManage
         val notifiable = getNotifiableForCall(call, uuid)
 
         val incomingCallIntent = Intent(context, MainActivity::class.java)
-        incomingCallIntent.putExtra("incomingCallUUID", uuid)
+        incomingCallIntent.putExtra(INTENT_CALL_UUID, uuid)
         Log.d(debugTag, "incmoing rec ${notifiable.notificationId}" )
 
         incomingCallIntent.addFlags(

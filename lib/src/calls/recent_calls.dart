@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:fusion_mobile_revamped/src/backend/softphone.dart';
+import 'package:fusion_mobile_revamped/src/chats/conversationView.dart';
 import 'package:fusion_mobile_revamped/src/components/contact_circle.dart';
 import 'package:fusion_mobile_revamped/src/components/dialpad_recent_calls.dart';
 import 'package:fusion_mobile_revamped/src/components/fusion_dropdown.dart';
@@ -232,61 +233,6 @@ class _RecentCallsListState extends State<RecentCallsList> {
         return false;
       }
     }).toList();
-  }
-
-  _historyList() {
-    List<Widget> response = [Container(height: 50)];
-    response.addAll(_history.where((item) {
-      String searchQuery = item.to! + ":" + item.from! + ":";
-
-      if (item.contact != null)
-        searchQuery += item.contact!.searchString() + ":";
-
-      if (item.crmContact != null)
-        searchQuery += item.crmContact!.company! +
-            ":" +
-            item.crmContact!.name! +
-            ":" +
-            item.crmContact!.crm!;
-
-      if (item.coworker != null)
-        searchQuery +=
-            item.coworker!.firstName! + ':' + item.coworker!.lastName!;
-
-      if (widget.query != "" && !searchQuery.contains(widget.query!)) {
-        return false;
-      } else if (_selectedTab == 'all') {
-        return true;
-      } else if (_selectedTab == 'integrated') {
-        return item.crmContact != null;
-      } else if (_selectedTab == 'coworkers') {
-        return item.coworker != null;
-      } else if (_selectedTab == 'fusion') {
-        return item.contact != null;
-      } else {
-        return false;
-      }
-    }).map((item) {
-      if (item.coworker != null && _coworkers[item.coworker!.uid] != null) {
-        item.coworker = _coworkers[item.coworker!.uid]!;
-      }
-      return CallHistorySummaryView(_fusionConnection, _softphone, item,
-          onExpand: () {
-        expand(item);
-      },
-          expanded: item.id == expandedId,
-          onSelect: widget.onSelect == null
-              ? null
-              : () {
-                  widget.onSelect!(
-                      item.coworker != null
-                          ? item.coworker!.toContact()
-                          : item.contact,
-                      item.crmContact);
-                });
-    }).toList());
-
-    return response;
   }
 
   Contact _getItemContact(CallHistory item) {
@@ -548,6 +494,33 @@ class _CallHistorySummaryViewState extends State<CallHistorySummaryView> {
     }
   }
 
+  String _callerName() {
+    String linePrefix = _getLinePrefix(_historyItem.callerId);
+    String name = _historyItem.direction == 'inbound'
+        ? _historyItem.fromDid!.formatPhone()
+        : _historyItem.toDid!.formatPhone();
+
+    linePrefix = linePrefix.contains("_")
+        ? linePrefix
+        : "${linePrefix.isNotEmpty ? "${linePrefix}_" : linePrefix}";
+
+    if (_historyItem.coworker != null) {
+      name =
+          "${_historyItem.coworker?.firstName ?? "Unknown"} ${_historyItem.coworker?.firstName ?? ""}";
+    } else if (_historyItem.contact != null) {
+      name = _historyItem.contact?.name?.toTitleCase() ?? "Unknown Contact";
+    } else if (_historyItem.crmContact != null) {
+      name = _historyItem.crmContact?.name ?? "Unknown crm contact";
+    } else if (_historyItem.phoneContact != null) {
+      name = _historyItem.phoneContact?.name.toTitleCase() ??
+          "Unknown phone contact";
+    } else if (_historyItem.callerId != null &&
+        _historyItem.callerId!.isNotEmpty) {
+      name = _historyItem.callerId ?? "Unknown";
+    }
+    return "$linePrefix$name";
+  }
+
   _isMissed() {
     return _historyItem.missed;
   }
@@ -637,23 +610,10 @@ class _CallHistorySummaryViewState extends State<CallHistorySummaryView> {
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (context) => StatefulBuilder(
-          builder: (BuildContext context, StateSetter setState) {
-        SMSConversation displayingConvo = convo;
-        return SMSConversationView(
-            fusionConnection: _fusionConnection,
-            softphone: _softphone,
-            smsConversation: displayingConvo,
-            deleteConvo: null,
-            setOnMessagePosted: null,
-            changeConvo: (SMSConversation updateConvo) {
-              setState(
-                () {
-                  displayingConvo = updateConvo;
-                },
-              );
-            });
-      }),
+      builder: (context) => ConversationView(
+        conversation: convo,
+        isNewConversation: convo.conversationId == null,
+      ),
     );
   }
 
@@ -783,7 +743,7 @@ class _CallHistorySummaryViewState extends State<CallHistorySummaryView> {
                       children: [
                         Align(
                           alignment: Alignment.centerLeft,
-                          child: Text(_name() != null ? _name() : "Unknown",
+                          child: Text(_callerName(),
                               style: TextStyle(
                                   fontWeight: FontWeight.bold, fontSize: 16)),
                         ),

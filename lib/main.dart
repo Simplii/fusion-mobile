@@ -18,6 +18,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:fusion_mobile_revamped/src/callpop/call_view.dart';
 import 'package:fusion_mobile_revamped/src/callpop/disposition.dart';
 import 'package:fusion_mobile_revamped/src/chats/chats.dart';
+import 'package:fusion_mobile_revamped/src/chats/conversationView.dart';
 import 'package:fusion_mobile_revamped/src/chats/newConversationView.dart';
 import 'package:fusion_mobile_revamped/src/chats/viewModels/chatsVM.dart';
 import 'package:fusion_mobile_revamped/src/dialpad/dialpad_modal.dart';
@@ -53,7 +54,7 @@ registerNotifications() {
       FlutterLocalNotificationsPlugin();
 // initialise the plugin. app_icon needs to be a added as a drawable resource to the Android head project
   const AndroidInitializationSettings initializationSettingsAndroid =
-      AndroidInitializationSettings('app_icon_background');
+      AndroidInitializationSettings('ic_launcher_background');
   final DarwinInitializationSettings initializationSettingsIOS =
       DarwinInitializationSettings(
           onDidReceiveLocalNotification:
@@ -427,19 +428,22 @@ class _MyHomePageState extends State<MyHomePage> {
                 isGroup: notificationData.isGroup,
                 myNumber: numberUsed,
                 number: notificationData.toNumber);
-            return SMSConversationView(
-                fusionConnection: fusionConnection,
-                softphone: softphone,
-                smsConversation: displayingConvo,
-                deleteConvo: null,
-                setOnMessagePosted: null,
-                changeConvo: (SMSConversation updateConvo) {
-                  setState(
-                    () {
-                      displayingConvo = updateConvo;
-                    },
-                  );
-                });
+            return ConversationView(
+                conversation: displayingConvo,
+                isNewConversation: displayingConvo.conversationId == null);
+            // return SMSConversationView(
+            //     fusionConnection: fusionConnection,
+            //     softphone: softphone,
+            //     smsConversation: displayingConvo,
+            //     deleteConvo: null,
+            //     setOnMessagePosted: null,
+            //     changeConvo: (SMSConversation updateConvo) {
+            //       setState(
+            //         () {
+            //           displayingConvo = updateConvo;
+            //         },
+            //       );
+            //     });
           },
         ),
       );
@@ -467,19 +471,23 @@ class _MyHomePageState extends State<MyHomePage> {
                     builder: (context) => StatefulBuilder(
                       builder: (BuildContext context, StateSetter setState) {
                         SMSConversation displayingConvo = convo;
-                        return SMSConversationView(
-                            fusionConnection: fusionConnection,
-                            softphone: softphone,
-                            smsConversation: displayingConvo,
-                            deleteConvo: null, //deleteConvo
-                            setOnMessagePosted: null, //onMessagePosted
-                            changeConvo: (SMSConversation updateConvo) {
-                              setState(
-                                () {
-                                  displayingConvo = updateConvo;
-                                },
-                              );
-                            });
+                        //   return SMSConversationView(
+                        //       fusionConnection: fusionConnection,
+                        //       softphone: softphone,
+                        //       smsConversation: displayingConvo,
+                        //       deleteConvo: null, //deleteConvo
+                        //       setOnMessagePosted: null, //onMessagePosted
+                        //       changeConvo: (SMSConversation updateConvo) {
+                        //         setState(
+                        //           () {
+                        //             displayingConvo = updateConvo;
+                        //           },
+                        //         );
+                        //       });
+                        // },
+                        return ConversationView(
+                            conversation: convo,
+                            isNewConversation: convo.conversationId == null);
                       },
                     ),
                   );
@@ -572,7 +580,7 @@ class _MyHomePageState extends State<MyHomePage> {
           'Fusion chats',
           channelDescription: 'Fusion incoming messages',
           importance: Importance.max,
-          icon: "@mipmap/app_icon",
+          icon: "@mipmap/new_app_icon",
         );
 
         const NotificationDetails platformChannelSpecifics =
@@ -580,7 +588,7 @@ class _MyHomePageState extends State<MyHomePage> {
         flutterLocalNotificationsPlugin.show(
           Random().nextInt(1000),
           message.data['title'],
-          message.data['from_number'] + " says: " + message.data['body'],
+          message.data['body'],
           platformChannelSpecifics,
         );
         messageData = message.data;

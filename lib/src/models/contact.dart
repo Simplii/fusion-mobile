@@ -574,7 +574,7 @@ class ContactsStore extends FusionStore<Contact> {
           storeRecord(contact);
         }
       });
-      if (!fromPhone) callback(response, true, false);
+      if (!fromPhone || query.isNotEmpty) callback(response, true, false);
     });
   }
 
