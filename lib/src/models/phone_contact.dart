@@ -373,7 +373,12 @@ class PhoneContactsStore extends FusionStore<PhoneContact> {
       if (!syncing) {
         syncing = true;
         try {
-          methodChannel?.invokeMethod('sync');
+          //TODO:Add sync method to IOS
+          if (Platform.isIOS) {
+            methodChannel?.invokeMethod('syncContacts');
+          } else {
+            methodChannel?.invokeMethod('sync');
+          }
         } on PlatformException catch (e) {
           print("MDBM syncPhoneContacts error $e");
         }

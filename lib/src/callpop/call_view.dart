@@ -909,8 +909,6 @@ class _CallViewState extends State<CallView> {
                                                 openCallQualityPill = false;
                                               }
                                             }
-                                            print(
-                                                "MDBM CallInfoStream st ${_activeCall != null} ${_activeCall?.state == CallStateEnum.STREAM} $rating");
 
                                             return AnimatedContainer(
                                               margin: EdgeInsets.only(
