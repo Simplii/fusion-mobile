@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:fusion_mobile_revamped/src/backend/fusion_connection.dart';
 import 'package:fusion_mobile_revamped/src/backend/softphone.dart';
+import 'package:fusion_mobile_revamped/src/chats/conversationView.dart';
 import 'package:fusion_mobile_revamped/src/components/contact_circle.dart';
 import 'package:fusion_mobile_revamped/src/contacts/contact_profile_view.dart';
 import 'package:fusion_mobile_revamped/src/messages/sms_conversation_view.dart';
@@ -200,28 +201,9 @@ class _VoicemailsState extends State<Voicemails> {
         context: context,
         backgroundColor: Colors.transparent,
         isScrollControlled: true,
-        builder: (context) => dept != null
-            ? StatefulBuilder(
-                builder: (BuildContext context, StateSetter setState) {
-                  SMSConversation displayingConvo = convo;
-                  return SMSConversationView(
-                      fusionConnection: _fusionConnection,
-                      softphone: _softphone,
-                      smsConversation: displayingConvo,
-                      deleteConvo: null,
-                      setOnMessagePosted: null,
-                      changeConvo: (SMSConversation UpdatedConvo) {
-                        setState(
-                          () {
-                            displayingConvo = UpdatedConvo;
-                          },
-                        );
-                      });
-                },
-              )
-            : Center(
-                child: Text("No personal number found"),
-              ));
+        builder: (context) => ConversationView(
+            conversation: convo,
+            isNewConversation: convo.conversationId == null));
   }
 
   Widget _vmRow(Voicemail vm) {
@@ -340,7 +322,8 @@ class _VoicemailsState extends State<Voicemails> {
                                               width: 22,
                                               height: 22,
                                               alignment: Alignment.center,
-                                              child: _isPlaying && _playingUrl == vm.path
+                                              child: _isPlaying &&
+                                                      _playingUrl == vm.path
                                                   ? Icon(CupertinoIcons.pause,
                                                       size: 12, color: smoke)
                                                   : Image.asset(
@@ -381,9 +364,10 @@ class _VoicemailsState extends State<Voicemails> {
                                             ])),
                                         Container(
                                             alignment: FractionalOffset(
-                                                _playingUrl == vm.path 
-                                                ? (_audioPosition / vm.duration!)
-                                                : 0,
+                                                _playingUrl == vm.path
+                                                    ? (_audioPosition /
+                                                        vm.duration!)
+                                                    : 0,
                                                 0),
                                             child: Container(
                                                 margin: EdgeInsets.only(

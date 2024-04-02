@@ -22,7 +22,7 @@ class CallQualityStream: EventChannel.StreamHandler {
         job = scope.launch {
             var callActive = true
             while(callActive) {
-                delay(15000)
+                delay(1000)
                 eventSink.success(call.currentQuality)
                 if( call.state == Call.State.Released ||
                     call.state == Call.State.End ||

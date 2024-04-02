@@ -14,12 +14,11 @@ class CallVM extends ChangeNotifier {
   CallVM() {
     stream = eventStream.listen((event) {
       // Handle events or data received from the platform
-      if (event < 3) {
+      if (event < 5) {
         lowScore += 1;
       } else {
         lowScore = 0;
       }
-      print("MDBM CallInfoStream st $event $lowScore");
       callMonitorReady = true;
       return event;
     });

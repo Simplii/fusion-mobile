@@ -233,7 +233,8 @@ class _MessagesListState extends State<MessagesList> {
     lookupState = 1;
     _fusionConnection!.conversations.getConversations(
         _selectedGroupId!, limit ?? 100, offset ?? _page * 100,
-        (List<SMSConversation> convos, bool fromServer, String departmentId) {
+        (List<SMSConversation> convos, bool fromServer, String departmentId,
+            errorMessage) {
       if (!mounted) return;
 
       this.setState(() {
@@ -783,7 +784,7 @@ class _SearchMessagesViewState extends State<SearchMessagesView> {
 
         _fusionConnection!.messages.searchV2(query,
             (List<SMSConversation> convos, List<CrmContact> crmContacts,
-                List<Contact> contacts) {
+                List<Contact> contacts, bool fromServer) {
           if (!mounted) return;
           if (mounted && query == _searchingFor) {
             this._onHasResults(convos, crmContacts, contacts);

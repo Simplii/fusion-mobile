@@ -111,7 +111,7 @@ class _RecentContactsTabState extends State<RecentContactsTab> {
         this.setState(() {
           _query = query;
         });
-      }, () {}),
+      }),
       _tabBar(),
       ContactsSearchList(_fusionConnection, _softphone, _query, _selectedTab)
     ];
@@ -154,10 +154,16 @@ class _ContactsSearchListState extends State<ContactsSearchList> {
   int _page = 0;
   bool _hasPulledFromServer = false;
   bool _contactsPermissionNotAllowed = false;
+  bool _showSyncingBanner = false;
 
   initState() {
     super.initState();
     _fusionConnection.phoneContacts.toUpdateView(() {
+      if (_showSyncingBanner) {
+        setState(() {
+          _showSyncingBanner = false;
+        });
+      }
       _lookupQuery();
     });
   }
@@ -181,6 +187,33 @@ class _ContactsSearchListState extends State<ContactsSearchList> {
   _loadMore() {
     _page += 1;
     _lookupQuery();
+  }
+
+  _updateContactsList(
+    List<PhoneContact> contacts, {
+    int setLookupState = 0,
+    bool showBanner = false,
+  }) {
+    setState(() {
+      if (setLookupState != 0) {
+        lookupState = setLookupState;
+      }
+      if (showBanner) {
+        _showSyncingBanner = true;
+      } else {
+        _showSyncingBanner = false;
+      }
+      _contacts = [];
+      Map<String, Contact> list = {};
+      _contacts.forEach((Contact c) {
+        list[c.id] = c;
+      });
+      contacts.forEach((PhoneContact c) {
+        list[c.id] = c.toContact();
+      });
+      _contacts = list.values.toList().cast<Contact>();
+      _sortList(_contacts);
+    });
   }
 
   _lookupQuery() {
@@ -338,40 +371,38 @@ class _ContactsSearchListState extends State<ContactsSearchList> {
       if (!mounted || _typeFilter != 'Phone Contacts') return;
       _checkContactsPermission().then((PermissionStatus status) {
         if (status.isGranted) {
-          if (_fusionConnection.phoneContacts.syncing) {
+          if (_fusionConnection.phoneContacts.noPhoneContacts) {
             setState(() {
               lookupState = 2;
               _contacts = [];
             });
-          } else if (_fusionConnection.phoneContacts.noPhoneContacts) {
-            setState(() {
-              lookupState = 2;
-              _contacts = [];
+          } else if (_query.isNotEmpty) {
+            _fusionConnection.phoneContacts
+                .searchPhoneContacts(_query)
+                .then((contacts) {
+              _updateContactsList(contacts,
+                  setLookupState: contacts.isEmpty ? 2 : 0);
             });
           } else {
             _fusionConnection.phoneContacts
                 .getAddressBookContacts(_query)
                 .then((List<PhoneContact> contacts) {
-              setState(() {
-                if (contacts.isEmpty &&
-                    _fusionConnection.phoneContacts.initSync &&
-                    _typeFilter == "Phone Contacts") {
+              if (contacts.isEmpty &&
+                  _fusionConnection.phoneContacts.initSync &&
+                  _typeFilter == "Phone Contacts") {
+                setState(() {
                   lookupState = 2;
                   _contacts = [];
-                } else {
-                  _contacts = [];
-                  Map<String, Contact> list = {};
-                  _contacts.forEach((Contact c) {
-                    list[c.id] = c;
-                  });
-                  contacts.forEach((PhoneContact c) {
-                    list[c.id] = c.toContact();
-                  });
-                  _contacts = list.values.toList().cast<Contact>();
-                  _sortList(_contacts);
-                  lookupState = 2;
-                }
-              });
+                });
+              } else {
+                _showSyncingBanner = false;
+                _updateContactsList(
+                  contacts,
+                  setLookupState: 2,
+                  showBanner:
+                      _fusionConnection.phoneContacts.syncing ? true : false,
+                );
+              }
             });
           }
         } else if (status.isPermanentlyDenied || status.isDenied) {
@@ -576,9 +607,8 @@ class _ContactsSearchListState extends State<ContactsSearchList> {
   }
 
   String _emptyContactsMessage() {
-    String message = _typeFilter == "Coworkers"
-        ? "No coworkers found"
-        : "No fusion contacts found";
+    String message =
+        _typeFilter == "Coworkers" ? "No coworkers found" : "No contacts found";
     if (_typeFilter == "fusion") return message;
     if (_typeFilter == "Phone Contacts" && _contactsPermissionNotAllowed) {
       message =
@@ -747,6 +777,28 @@ class _ContactsSearchListState extends State<ContactsSearchList> {
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
                           color: coal))),
+              if (_selectedTab == "addressBook" && _showSyncingBanner)
+                Positioned(
+                  bottom: 0,
+                  child: AnimatedContainer(
+                    duration: Duration(microseconds: 500),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 10, horizontal: 16),
+                      child: Text(
+                        "Phone contacts are syncing",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          height: 1.2,
+                        ),
+                      ),
+                    ),
+                    curve: Curves.easeIn,
+                    width: MediaQuery.of(context).size.width,
+                    color: coal,
+                  ),
+                ),
               if (_selectedTab == "fusion")
                 Positioned(
                     bottom: 17,
@@ -955,11 +1007,9 @@ class _ContactsListState extends State<ContactsList> {
 
 class SearchContactsBar extends StatefulWidget {
   final FusionConnection? _fusionConnection;
-  final Function() _onClearSearch;
   final Function(String query) _onChange;
 
-  SearchContactsBar(this._fusionConnection, this._onChange, this._onClearSearch,
-      {Key? key})
+  SearchContactsBar(this._fusionConnection, this._onChange, {Key? key})
       : super(key: key);
 
   @override
@@ -976,14 +1026,9 @@ class _SearchContactsBarState extends State<SearchContactsBar> {
 
   int willSearch = 0;
 
-  Function() get _onClearSearch => widget._onClearSearch;
-
   Function(String query) get _onChange => widget._onChange;
 
   _search(String val) {
-    if (_searchInputController.value.text.trim() == "") {
-      this._onClearSearch();
-    }
     if (willSearch == 0) {
       willSearch = 1;
       Future.delayed(const Duration(seconds: 1)).then((dynamic x) {

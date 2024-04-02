@@ -54,9 +54,7 @@ class MainActivity : FlutterFragmentActivity() {
         Log.d(debugTag, "core started ${FMCore.coreStarted}")
         core.addListener(coreListener)
 
-        val incomingCallId : String? = intent.getStringExtra("incomingCallUUID")
-        Log.d(debugTag, "MainActivity created from incoming call = $incomingCallId")
-        Log.d(debugTag, "MainActivity on create")
+        val incomingCallId : String? = intent.getStringExtra(NotificationsManager.INTENT_CALL_UUID)
         if(incomingCallId != null){
             appOpenedFromBackground = true
             intent.removeExtra("incomingCallUUID")

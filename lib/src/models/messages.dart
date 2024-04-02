@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/widgets.dart';
+import 'package:fusion_mobile_revamped/src/classes/ws_message_obj.dart';
 import 'package:fusion_mobile_revamped/src/models/sms_departments.dart';
 import 'package:fusion_mobile_revamped/src/models/user_settings.dart';
 import 'package:fusion_mobile_revamped/src/styles.dart';
@@ -47,6 +48,9 @@ class SMSMessage extends FusionModel {
   String? user;
   String errorMessage = "";
   int broadcastConvoId = 0;
+  List<String> typingUsers = [];
+  String userTyping1 = "";
+  String userTyping2 = "";
 
   SMSMessage(Map<String, dynamic> map) {
     Map<String, dynamic> timeDateObj = checkDateObj(map['time'])!;
@@ -70,7 +74,7 @@ class SMSMessage extends FusionModel {
     this.time = CarbonDate(timeDateObj);
     this.to = map['to'].toString().toLowerCase();
     this.type = map['type'];
-    this.unixtime = map['unixtime'];
+    this.unixtime = map['unixtime'] ?? 0;
     this.user = map['user'].runtimeType == String ? map['user'] : null;
     this.broadcastConvoId = map['broadcastConversationId'] ?? 0;
     this.errorMessage = map['errorMessage'] ?? "";
@@ -106,9 +110,9 @@ class SMSMessage extends FusionModel {
         ? map['user'].toString().replaceFirst(RegExp("@.*"), "")
         : null;
     this.broadcastConvoId = map['broadcastConversationId'] ?? 0;
-    this.errorMessage = map.containsKey("errorMessage") 
-      ? map['errorMessage'] 
-      : map['error_message'] ?? "";
+    this.errorMessage = map.containsKey("errorMessage")
+        ? map['errorMessage']
+        : map['error_message'] ?? "";
   }
 
   serialize() {
@@ -132,7 +136,10 @@ class SMSMessage extends FusionModel {
       'unixtime': unixtime,
       'user': user,
       'broadcastConvoId': broadcastConvoId,
-      'errorMessage': errorMessage
+      'errorMessage': errorMessage,
+      'typingUsers': typingUsers,
+      'userTyping1': userTyping1,
+      'userTyping2': userTyping2,
     });
   }
 
@@ -190,6 +197,59 @@ class SMSMessage extends FusionModel {
     this.errorMessage = "";
   }
 
+  SMSMessage.typing({
+    required String from,
+    required bool isGroup,
+    required String text,
+    required String to,
+    required String user,
+    required String messageId,
+    required String domain,
+  }) {
+    String date = DateTime.now().toString();
+    this.convertedMms = false;
+    this.domain = domain;
+    this.from = from;
+    this.fromMe = false;
+    this.id = messageId;
+    this.isGroup = isGroup;
+    this.message = text;
+    this.messageStatus = 'typing';
+    this.mime = null;
+    this.read = true;
+    this.scheduledAt = null;
+    this.smsWebhookId = 0;
+    this.time = CarbonDate.fromDate(date);
+    this.to = to;
+    this.type = "sms";
+    this.unixtime = DateTime.parse(date).millisecondsSinceEpoch ~/ 1000;
+    this.user = user;
+    this.broadcastConvoId = 0;
+    this.errorMessage = "";
+    this.typingUsers.add(user);
+  }
+
+  SMSMessage.fromWsMessageObj(WsMessageObject wsMessageObject) {
+    this.convertedMms = false;
+    this.domain = wsMessageObject.domain;
+    this.from = wsMessageObject.from.toString().toLowerCase();
+    this.fromMe = true;
+    this.id = wsMessageObject.id.toString();
+    this.isGroup = wsMessageObject.isGroup;
+    this.message = wsMessageObject.message;
+    this.messageStatus = wsMessageObject.messageStatus;
+    this.mime = wsMessageObject.mime;
+    this.read = wsMessageObject.read;
+    this.scheduledAt = null;
+    this.smsWebhookId = 0;
+    this.time = CarbonDate.fromDate(wsMessageObject.time);
+    this.to = wsMessageObject.to;
+    this.type = wsMessageObject.type;
+    this.unixtime = wsMessageObject.unixtime;
+    this.user = wsMessageObject.user;
+    this.broadcastConvoId = 0;
+    this.errorMessage = wsMessageObject.errorMessage;
+  }
   @override
   String getId() => this.id!.toLowerCase();
 }
@@ -242,23 +302,23 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
   notifyMessage(SMSMessage message) {
     if (!notifiedMessages.containsKey(message.id)) {
       notifiedMessages[message.id] = true;
-      
+
       List<SMSConversation> convos =
           fusionConnection.conversations.getRecords();
-      
-      SMSConversation? convo = convos.where((element) => element.isGroup 
-        ? element.number == message.to
-        : element.myNumber == message.to).firstOrNull;
-      
+
+      SMSConversation? convo = convos
+          .where((element) => element.isGroup
+              ? element.number == message.to
+              : element.myNumber == message.to)
+          .firstOrNull;
+
       if (convo != null) {
-          convo.message = message;
-          convo.unread = convo.unread + 1;
-          convo.lastContactTime =
-              DateTime.parse(message.time.date ?? "")
-                  .toLocal()
-                  .toIso8601String();
-          fusionConnection.conversations.storeRecord(convo);
-          notification.update(convo);
+        convo.message = message;
+        convo.unread = convo.unread + 1;
+        convo.lastContactTime =
+            DateTime.parse(message.time.date ?? "").toLocal().toIso8601String();
+        fusionConnection.conversations.storeRecord(convo);
+        notification.update(convo);
       }
 
       new Future.delayed(Duration(minutes: 2), () {
@@ -293,7 +353,7 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
           'user': record.user,
           'raw': record.serialize(),
           'broadcastConvoId': record.broadcastConvoId,
-          'errorMessage': record.errorMessage 
+          'errorMessage': record.errorMessage
         },
         conflictAlgorithm: ConflictAlgorithm.replace);
   }
@@ -315,14 +375,15 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
     persist(message);
   }
 
-  sendMediaMessage(
-      XFile file,
-      SMSConversation conversation,
-      String? departmentId,
-      dynamic generatedConvoId,
-      Function? callback,
-      Function largeMMSCallback,
-      schedule) async {
+  _sendMediaMessage({
+    required XFile file,
+    required SMSConversation conversation,
+    String? departmentId,
+    dynamic generatedConvoId,
+    Function? callback,
+    Function? largeMMSCallback,
+    DateTime? schedule,
+  }) async {
     int fileSize = await file.length();
     bool _canSendLargeMMS = true;
 
@@ -331,7 +392,7 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
         if (key == "enabled_features" &&
             !value.contains("Large MMS Messages")) {
           _canSendLargeMMS = false;
-          largeMMSCallback();
+          if (largeMMSCallback != null) largeMMSCallback();
         }
       });
     }
@@ -360,7 +421,9 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
         if (conversation.conversationId != null) {
           fusionConnection.conversations.storeRecord(conversation);
         }
-        callback!();
+        if (callback != null) {
+          callback(message);
+        }
       });
     }
   }
@@ -375,50 +438,58 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
         isGroup: numbers.length > 1,
         hash: myNumber + ':' + numbers.join(':'));
     await fusionConnection.apiV2Call(
-      "post", 
-      "/messaging/group/${departmentId}/conversations/existing", 
-      {'identifiers': [myNumber,...numbers]}, 
-      callback: (Map<String, dynamic> data) {
-        if(data['lastMessage'] != null){
-          List<CrmContact> leads = [];
-          for (Map<String, dynamic> obj in data['conversationMembers']) {
-            List<dynamic> convoMembersLeads = obj['leads'];
-            if(convoMembersLeads != null && convoMembersLeads.length > 0 && !fusionConnection.settings.usesV2){
-              convoMembersLeads.forEach((lead) { 
-                leads.add(CrmContact.fromExpanded(lead));
-              });
-            }
+        "post", "/messaging/group/${departmentId}/conversations/existing", {
+      'identifiers': [myNumber, ...numbers]
+    }, callback: (Map<String, dynamic> data) {
+      if (data['lastMessage'] != null) {
+        List<CrmContact> leads = [];
+        for (Map<String, dynamic> obj in data['conversationMembers']) {
+          List<dynamic> convoMembersLeads = obj['leads'];
+          if (convoMembersLeads != null &&
+              convoMembersLeads.length > 0 &&
+              !fusionConnection.settings.usesV2) {
+            convoMembersLeads.forEach((lead) {
+              leads.add(CrmContact.fromExpanded(lead));
+            });
           }
-          convo = SMSConversation(data);
-          convo.crmContacts = leads;
-          convo.contacts = contacts;
-        } else {
-          convo = SMSConversation.build(
+        }
+        convo = SMSConversation(data);
+        convo.crmContacts = leads;
+        convo.contacts = contacts;
+      } else {
+        convo = SMSConversation.build(
             myNumber: myNumber,
             contacts: contacts,
             crmContacts: [],
             number: numbers.join(','),
             isGroup: numbers.length > 1,
-            hash: myNumber +':'+numbers.join(':')
-          );
-        }
+            hash: myNumber + ':' + numbers.join(':'));
+      }
     });
 
     return convo;
   }
 
-  sendMessage(
-      String? text,
-      SMSConversation conversation,
-      String? departmentId,
-      XFile? mediaFile,
-      Function? callback,
-      Function largeMMSCallback,
-      DateTime? schedule) async {
+  sendMessage({
+    String? text,
+    required SMSConversation conversation,
+    String? departmentId,
+    XFile? mediaFile,
+    Function(SMSMessage)? callback,
+    Function? largeMMSCallback,
+    DateTime? schedule,
+  }) async {
     if (conversation.conversationId != null) {
       if (mediaFile != null) {
-        this.sendMediaMessage(mediaFile, conversation, departmentId, null,
-            callback, largeMMSCallback, schedule);
+        _sendMediaMessage(
+          file: mediaFile,
+          conversation: conversation,
+          departmentId: departmentId,
+          callback: callback,
+          generatedConvoId: null,
+          largeMMSCallback: largeMMSCallback,
+          schedule: schedule,
+        );
       } else {
         fusionConnection.apiV2Call(
             "post",
@@ -431,7 +502,7 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
               'isGroup': conversation.isGroup
             }, callback: (Map<String, dynamic> data) {
           if (data.containsKey("success") && !data['success']) {
-            return toast("${data['error']}");
+            return toast("Message did not send due to ${data['error']}");
           }
           SMSMessage message = SMSMessage.fromV2(data);
           conversation.message = message;
@@ -439,7 +510,7 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
           storeRecord(message);
           fusionConnection.conversations.storeRecord(conversation);
           if (callback != null) {
-            callback();
+            callback(message);
           }
         });
       }
@@ -453,8 +524,15 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
         conversation.conversationId = data['groupId'];
         if (mediaFile != null) {
           var generatedConvoId = data['groupId'];
-          this.sendMediaMessage(mediaFile, conversation, departmentId,
-              generatedConvoId, callback, largeMMSCallback, schedule);
+          _sendMediaMessage(
+            file: mediaFile,
+            conversation: conversation,
+            departmentId: departmentId,
+            callback: callback,
+            generatedConvoId: generatedConvoId,
+            largeMMSCallback: largeMMSCallback,
+            schedule: schedule,
+          );
         } else {
           fusionConnection.apiV2Call(
               "post",
@@ -471,7 +549,9 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
             SMSMessage message = SMSMessage.fromV2(data);
             conversation.message = message;
             storeRecord(message);
-            callback!();
+            if (callback != null) {
+              callback(message);
+            }
           });
         }
       });
@@ -567,10 +647,14 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
   }
 
   searchV2(
-      String query,
-      Function(List<SMSConversation> conversations,
-              List<CrmContact> crmContacts, List<Contact> Contacts)
-          callback) {
+    String query,
+    Function(
+      List<SMSConversation> conversations,
+      List<CrmContact> crmContacts,
+      List<Contact> Contacts,
+      bool fromServer,
+    ) callback,
+  ) {
     if (query.trim().length == 0) {
       return;
     }
@@ -578,7 +662,7 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
     List<SMSConversation> matchedConversations = [];
 
     Function() _sendFromPersisted = () {
-      callback(matchedConversations, [], []);
+      callback(matchedConversations, [], [], false);
     };
 
     fusionConnection.conversations
@@ -627,7 +711,7 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
         fullConversations.add(convo);
       }
 
-      callback(fullConversations, [], contacts);
+      callback(fullConversations, [], contacts, true);
     });
   }
 
@@ -736,19 +820,20 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
         callback: null);
   }
 
-  offlineMessage(
-      String text,
-      SMSConversation conversation,
-      String departmentId,
-      XFile? mediaFile,
-      Function? callback,
-      Function largeMMSCallback,
-      DateTime? schedule) {
+  offlineMessage({
+    String? text,
+    required SMSConversation conversation,
+    required String departmentId,
+    XFile? mediaFile,
+    Function? callback,
+    Function? largeMMSCallback,
+    DateTime? schedule,
+  }) {
     SMSMessage message = SMSMessage.offline(
       from: conversation.myNumber,
       to: conversation.number,
       isGroup: conversation.isGroup,
-      text: text,
+      text: text ?? "",
       user: fusionConnection.getExtension(),
       messageId: (int.parse(conversation.message!.id!) + 1).toString(),
       schedule: schedule != null ? schedule.toUtc().toString() : null,

@@ -235,6 +235,7 @@ class PhoneContactsStore extends FusionStore<PhoneContact> {
   bool initSync = false;
   bool noPhoneContacts = false;
   Function? updateView;
+  bool contactsSynced = false;
 
   persist(
     PhoneContact record,
@@ -322,17 +323,34 @@ class PhoneContactsStore extends FusionStore<PhoneContact> {
         }
         syncing = false;
         initSync = false;
+        contactsSynced = true;
         if (result.isEmpty) {
           noPhoneContacts = true;
         }
         if (updateView != null) updateView!();
         break;
+      case "CONTACTS_SYNCED":
+        List result = [];
+        result = Platform.isAndroid
+            ? jsonDecode(methodCall.arguments)
+            : methodCall.arguments;
+        for (var c in result) {
+          PhoneContact contact = Platform.isAndroid
+              ? PhoneContact(c)
+              : PhoneContact(Map<String, dynamic>.from(c));
+          storeRecord(contact);
+          persist(contact);
+        }
+        syncing = false;
+        contactsSynced = true;
+        if (updateView != null) updateView!();
       default:
         print("contacts default");
     }
   }
 
   void syncPhoneContacts() async {
+    if (contactsSynced) return;
     final PermissionStatus status = await Permission.contacts.status;
     if (status.isGranted) {
       if (!syncing) {
@@ -343,44 +361,69 @@ class PhoneContactsStore extends FusionStore<PhoneContact> {
           print("MDBM syncPhoneContacts error $e");
         }
       } else {
-        toast("contacts sync in progress");
+        // toast("contacts sync in progress");
       }
     }
   }
 
+  void sync() async {
+    if (syncing) return;
+    final PermissionStatus status = await Permission.contacts.status;
+    if (status.isGranted) {
+      if (!syncing) {
+        syncing = true;
+        try {
+          //TODO:Add sync method to IOS
+          if (Platform.isIOS) {
+            methodChannel?.invokeMethod('syncContacts');
+          } else {
+            methodChannel?.invokeMethod('sync');
+          }
+        } on PlatformException catch (e) {
+          print("MDBM syncPhoneContacts error $e");
+        }
+      }
+    }
+  }
+
+  Future<List<PhoneContact>> getFromDb(String query) async {
+    final database = openDatabase(join(await getDatabasesPath(), "fusion.db"));
+    final db = await database;
+
+    List<Map<String, dynamic>> results = await db.query(
+      'phone_contacts',
+      where: 'searchString Like ?',
+      whereArgs: ["%" + query + "%"],
+      orderBy: "lastName asc, firstName asc",
+    );
+
+    List<PhoneContact> list = [];
+
+    for (Map<String, dynamic> result in results) {
+      PhoneContact phoneContact = PhoneContact.unserialize(result['raw']);
+      phoneContact.profileImage = result['profileImage'];
+      storeRecord(phoneContact);
+      list.add(phoneContact);
+    }
+    return list;
+  }
+
   Future<List<PhoneContact>> getAddressBookContacts(String query) async {
-    if (syncing) return [];
     List<PhoneContact> contacts = getRecords();
     if (contacts.isNotEmpty && query.isEmpty) {
       return contacts;
     } else {
-      final database =
-          openDatabase(join(await getDatabasesPath(), "fusion.db"));
-      final db = await database;
+      contacts = await getFromDb(query);
 
-      List<Map<String, dynamic>> results = await db.query(
-        'phone_contacts',
-        where: 'searchString Like ?',
-        whereArgs: ["%" + query + "%"],
-        orderBy: "lastName asc, firstName asc",
-      );
-
-      List<PhoneContact> list = [];
-
-      for (Map<String, dynamic> result in results) {
-        PhoneContact phoneContact = PhoneContact.unserialize(result['raw']);
-        phoneContact.profileImage = result['profileImage'];
-        storeRecord(phoneContact);
-        list.add(phoneContact);
-      }
-
-      contacts = list;
-
-      if (list.isEmpty && query.isEmpty && !syncing) {
+      if (contacts.isEmpty && query.isEmpty && !syncing) {
         initSync = true;
         syncPhoneContacts();
       }
       return contacts;
     }
+  }
+
+  Future<List<PhoneContact>> searchPhoneContacts(query) async {
+    return await getFromDb(query);
   }
 }

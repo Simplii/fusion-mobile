@@ -84,13 +84,16 @@ class FusionConnection {
   Connectivity connectivity = Connectivity();
   ConnectivityResult connectivityResult = ConnectivityResult.none;
   bool internetAvailable = true;
+  final StreamController websocketStream = StreamController.broadcast();
   String serverRoot = "http://fusioncom.co";
   String mediaServer = "https://fusion-media.sfo2.digitaloceanspaces.com";
   String defaultAvatar = "https://fusioncom.co/img/defaultuser.png";
   static const MethodChannel contactsChannel =
       MethodChannel('net.fusioncomm.ios/contacts');
+  static bool isInternetActive = false;
 
-  FusionConnection() {
+  // Switched fusion connection to Singleton so we don't have to pass it down each widget
+  FusionConnection._internal() {
     _getCookies();
     crmContacts = CrmContactsStore(this);
     integratedContacts = IntegratedContactsStore(this);
@@ -113,6 +116,11 @@ class FusionConnection {
         fusionConnection: this, contactsChannel: contactsChannel);
     phoneContacts.setup();
     getDatabase();
+  }
+
+  static final FusionConnection instance = FusionConnection._internal();
+  factory FusionConnection() {
+    return instance;
   }
 
   refreshUnreads() {
@@ -214,7 +222,8 @@ class FusionConnection {
   getDatabase() {
     getDatabasesPath().then((String path) {
       openDatabase(p.join(path, "fusion.db"), version: 1, onOpen: (db) {
-        print(db.execute('''
+        print(db.execute(
+            '''
           CREATE TABLE IF NOT EXISTS sms_conversation(
           conversationId int,
           id TEXT PRIMARY key,
@@ -231,7 +240,8 @@ class FusionConnection {
           assigneeUid TEXT
           );'''));
 
-        print(db.execute('''
+        print(db.execute(
+            '''
           CREATE TABLE IF NOT EXISTS sms_message(
           id TEXT PRIMARY key,
           `from` TEXT,
@@ -248,7 +258,8 @@ class FusionConnection {
           errorMessage TEXT
           );'''));
 
-        print(db.execute('''
+        print(db.execute(
+            '''
           CREATE TABLE IF NOT EXISTS call_history(
           cdrIdHash TEXT PRIMARY key,
           id TEXT,
@@ -267,7 +278,8 @@ class FusionConnection {
           phoneContact BLOB
           );'''));
 
-        print(db.execute('''
+        print(db.execute(
+            '''
           CREATE TABLE IF NOT EXISTS contacts(
           id TEXT PRIMARY key,
           company TEXT,
@@ -278,7 +290,8 @@ class FusionConnection {
           raw BLOB
           );
           '''));
-        print(db.execute('''
+        print(db.execute(
+            '''
           CREATE TABLE IF NOT EXISTS phone_contacts(
           id TEXT PRIMARY key,
           company TEXT,
@@ -588,7 +601,7 @@ class FusionConnection {
         print("MyDebugMessage apiCallV2 error ${e}");
       }
 
-      print("apirequest");
+      print("MDBM apirequest $url $urlParams");
       print(url);
       print(urlParams);
       print(data);
@@ -679,9 +692,9 @@ class FusionConnection {
       contacts.search("", 100, 0, (p0, p1, fromPhoneBook) => null);
     }
     conversations.getConversations(
-        "-2", 100, 0, (convos, fromServer, departmentId) {});
+        "-2", 100, 0, (convos, fromServer, departmentId, errorMessage) {});
     refreshUnreads();
-    phoneContacts.syncPhoneContacts();
+    phoneContacts.sync();
     contactFields.getFields((List<ContactField> list, bool fromServer) {});
     setupSocket();
     if (callback != null) {
@@ -834,7 +847,9 @@ class FusionConnection {
     int messageNum = 0;
     final wsUrl = Uri.parse('wss://fusioncom.co:8443/');
     socketChannel = WebSocketChannel.connect(wsUrl);
-    socketChannel.stream.listen((messageData) async {
+    websocketStream.addStream(socketChannel.stream);
+    websocketStream.stream.listen((messageData) async {
+      print("MDBM wsMessage ${messageData}");
       Map<String, dynamic> message = convert.jsonDecode(messageData);
       if (message.containsKey('heartbeat')) {
         _heartbeats[message['heartbeat']] = true;
@@ -873,6 +888,8 @@ class FusionConnection {
       }
 
       if (_softphone != null) _softphone!.checkCallIds(message);
+    }, onError: (e) {
+      print("MDBM WS ERROR ${e}");
     });
     _reconnectSocket();
     _sendHeartbeat();

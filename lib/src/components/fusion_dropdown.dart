@@ -81,142 +81,160 @@ class _FusionDropdownState extends State<FusionDropdown> {
             color: option[1] == _value ? lightHighlight : Colors.transparent,
             border:
                 Border(bottom: BorderSide(color: lightDivider, width: 1.0))),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              GestureDetector(
-                behavior: HitTestBehavior.translucent,
-                onTap: () {
-                  _onChange!(option[1]);
-                  Navigator.pop(context);
-                },
-                child: Row(children: [
-                  Container(
-                    width: 220,
-                    padding: EdgeInsets.only(
-                        bottom:10,
-                        top: 14,
-                        left: 12),
-                    child: Text(
-                      option[0],
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                      ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onTap: () {
+                _onChange!(option[1]);
+                Navigator.pop(context);
+              },
+              child: Row(children: [
+                Container(
+                  width: 220,
+                  padding: EdgeInsets.only(bottom: 10, top: 14, left: 12),
+                  child: Text(
+                    option[0],
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                ]),
-              ),
-              Column(
-                  children: deptNUmbers.map((String option) {
-                    return GestureDetector(
-                       behavior: HitTestBehavior.translucent,
-                        onTap: () {
-                          _onNumberTap!(option);
-                          Navigator.pop(context);
-                        },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          // color: _selectedNumber == option
-                          //     ? lightHighlight
-                          //     : Colors.transparent,
-                        ),
-                        padding: EdgeInsets.only(
-                            top: 12,
-                            bottom: 12,
-                            left: 12,
-                            right: _selectedNumber == option ? 12 : 0),
-                        child: Row(
-                          children: [
-                            Text(
-                              option.formatPhone(),
-                              style: TextStyle(
-                                  fontSize: 17,
-                                  color: _selectedNumber == option
-                                      ? Colors.white
-                                      : Colors.white70,
-                                  fontWeight: _selectedNumber == option
-                                      ? FontWeight.w700
-                                      : FontWeight.normal),
-                            ),
-                            Spacer(),
-                            Visibility(
-                              child: Image.asset("assets/icons/check_white.png",
-                                  height: 17, width: 17),
-                              visible: _selectedNumber == option ? true : false,
-                            ),
-                          ],
-                        ),
+                ),
+              ]),
+            ),
+            Column(
+                children: deptNUmbers.map((String option) {
+              return GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: () {
+                  _onNumberTap!(option);
+                  Navigator.pop(context);
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                      // color: _selectedNumber == option
+                      //     ? lightHighlight
+                      //     : Colors.transparent,
                       ),
-                    );
-                  }).toList())
-            ],
-          ),
+                  padding: EdgeInsets.only(
+                      top: 12,
+                      bottom: 12,
+                      left: 12,
+                      right: _selectedNumber == option ? 12 : 0),
+                  child: Row(
+                    children: [
+                      Text(
+                        option.formatPhone(),
+                        style: TextStyle(
+                            fontSize: 17,
+                            color: _selectedNumber == option
+                                ? Colors.white
+                                : Colors.white70,
+                            fontWeight: _selectedNumber == option
+                                ? FontWeight.w700
+                                : FontWeight.normal),
+                      ),
+                      Spacer(),
+                      Visibility(
+                        child: Image.asset("assets/icons/check_white.png",
+                            height: 17, width: 17),
+                        visible: _selectedNumber == option ? true : false,
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList())
+          ],
+        ),
       );
     } else {
       return GestureDetector(
-        onTap:(){
+        onTap: () {
           _onChange(option[1]);
           Navigator.pop(context);
         },
         child: Container(
             padding: EdgeInsets.symmetric(vertical: 12, horizontal: 12),
             decoration: BoxDecoration(
-                color: option[1] == _value ? lightHighlight : Colors.transparent,
-                border:
-                    Border(bottom: BorderSide(color: lightDivider, width: 1.0))),
-            child: option.length > 3 
-              ? Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Wrap(
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    spacing: 8,
+                color:
+                    option[1] == _value ? lightHighlight : Colors.transparent,
+                border: Border(
+                    bottom: BorderSide(color: lightDivider, width: 1.0))),
+            child: option.length > 3
+                ? Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      if(option[3] == DepartmentIds.FusionChats)
-                        Image.asset("assets/icons/messages/fusion_chats.png", height: 24,),
-                      if(option[3] == DepartmentIds.Personal)
-                        Icon(Icons.person, color: personalChat,),
-                      if(option[4] == DepartmentProtocols.telegram)
-                        Image.asset("assets/icons/messages/telegram.png", height: 24,),
-                      if(option[4] == DepartmentProtocols.whatsapp)
-                        Image.asset("assets/icons/messages/whatsapp.png", height: 24,),
-                      if(option[4] == DepartmentProtocols.facebook)
-                        Image.asset("assets/icons/messages/messenger.png", height: 24,),
-                      if(int.parse(option[3]) > 0 && option[4] == "sms")
-                        Image.asset("assets/icons/messages/department.png", height: 24,),
-                      Text(option[0],
-                        style: TextStyle(
+                      Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 8,
+                        children: [
+                          if (option[3] == DepartmentIds.FusionChats)
+                            Image.asset(
+                              "assets/icons/messages/fusion_chats.png",
+                              height: 24,
+                            ),
+                          if (option[3] == DepartmentIds.Personal)
+                            Icon(
+                              Icons.person,
+                              color: personalChat,
+                            ),
+                          if (option[4] == DepartmentProtocols.telegram)
+                            Image.asset(
+                              "assets/icons/messages/telegram.png",
+                              height: 24,
+                            ),
+                          if (option[4] == DepartmentProtocols.whatsapp)
+                            Image.asset(
+                              "assets/icons/messages/whatsapp.png",
+                              height: 24,
+                            ),
+                          if (option[4] == DepartmentProtocols.facebook)
+                            Image.asset(
+                              "assets/icons/messages/messenger.png",
+                              height: 24,
+                            ),
+                          if (int.parse(option[3]) > 0 && option[4] == "sms")
+                            Image.asset(
+                              "assets/icons/messages/department.png",
+                              height: 24,
+                            ),
+                          Text(option[0],
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700))
+                        ],
+                      ),
+                      if (int.parse(option[2]) > 0)
+                        Container(
+                          padding: EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                              shape: int.parse(option[2]) > 99
+                                  ? BoxShape.rectangle
+                                  : BoxShape.circle,
+                              borderRadius: int.parse(option[2]) > 99
+                                  ? BorderRadius.all(Radius.circular(20))
+                                  : null,
+                              color: crimsonDarker),
+                          child: Text(
+                            option[2],
+                            style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold),
+                          ),
+                        )
+                    ],
+                  )
+                : Text(option[0],
+                    style: TextStyle(
                         color: Colors.white,
                         fontSize: 18,
-                        fontWeight: FontWeight.w700))
-                    ],
-                  ),
-                  if(int.parse(option[2]) > 0)
-                  Container(
-                    padding: EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      shape: int.parse(option[2]) > 99 
-                        ? BoxShape.rectangle
-                        : BoxShape.circle,
-                      borderRadius: int.parse(option[2]) > 99 
-                        ? BorderRadius.all(Radius.circular(20))
-                        : null,
-                      color: crimsonDarker
-                    ),
-                    child: Text(
-                      option[2],
-                      style: TextStyle(
-                        fontSize: 12,color: Colors.white,fontWeight: FontWeight.bold),),
-                  )
-                ],
-              )
-              : Text(option[0],
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700))),
+                        fontWeight: FontWeight.w700))),
       );
     }
   }
@@ -265,17 +283,20 @@ class _FusionDropdownState extends State<FusionDropdown> {
             : Row(children: [
                 Container(
                   constraints: BoxConstraints(
-                    maxWidth:  MediaQuery.of(context).size.width - 250,),
-                  child: Text(selected == DepartmentIds.FusionChats 
-                    ? "Fusion Chats" 
-                    : selected!,
+                    maxWidth: MediaQuery.of(context).size.width - 250,
+                  ),
+                  child: Text(
+                    selected == DepartmentIds.FusionChats
+                        ? "Fusion Chats"
+                        : selected!,
                     overflow: TextOverflow.ellipsis,
                     softWrap: false,
                     style: _style != null ? _style : subHeaderTextStyle,
                   ),
                 ),
                 Container(
-                  child: Text(" " + mDash + " " + _selectedNumber!.formatPhone()),
+                  child:
+                      Text(" " + mDash + " " + _selectedNumber!.formatPhone()),
                 ),
                 Container(
                     margin: EdgeInsets.only(left: 3, right: 12),

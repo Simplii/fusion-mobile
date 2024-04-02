@@ -65,6 +65,7 @@
             android:hardwareAccelerated="true"
             android:launchMode="singleTop"
             android:showOnLockScreen="true"
+            android:turnScreenOn="true"
             android:theme="@style/LaunchTheme"
             android:windowSoftInputMode="adjustResize">
             <!-- Specifies an Android theme to apply to this Activity as soon as

@@ -102,6 +102,7 @@ class Softphone implements SipUaHelperListener {
   List<List<String?>> devicesList = [];
   bool callInitiated = false;
   List<Call> endedCalls = []; // call dispositions
+  static Softphone? instance;
   Map<String, String> phoneContactName =
       {}; //FIXME: change this temp fix for phoneContact
 
@@ -112,6 +113,7 @@ class Softphone implements SipUaHelperListener {
       _android = MethodChannel('net.fusioncomm.android/calling');
       _telecom = MethodChannel('net.fusioncomm.android/telecom');
     }
+    instance = this;
   }
 
   close() async {

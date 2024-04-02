@@ -22,13 +22,13 @@ class CallInfoStream: NSObject, FlutterStreamHandler {
 
         var call: Call? = pd.mCore?.currentCall
         DispatchQueue.main.async {
-            self.timer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true, block: { t in
+            self.timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true, block: { t in
                 event(call?.currentQuality)
                 if (call?.state == Call.State.Released ||
                     call?.state == Call.State.End ||
                     call?.state == Call.State.Error ||
                     call?.state == Call.State.Paused
-                ) {
+                ) { 
                     call = self.pd.mCore?.currentCall
                     if(call == nil){
                         t.invalidate()

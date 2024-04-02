@@ -244,9 +244,23 @@ class NotificationsManager(private val context: Context, private val callsManage
     fun displayIncomingCallNotification(call: Call) {
         val uuid =  callsManager.findUuidByCall(call)
         val notifiable = getNotifiableForCall(call, uuid)
+        try {
+            val showLockScreenNotification = android.provider.Settings.Secure.getInt(
+                context.contentResolver,
+                "lock_screen_show_notifications",
+                0
+            )
+            Log.d(
+                debugTag,"Are notifications allowed on lock screen? ${showLockScreenNotification != 0} ($showLockScreenNotification)"
+            )
+        } catch (e: Exception) {
+            Log.d(
+                debugTag,"Failed to get android.provider.Settings.Secure.getInt(lock_screen_show_notifications): $e"
+            )
+        }
 
         val incomingCallIntent = Intent(context, MainActivity::class.java)
-        incomingCallIntent.putExtra("incomingCallUUID", uuid)
+        incomingCallIntent.putExtra(INTENT_CALL_UUID, uuid)
         Log.d(debugTag, "incmoing rec ${notifiable.notificationId}" )
 
         incomingCallIntent.addFlags(

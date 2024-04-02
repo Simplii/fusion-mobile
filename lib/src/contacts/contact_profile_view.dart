@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:fusion_mobile_revamped/src/backend/softphone.dart';
+import 'package:fusion_mobile_revamped/src/chats/conversationView.dart';
 import 'package:fusion_mobile_revamped/src/components/contact_circle.dart';
 import 'package:fusion_mobile_revamped/src/components/fusion_dropdown.dart';
 import 'package:fusion_mobile_revamped/src/messages/sms_conversation_view.dart';
@@ -377,23 +378,9 @@ class _ContactProfileViewState extends State<ContactProfileView> {
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (context) => StatefulBuilder(
-        builder: (BuildContext context, StateSetter setState) {
-          SMSConversation displayingConvo = convo;
-          return SMSConversationView(
-              fusionConnection: _fusionConnection,
-              softphone: _softphone,
-              smsConversation: displayingConvo,
-              deleteConvo: null, //deletemessage
-              setOnMessagePosted: null, //refreshview
-              changeConvo: (SMSConversation UpdatedConvo) {
-                setState(
-                  () {
-                    displayingConvo = UpdatedConvo;
-                  },
-                );
-              });
-        },
+      builder: (context) => ConversationView(
+        conversation: convo,
+        isNewConversation: convo.conversationId == null,
       ),
     );
   }

@@ -10,12 +10,14 @@ class DepartmentUnreadRecord extends FusionModel {
   int? unread;
   String? inq;
   String? to;
-  List<String>? numbers;
+  List<String> numbers = [];
 
   DepartmentUnreadRecord(Map<String, dynamic> obj) {
+    List numbers = obj['numbers'] ?? [];
     this.departmentId = obj['id'];
     this.unread = obj['unread'];
     this.inq = obj['inq'];
+    this.numbers = numbers.map((e) => e.toString()).toList();
   }
 }
 
@@ -26,46 +28,60 @@ class UnreadsStore extends FusionStore<DepartmentUnreadRecord> {
   getUnreads(Function(List<DepartmentUnreadRecord>, bool) callback) {
     fusionConnection.apiV2Call("get", "/messaging/unread", {},
         callback: (dynamic data) {
-          if(data.runtimeType != List){
-            Map<String, dynamic> d = data;
-            if(d.containsKey('error') && d['error'] == "invalid_login"){
-              toast("your account was logged out for some reason, please relogin, and report this issue to our team",
-                duration: Duration(seconds: 5));
-            } else {
-              toast("there was an error trying to get unread messages",duration: Duration(seconds: 2));
-            }
+      if (data.runtimeType != List) {
+        Map<String, dynamic> d = data;
+        if (d.containsKey('error') && d['error'] == "invalid_login") {
+          toast(
+              "your account was logged out for some reason, please re-login, and report this issue to our team",
+              duration: Duration(seconds: 5));
+        } else {
+          toast("there was an error trying to get unread messages",
+              duration: Duration(seconds: 2));
+        }
+      } else {
+        List<dynamic> datas = data;
+        List<DepartmentUnreadRecord> response = [];
+        clearRecords();
+        List<SMSDepartment> allDeps =
+            fusionConnection.smsDepartments.getRecords();
+        SMSDepartment allMessages = fusionConnection.smsDepartments
+            .getDepartment(DepartmentIds.AllMessages);
+
+        RegExp reg = RegExp(r'(^[+]*[(]{0,1}[0-9]{1,4}[)]{0,1}[-\s\./0-9]*$)');
+        int allUnreads = 0;
+        for (var dep in allDeps) {
+          if (datas.isEmpty) {
+            dep.unreadCount = 0;
           } else {
-            List<dynamic> datas = data;
-            List<DepartmentUnreadRecord> response = [];
-            clearRecords();
-            List<SMSDepartment> deps = fusionConnection.smsDepartments.allDepartments();
-            if(datas.isEmpty){
-              for (SMSDepartment dep in deps) {
-                    dep.unreadCount = 0;
-                    fusionConnection.smsDepartments.storeRecord(dep);
-                }
-            }
-            for (Map<String, dynamic> item in datas.cast<Map<String, dynamic>>()) {
+            for (var item in datas) {
               DepartmentUnreadRecord obj = DepartmentUnreadRecord(item);
+              if (!obj.numbers.any((item) => reg.hasMatch(item))) {
+                obj.departmentId = -3;
+              }
               storeRecord(obj);
-              response.add(obj);
-              if(item.containsKey('departmentId')){
-                List nums = item['numbers'];
-                for (SMSDepartment dep in deps) {
-                  if(nums.isNotEmpty && nums[0].toString().contains('@') && item['departmentId'] == -1){
-                    item['departmentId'] = -3;
-                  }
-                  if(dep.id == item['departmentId'].toString()){
-                    dep.unreadCount = item['unread'];
-                    fusionConnection.smsDepartments.storeRecord(dep);
-                  }
-                }
+              print("MDBM ${obj.unread} ${obj.departmentId}");
+
+              if (dep.id == obj.departmentId.toString()) {
+                response.add(obj);
+                dep.unreadCount = obj.unread!;
+                allUnreads += obj.unread!;
+                break;
+              } else {
+                dep.unreadCount = 0;
               }
             }
-            callback(response, true);
           }
+          fusionConnection.smsDepartments.storeRecord(dep);
+        }
 
-        });
+        allMessages.unreadCount = allUnreads;
+        fusionConnection.smsDepartments.storeRecord(allMessages);
+        for (var r in response) {
+          print("MDBM Unreads ${r.departmentId} ${r.unread}");
+        }
+        callback(response, true);
+      }
+    });
   }
 
   hasUnread() {

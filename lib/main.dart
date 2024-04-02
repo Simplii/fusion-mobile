@@ -5,6 +5,7 @@ import 'dart:math';
 import 'dart:ui';
 
 import 'package:all_sensors/all_sensors.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -16,12 +17,17 @@ import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:fusion_mobile_revamped/src/callpop/call_view.dart';
 import 'package:fusion_mobile_revamped/src/callpop/disposition.dart';
+import 'package:fusion_mobile_revamped/src/chats/chats.dart';
+import 'package:fusion_mobile_revamped/src/chats/conversationView.dart';
+import 'package:fusion_mobile_revamped/src/chats/newConversationView.dart';
+import 'package:fusion_mobile_revamped/src/chats/viewModels/chatsVM.dart';
 import 'package:fusion_mobile_revamped/src/dialpad/dialpad_modal.dart';
 import 'package:fusion_mobile_revamped/src/models/contact.dart';
 import 'package:fusion_mobile_revamped/src/models/conversations.dart';
 import 'package:fusion_mobile_revamped/src/models/dids.dart';
 import 'package:fusion_mobile_revamped/src/models/notification_data.dart';
 import 'package:fusion_mobile_revamped/src/models/sms_departments.dart';
+import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:overlay_support/overlay_support.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -48,7 +54,7 @@ registerNotifications() {
       FlutterLocalNotificationsPlugin();
 // initialise the plugin. app_icon needs to be a added as a drawable resource to the Android head project
   const AndroidInitializationSettings initializationSettingsAndroid =
-      AndroidInitializationSettings('app_icon_background');
+      AndroidInitializationSettings('ic_launcher_background');
   final DarwinInitializationSettings initializationSettingsIOS =
       DarwinInitializationSettings(
           onDidReceiveLocalNotification:
@@ -137,7 +143,11 @@ Future<void> main() async {
     appRunner: () =>
         runApp(OverlaySupport.global(child: MaterialApp(home: MyApp()))),
   );*/
-  runApp(OverlaySupport.global(child: MaterialApp(home: MyApp())));
+  runApp(OverlaySupport.global(
+      child: MaterialApp(
+    debugShowCheckedModeBanner: false,
+    home: MyApp(),
+  )));
   // runApp(MaterialApp(home: MyApp()));
 }
 
@@ -166,6 +176,7 @@ class MyApp extends StatelessWidget {
     }
 
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       builder: (BuildContext context, Widget? child) {
         final double scaleRange =
             MediaQuery.of(context).textScaleFactor.clamp(0.8, 1.2);
@@ -224,6 +235,10 @@ class _MyHomePageState extends State<MyHomePage> {
   late StreamSubscription<ProximityEvent> _proximitySub;
   bool flutterBackgroundInitialized = false;
   Function? onMessagePosted;
+  late SharedPreferences sharedPreferences;
+  late StreamSubscription<ConnectivityResult> connectivitySubscription;
+  ConnectivityResult connectionStatus = ConnectivityResult.none;
+
   _logOut() {
     SharedPreferences.getInstance().then((SharedPreferences prefs) {
       prefs.remove('username');
@@ -247,16 +262,19 @@ class _MyHomePageState extends State<MyHomePage> {
     // }
   }
 
+  void _getSharedPres() async {
+    sharedPreferences = await SharedPreferences.getInstance();
+  }
+
   @override
   initState() {
     super.initState();
-
+    _getSharedPres();
     receivedMsg = "";
     fusionConnection.onLogOut(_logOut);
     softphone.onUpdate(() {
       setState(() {});
     });
-    print("MDBM INITSTATE DART MAIN");
     _autoLogin();
     // need to move _setupPermissions away from initState
     // or will have error when dart execute in the background
@@ -271,6 +289,59 @@ class _MyHomePageState extends State<MyHomePage> {
     fusionConnection.setRefreshUi(() {
       this.setState(() {});
     });
+    connectivitySubscription =
+        fusionConnection.connectivity.onConnectivityChanged.listen(
+      _updateConnectionStatus,
+    );
+    Connectivity().checkConnectivity().then((value) {
+      if (value == ConnectivityResult.none) {
+        ScaffoldMessenger.of(context).showMaterialBanner(
+          MaterialBanner(
+            content: Text(
+              "This device is not connected to the internet",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            actions: [
+              Icon(
+                Icons.error_outline,
+                color: crimsonDark,
+              )
+            ],
+          ),
+        );
+      }
+    });
+  }
+
+  @override
+  dispose() {
+    connectivitySubscription.cancel();
+    super.dispose();
+  }
+
+  Future<void> _updateConnectionStatus(ConnectivityResult result) async {
+    connectionStatus = result;
+    FusionConnection.isInternetActive =
+        await InternetConnectionChecker().hasConnection;
+    if (!FusionConnection.isInternetActive) {
+      ScaffoldMessenger.of(context).showMaterialBanner(
+        MaterialBanner(
+          content: Text(
+            "This device is not connected to the internet",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          actions: [
+            Icon(
+              Icons.error_outline,
+              color: crimsonDark,
+            )
+          ],
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).clearMaterialBanners();
+      _autoLogin();
+    }
   }
 
   Future<void> _setupPermissions() async {
@@ -318,11 +389,13 @@ class _MyHomePageState extends State<MyHomePage> {
     String depId = notificationData.departmentId ?? DepartmentIds.AllMessages;
 
     if (notificationData.toNumber.isNotEmpty && notificationData.isGroup) {
-      List<SMSDepartment> deps = fusionConnection.smsDepartments.allDepartments();
+      List<SMSDepartment> deps =
+          fusionConnection.smsDepartments.allDepartments();
       if (deps.isEmpty) {
         await fusionConnection.smsDepartments.getDepartments((p0) => deps = p0);
       }
-      SMSDepartment? dep = deps.where((element) => element.id == depId).firstOrNull;
+      SMSDepartment? dep =
+          deps.where((element) => element.id == depId).firstOrNull;
       String numberUsed = "";
 
       List<String> depNumbers = dep?.numbers ?? [];
@@ -334,13 +407,11 @@ class _MyHomePageState extends State<MyHomePage> {
         }
       }
       for (NotificationMember member in notificationData.members) {
-        convoContacts.add(
-          Contact.fake(
-            member.number, 
+        convoContacts.add(Contact.fake(member.number,
             firstName: member.name.split(' ')[0],
-            lastName: member.name.split("").length > 1 ? member.name.split(' ')[1] : ""
-          )
-        );
+            lastName: member.name.split("").length > 1
+                ? member.name.split(' ')[1]
+                : ""));
       }
       showModalBottomSheet(
         context: context,
@@ -357,61 +428,71 @@ class _MyHomePageState extends State<MyHomePage> {
                 isGroup: notificationData.isGroup,
                 myNumber: numberUsed,
                 number: notificationData.toNumber);
-            return SMSConversationView(
-                fusionConnection: fusionConnection,
-                softphone: softphone,
-                smsConversation: displayingConvo,
-                deleteConvo: null,
-                setOnMessagePosted: null,
-                changeConvo: (SMSConversation updateConvo) {
-                  setState(
-                    () {
-                      displayingConvo = updateConvo;
-                    },
-                  );
-                });
+            return ConversationView(
+                conversation: displayingConvo,
+                isNewConversation: displayingConvo.conversationId == null);
+            // return SMSConversationView(
+            //     fusionConnection: fusionConnection,
+            //     softphone: softphone,
+            //     smsConversation: displayingConvo,
+            //     deleteConvo: null,
+            //     setOnMessagePosted: null,
+            //     changeConvo: (SMSConversation updateConvo) {
+            //       setState(
+            //         () {
+            //           displayingConvo = updateConvo;
+            //         },
+            //       );
+            //     });
           },
         ),
       );
-    } else if (notificationData.toNumber.isNotEmpty && !notificationData.isGroup) {
+    } else if (notificationData.toNumber.isNotEmpty &&
+        !notificationData.isGroup) {
       fusionConnection.contacts.search(notificationData.fromNumber, 10, 0,
           (contacts, contactsFromServer, contactsFromPhonebook) {
         if (contactsFromServer || contactsFromPhonebook) {
-          fusionConnection.integratedContacts.search(notificationData.fromNumber, 10, 0,
-              (crmContacts, fromServer, hasMore) {
+          fusionConnection.integratedContacts
+              .search(notificationData.fromNumber, 10, 0,
+                  (crmContacts, fromServer, hasMore) {
             if (fromServer || contactsFromPhonebook) {
-              if(!fusionConnection.settings.usesV2){
+              if (!fusionConnection.settings.usesV2) {
                 contacts.addAll(crmContacts);
               }
-              fusionConnection.messages.checkExistingConversation(
-                depId,
-                notificationData.toNumber,
-                [notificationData.fromNumber],
-                contacts
-              ).then((convo) {
-                showModalBottomSheet(
-                  context: context,
-                  backgroundColor: Colors.transparent,
-                  isScrollControlled: true,
-                  builder: (context) => StatefulBuilder(
-                    builder: (BuildContext context,StateSetter setState) {
-                      SMSConversation displayingConvo = convo;
-                      return SMSConversationView(
-                          fusionConnection: fusionConnection, 
-                          softphone: softphone, 
-                          smsConversation: displayingConvo, 
-                          deleteConvo: null,//deleteConvo
-                          setOnMessagePosted: null,//onMessagePosted
-                          changeConvo: (SMSConversation updateConvo){
-                            setState(() {
-                              displayingConvo = updateConvo;
-                            },);
-                          }
-                      );
-                    },
-                  ),
-                );
-              },);
+              fusionConnection.messages
+                  .checkExistingConversation(depId, notificationData.toNumber,
+                      [notificationData.fromNumber], contacts)
+                  .then(
+                (convo) {
+                  showModalBottomSheet(
+                    context: context,
+                    backgroundColor: Colors.transparent,
+                    isScrollControlled: true,
+                    builder: (context) => StatefulBuilder(
+                      builder: (BuildContext context, StateSetter setState) {
+                        SMSConversation displayingConvo = convo;
+                        //   return SMSConversationView(
+                        //       fusionConnection: fusionConnection,
+                        //       softphone: softphone,
+                        //       smsConversation: displayingConvo,
+                        //       deleteConvo: null, //deleteConvo
+                        //       setOnMessagePosted: null, //onMessagePosted
+                        //       changeConvo: (SMSConversation updateConvo) {
+                        //         setState(
+                        //           () {
+                        //             displayingConvo = updateConvo;
+                        //           },
+                        //         );
+                        //       });
+                        // },
+                        return ConversationView(
+                            conversation: convo,
+                            isNewConversation: convo.conversationId == null);
+                      },
+                    ),
+                  );
+                },
+              );
             }
           });
         }
@@ -499,7 +580,7 @@ class _MyHomePageState extends State<MyHomePage> {
           'Fusion chats',
           channelDescription: 'Fusion incoming messages',
           importance: Importance.max,
-          icon: "@mipmap/app_icon",
+          icon: "@mipmap/new_app_icon",
         );
 
         const NotificationDetails platformChannelSpecifics =
@@ -507,7 +588,7 @@ class _MyHomePageState extends State<MyHomePage> {
         flutterLocalNotificationsPlugin.show(
           Random().nextInt(1000),
           message.data['title'],
-          message.data['from_number'] + " says: " + message.data['body'],
+          message.data['body'],
           platformChannelSpecifics,
         );
         messageData = message.data;
@@ -650,15 +731,17 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  _openNewMessage() {
-    showModalBottomSheet(
-        routeSettings: RouteSettings(name: 'newMessagePopup'),
-        context: context,
-        backgroundColor: Colors.transparent,
-        isScrollControlled: true,
-        builder: (context) =>
-            NewMessagePopup(fusionConnection, softphone, onMessagePosted));
-  }
+  // _openNewMessage() {
+  //   showModalBottomSheet(
+  //     routeSettings: RouteSettings(name: 'newMessagePopup'),
+  //     context: context,
+  //     backgroundColor: Colors.transparent,
+  //     isScrollControlled: true,
+  //     builder: (context) =>
+  //         // NewMessagePopup(fusionConnection, softphone, onMessagePosted),
+  //         NewMessageView(sharedPreferences: sharedPreferences),
+  //   );
+  // }
 
   void _loginSuccess(String? username, String? password) {
     this.setState(() {
@@ -685,13 +768,13 @@ class _MyHomePageState extends State<MyHomePage> {
           break;
         }
       }
-      return FloatingActionButton(
-        backgroundColor:
-            _canSendMessage ? crimsonLight : crimsonLight.withOpacity(0.5),
-        foregroundColor: Colors.white,
-        onPressed: _canSendMessage ? _openNewMessage : null,
-        child: Icon(Icons.add),
-      );
+      // return FloatingActionButton(
+      //   backgroundColor:
+      //       _canSendMessage ? crimsonLight : crimsonLight.withOpacity(0.5),
+      //   foregroundColor: Colors.white,
+      //   onPressed: _canSendMessage ? _openNewMessage : null,
+      //   child: Icon(Icons.add),
+      // );
     } else {
       return null;
     }
@@ -702,11 +785,21 @@ class _MyHomePageState extends State<MyHomePage> {
         ? RecentCallsTab(fusionConnection, softphone)
         : (_currentIndex == 1
             ? RecentContactsTab(fusionConnection, softphone)
-            : MessagesTab(fusionConnection, softphone, (Function func) {
-                onMessagePosted = func;
-              }, () {
-                onMessagePosted = null;
-              })));
+            // : MessagesTab(
+            //     fusionConnection,
+            //     softphone,
+            //     (Function func) {
+            //       onMessagePosted = func;
+            //     },
+            //     () {
+            //       onMessagePosted = null;
+            //     },
+            //   )));
+            : Chats(
+                fusionConnection: fusionConnection,
+                softPhone: softphone,
+                sharedPreferences: sharedPreferences,
+              )));
   }
 
   @override
