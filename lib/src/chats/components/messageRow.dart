@@ -30,6 +30,7 @@ class MessageRow extends StatelessWidget {
 
   Contact _getContactAvatar(String from) {
     Contact contact = Contact.fake(from);
+    if (conversation.contacts.isEmpty) return contact;
     var matchedNumber = conversation.contacts.last.phoneNumbers
         .where((num) => num['number'] == message.from)
         .firstOrNull;

@@ -293,23 +293,25 @@ class _MyHomePageState extends State<MyHomePage> {
         fusionConnection.connectivity.onConnectivityChanged.listen(
       _updateConnectionStatus,
     );
-    Connectivity().checkConnectivity().then((value) {
-      if (value == ConnectivityResult.none) {
-        ScaffoldMessenger.of(context).showMaterialBanner(
-          MaterialBanner(
-            content: Text(
-              "This device is not connected to the internet",
-              style: TextStyle(fontWeight: FontWeight.bold),
+    Future.delayed(Duration(seconds: 2), () {
+      Connectivity().checkConnectivity().then((value) {
+        if (value == ConnectivityResult.none) {
+          ScaffoldMessenger.of(context).showMaterialBanner(
+            MaterialBanner(
+              content: Text(
+                "No internet connection",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              actions: [
+                Icon(
+                  Icons.error_outline,
+                  color: crimsonDark,
+                )
+              ],
             ),
-            actions: [
-              Icon(
-                Icons.error_outline,
-                color: crimsonDark,
-              )
-            ],
-          ),
-        );
-      }
+          );
+        }
+      });
     });
   }
 
@@ -413,40 +415,23 @@ class _MyHomePageState extends State<MyHomePage> {
                 ? member.name.split(' ')[1]
                 : ""));
       }
+      SMSConversation displayingConvo = SMSConversation.build(
+          contacts: convoContacts,
+          conversationId: int.parse(notificationData.toNumber),
+          crmContacts: [],
+          selectedDepartmentId: depId,
+          hash: notificationData.numbers.join(':'),
+          isGroup: notificationData.isGroup,
+          myNumber: numberUsed,
+          number: notificationData.toNumber);
       showModalBottomSheet(
-        context: context,
-        backgroundColor: Colors.transparent,
-        isScrollControlled: true,
-        builder: (context) => StatefulBuilder(
-          builder: (BuildContext context, StateSetter setState) {
-            SMSConversation displayingConvo = SMSConversation.build(
-                contacts: convoContacts,
-                conversationId: int.parse(notificationData.toNumber),
-                crmContacts: [],
-                selectedDepartmentId: depId,
-                hash: notificationData.numbers.join(':'),
-                isGroup: notificationData.isGroup,
-                myNumber: numberUsed,
-                number: notificationData.toNumber);
-            return ConversationView(
-                conversation: displayingConvo,
-                isNewConversation: displayingConvo.conversationId == null);
-            // return SMSConversationView(
-            //     fusionConnection: fusionConnection,
-            //     softphone: softphone,
-            //     smsConversation: displayingConvo,
-            //     deleteConvo: null,
-            //     setOnMessagePosted: null,
-            //     changeConvo: (SMSConversation updateConvo) {
-            //       setState(
-            //         () {
-            //           displayingConvo = updateConvo;
-            //         },
-            //       );
-            //     });
-          },
-        ),
-      );
+          context: context,
+          backgroundColor: Colors.transparent,
+          isScrollControlled: true,
+          builder: (context) => ConversationView(
+              conversation: displayingConvo,
+              departmentId: depId,
+              isNewConversation: displayingConvo.conversationId == null));
     } else if (notificationData.toNumber.isNotEmpty &&
         !notificationData.isGroup) {
       fusionConnection.contacts.search(notificationData.fromNumber, 10, 0,
@@ -465,32 +450,13 @@ class _MyHomePageState extends State<MyHomePage> {
                   .then(
                 (convo) {
                   showModalBottomSheet(
-                    context: context,
-                    backgroundColor: Colors.transparent,
-                    isScrollControlled: true,
-                    builder: (context) => StatefulBuilder(
-                      builder: (BuildContext context, StateSetter setState) {
-                        SMSConversation displayingConvo = convo;
-                        //   return SMSConversationView(
-                        //       fusionConnection: fusionConnection,
-                        //       softphone: softphone,
-                        //       smsConversation: displayingConvo,
-                        //       deleteConvo: null, //deleteConvo
-                        //       setOnMessagePosted: null, //onMessagePosted
-                        //       changeConvo: (SMSConversation updateConvo) {
-                        //         setState(
-                        //           () {
-                        //             displayingConvo = updateConvo;
-                        //           },
-                        //         );
-                        //       });
-                        // },
-                        return ConversationView(
-                            conversation: convo,
-                            isNewConversation: convo.conversationId == null);
-                      },
-                    ),
-                  );
+                      context: context,
+                      backgroundColor: Colors.transparent,
+                      isScrollControlled: true,
+                      builder: (context) => ConversationView(
+                          conversation: convo,
+                          departmentId: depId,
+                          isNewConversation: convo.conversationId == null));
                 },
               );
             }

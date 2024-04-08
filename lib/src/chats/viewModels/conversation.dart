@@ -21,6 +21,7 @@ class ConversationVM with ChangeNotifier {
   late StreamSubscription wsStream;
   late StreamSubscription<RemoteMessage> notificationStream;
   final FusionConnection fusionConnection = FusionConnection.instance;
+  final String? departmentId;
   ChatsVM? _chatsVM;
   SMSConversation conversation;
 
@@ -37,11 +38,16 @@ class ConversationVM with ChangeNotifier {
   Map<String, Timer> usersTimers = {};
   bool showLargeMMSErrorMessage = false;
 
-  ConversationVM({required this.conversation, ChatsVM? chatsVM}) {
+  ConversationVM({
+    required this.conversation,
+    ChatsVM? chatsVM,
+    this.departmentId,
+  }) {
     _chatsVM = chatsVM;
-    conversationDepartmentId = conversation.getDepartmentId(
-      fusionConnection: fusionConnection,
-    );
+    conversationDepartmentId = departmentId ??
+        conversation.getDepartmentId(
+          fusionConnection: fusionConnection,
+        );
     wsStream = fusionConnection.websocketStream.stream.listen(_updateFromWS);
     notificationStream =
         FirebaseMessaging.onMessage.listen(_onNotificationReceived);
