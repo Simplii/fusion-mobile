@@ -165,8 +165,6 @@ class _RecentCallsListState extends State<RecentCallsList> {
       if (!fromServer && _page > 0) return;
       this.setState(() {
         if (fromServer) {
-          print(
-              "MDBM ${history.length} ${history.first.from} ${history.first.fromDid} ${history.first.toDid}");
           lookupState = 2;
         }
         Map<String?, CallHistory> oldHistory = new Map<String?, CallHistory>();
