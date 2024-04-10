@@ -262,7 +262,6 @@ class _MyHomePageState extends State<MyHomePage> {
       _callInProgress = false;
       _logged_in = false;
     });
-    fusionConnection.logOut();
     softphone.unregisterLinphone();
     // if(Platform.isAndroid){
     //   SystemNavigator.pop();
@@ -346,7 +345,6 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> _setupPermissions() async {
-    await Permission.phone.request();
     await FirebaseMessaging.instance.requestPermission(
         alert: true,
         announcement: false,
@@ -354,6 +352,10 @@ class _MyHomePageState extends State<MyHomePage> {
         criticalAlert: true,
         provisional: false,
         sound: true);
+    bool phonePermissionIsGranted = await Permission.phone.isGranted;
+    if (!phonePermissionIsGranted) {
+      Permission.phone.request();
+    }
   }
 
   checkForInitialMessage({String? username}) async {
@@ -532,7 +534,7 @@ class _MyHomePageState extends State<MyHomePage> {
       String sub_login = sharedPreferences.getString("sub_login") ?? "";
       String aor = sharedPreferences.getString("aor") ?? "";
       String auth_key = sharedPreferences.getString("auth_key") ?? "";
-
+      String ext = username.split('@')[0];
       if (auth_key.isNotEmpty) {
         setState(() {
           _sub_login = sub_login;
@@ -541,41 +543,36 @@ class _MyHomePageState extends State<MyHomePage> {
           _logged_in = true;
           _isRegistering = true;
         });
-        print("MDBM MAIN username= $username authKey= $auth_key aor= $aor ");
+        print(
+            "MDBM MAIN username= $username authKey= $auth_key aor= $aor domain=${fusionConnection.getDomain()} ext=${fusionConnection.getExtension()}");
 
-        softphone.register(sub_login, auth_key, aor.replaceAll('sip:', ''));
         fusionConnection.autoLogin(username, _logOut);
-        // await fusionConnection.autoLogin(username, domain);
-        // softphone.onUnregister(() {
-        //   fusionConnection.nsApiCall('device', 'read', {
-        //     'domain': fusionConnection.getDomain(),
-        //     'device':
-        //         'sip:${fusionConnection.getExtension()}fm@${fusionConnection.getDomain()}',
-        //     'user': fusionConnection.getExtension()
-        //   }, callback: (Map<String, dynamic> response) {
-        //     print("deviceread");
-        //     print(response);
-        //     if (!response.containsKey('device')) {
-        //       fusionConnection.logOut();
-        //     }
-        //     Map<String, dynamic> device = response['device'];
-        //     _sub_login = device['sub_login'];
-        //     _auth_key = device['authentication_key'];
-        //     _aor = device['aor'];
+        softphone.register(sub_login, auth_key, aor.replaceAll('sip:', ''));
+        softphone.onUnregister(() {
+          fusionConnection.nsApiCall('device', 'read', {
+            'domain': domain,
+            'device': 'sip:${ext}fm@$domain',
+            'user': ext
+          }, callback: (Map<String, dynamic> response) {
+            print("deviceread");
+            print(response);
+            if (!response.containsKey('device')) {
+              fusionConnection.logOut();
+            }
+            Map<String, dynamic> device = response['device'];
+            _sub_login = device['sub_login'];
+            _auth_key = device['authentication_key'];
+            _aor = device['aor'];
 
-        //     SharedPreferences.getInstance().then((SharedPreferences prefs) {
-        //       prefs.setString("sub_login", _sub_login);
-        //       prefs.setString("auth_key", _auth_key);
-        //       prefs.setString("aor", _aor);
-        //     });
+            sharedPreferences.setString("sub_login", _sub_login);
+            sharedPreferences.setString("auth_key", _auth_key);
+            sharedPreferences.setString("aor", _aor);
 
-        //     softphone.register(
-        //         device['sub_login'],
-        //         device['authentication_key'],
-        //         device['aor'].replaceAll('sip:', ''));
-        //   });
-        // });
-        // checkForInitialMessage(username: username);
+            softphone.register(
+                _sub_login, _auth_key, _aor.replaceAll('sip:', ''));
+          });
+        });
+        checkForInitialMessage(username: username);
       } else {}
     }
   }

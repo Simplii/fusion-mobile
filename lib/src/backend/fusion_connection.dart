@@ -5,7 +5,6 @@ import 'dart:core';
 import 'dart:io';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:fusion_mobile_revamped/src/models/contact_fields.dart';
 import 'package:fusion_mobile_revamped/src/models/dids.dart';
@@ -15,7 +14,6 @@ import 'package:fusion_mobile_revamped/src/models/quick_response.dart';
 import 'package:fusion_mobile_revamped/src/models/timeline_items.dart';
 import 'package:fusion_mobile_revamped/src/models/unreads.dart';
 import 'package:fusion_mobile_revamped/src/models/voicemails.dart';
-import 'package:http/retry.dart';
 import 'package:overlay_support/overlay_support.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -34,11 +32,10 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
-// import 'package:cookie_jar/cookie_jar.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
 import '../utils.dart';
 import 'softphone.dart';
-// import 'package:encrypt/encrypt.dart' as enc;
+import 'dart:developer' as developer;
 
 class FusionConnection {
   String _TAG = "MDBM FUSIONCONNECTION";
@@ -78,8 +75,9 @@ class FusionConnection {
   ConnectivityResult connectivityResult = ConnectivityResult.none;
   bool internetAvailable = true;
   final StreamController websocketStream = StreamController.broadcast();
-  static final String host = "fusioncom.co";
-  // static final String host = "zaid-fusion-dev.fusioncomm.net";
+  StreamSubscription? _wsStream;
+  // static final String host = "fusioncom.co";
+  static final String host = "zaid-fusion-dev.fusioncomm.net";
   String serverRoot = "http://$host";
   String mediaServer = "https://fusion-media.sfo2.digitaloceanspaces.com";
   String defaultAvatar = "https://$host/img/defaultuser.png";
@@ -186,6 +184,8 @@ class FusionConnection {
   }
 
   logOut() {
+    developer.log("wsStream = $_wsStream", name: _TAG);
+    _wsStream?.cancel();
     _softphone?.unregisterLinphone();
     FirebaseMessaging.instance.getToken().then((token) {
       if (_pushkitToken != null) {
@@ -193,7 +193,7 @@ class FusionConnection {
       }
       apiV1Call("delete", "/clients/device_token",
           {"token": token, "pn_tok": _pushkitToken}, callback: (data) {
-        apiV1Call("get", "/log_out", {}, callback: (data) {
+        apiV1Call("get", "/log_out", {}, callback: (data) async {
           _username = '';
           // _password = '';
           try {
@@ -204,7 +204,6 @@ class FusionConnection {
             }
             _onLogOut();
           } catch (e) {}
-          sharedPreferences.clear();
           _clearDataStores();
         });
       });
@@ -466,11 +465,10 @@ class FusionConnection {
         jsonResponse =
             convert.jsonDecode(uriResponse.body) as Map<String, dynamic>?;
       } catch (e) {}
-      if (kDebugMode) {
-        print(
-            "$_TAG NS_API_Resp ${jsonResponse} ${action} ${object} t=$_token s=$_signature u=$_username");
-      }
-      client.close();
+      developer.log(
+        "NS_API_Resp $action $object t=$_token s=$_signature u=$_username, body=$requestBody",
+        name: _TAG,
+      );
       callback(jsonResponse);
     } finally {
       client.close();
@@ -491,7 +489,7 @@ class FusionConnection {
 
       Map<Symbol, dynamic> args = {};
       String urlParams = "";
-      if (method.toLowerCase() == 'get') {
+      if (method.toLowerCase() == 'get' && data.isNotEmpty) {
         urlParams = "?";
         for (String key in data.keys) {
           RegExp reg = RegExp((r'[^\x20-\x7E]'));
@@ -503,7 +501,6 @@ class FusionConnection {
         }
       }
       Uri url = Uri.parse('https://$host/api/v1' + route + urlParams);
-      // Map<String, String> headers = await _cookieHeaders(url);
       String requestBody = convert.jsonEncode(data);
       String _authToken = method == "get"
           ? generateMd5(
@@ -524,35 +521,28 @@ class FusionConnection {
       http.Response? uriResponse;
       try {
         uriResponse = await Function.apply(fn, [url], args);
-        if (uriResponse!.body != '{"error":"invalid_login"}') {
-          // _saveCookie(uriResponse);
-        }
       } catch (e) {
         toast("${e}");
-        if (kDebugMode) {
-          print("MyDebugMessage apiCallV1 error ${e}");
-        }
+        developer.log("apiCallV1 error", name: _TAG, error: e);
       }
 
       if (uriResponse?.statusCode == 401 &&
           uriResponse!.headers.containsKey("x-fusion-signature")) {
         if (uriResponse.headers["x-fusion-signature"] != null &&
             uriResponse.headers["x-fusion-signature"] != _signature) {
-          print("$_TAG apiv1 new signature");
+          developer.log("apiv1 new signature", name: _TAG);
           _signature = uriResponse.headers["x-fusion-signature"]!;
           sharedPreferences.setString("signature", _signature);
-        }
-        if (kDebugMode) {
-          print("$_TAG apiv1 ${uriResponse.body} ${url} ${data}");
-        }
-        //TODO: need to reauth
-        if (onError != null) {
           if (retryCount >= 5) {
-            onError();
+            developer.log("apiv1 retried $url 5 times", name: _TAG);
+            if (onError != null) {
+              onError();
+            }
           } else {
-            Future.delayed(Duration(seconds: 1), () {
-              print("MyDebugMessage retry future");
-              apiV1Call(method, route, data,
+            await Future.delayed(Duration(seconds: 1), () async {
+              developer.log("apiv1 retry future", name: _TAG);
+
+              await apiV1Call(method, route, data,
                   onError: onError,
                   callback: callback,
                   retryCount: retryCount + 1);
@@ -561,12 +551,13 @@ class FusionConnection {
         }
       } else {
         if (uriResponse?.statusCode != 200) {
-          if (kDebugMode) {
-            print(
-                "$_TAG apiv1 code ${uriResponse?.statusCode} body ${uriResponse?.body} ");
-          }
+          developer.log(
+              "apiv1 request failing $method $url ${uriResponse?.statusCode} retryCount=$retryCount",
+              name: _TAG);
         } else {
           var jsonResponse = convert.jsonDecode(uriResponse?.body ?? "");
+          developer.log("apiv1 $method $url ${uriResponse?.statusCode}",
+              name: _TAG);
           if (callback != null) callback(jsonResponse);
         }
       }
@@ -624,39 +615,40 @@ class FusionConnection {
         uriResponse = await Function.apply(fn, [url], args);
       } catch (e) {
         toast("${e}");
-        if (kDebugMode) {
-          print("MyDebugMessage apiCallV2 error ${e}");
-        }
+        developer.log("apiCallV2 error", name: _TAG, error: e);
       }
-      if (kDebugMode) {
-        print("MDBM apirequest $url $urlParams");
-      }
-
       if (uriResponse?.statusCode == 401 &&
           uriResponse!.headers.containsKey("x-fusion-signature")) {
-        //TODO: need to reauth
         if (uriResponse.headers["x-fusion-signature"] != null &&
             uriResponse.headers["x-fusion-signature"] != _signature) {
-          print("$_TAG apiv1 new signature");
+          developer.log(
+              "apiv2 new signature=${uriResponse.headers["x-fusion-signature"]}",
+              name: _TAG);
           _signature = uriResponse.headers["x-fusion-signature"]!;
           sharedPreferences.setString("signature", _signature);
-        }
-        if (onError != null) {
           if (retryCount >= 5) {
-            onError();
+            developer.log("apiv2 retried $url 5 times", name: _TAG);
+            if (onError != null) {
+              onError();
+            }
           } else {
-            Future.delayed(Duration(seconds: 1), () {
-              print("MyDebugMessage retry v2 future");
-              apiV2Call(method, route, data,
+            await Future.delayed(Duration(seconds: 1), () async {
+              developer.log("apiv2 retry future $url", name: _TAG);
+              await apiV2Call(method, route, data,
                   onError: onError,
                   callback: callback,
                   retryCount: retryCount + 1);
             });
           }
         }
+      } else if (uriResponse?.statusCode != 200) {
+        developer.log(
+            "apiv2 request failing $method $url ${uriResponse?.statusCode}",
+            name: _TAG);
+      } else {
+        var jsonResponse = convert.jsonDecode(uriResponse?.body ?? "");
+        if (callback != null) callback(jsonResponse);
       }
-      var jsonResponse = convert.jsonDecode(uriResponse?.body ?? "");
-      if (callback != null) callback(jsonResponse);
     } finally {
       client.close();
     }
@@ -664,15 +656,19 @@ class FusionConnection {
 
   apiV2Multipart(String method, String route, Map<String, dynamic> data,
       List<http.MultipartFile> files,
-      {required Function callback}) async {
+      {required Function callback, int retryCount = 0}) async {
     var client = http.Client();
     try {
       data['username'] = sharedPreferences.getString("username");
 
       Uri url = Uri.parse('https://$host/api/v2' + route);
       http.MultipartRequest request = new http.MultipartRequest(method, url);
-      // (await _cookieHeaders(url)).forEach((k, v) => request.headers[k] = v);
-
+      developer.log("multipartv2 $method $url $data", name: _TAG);
+      String _authToken =
+          generateMd5("$_token:$_username:/api/v2$route::$_signature");
+      request.headers["X-fusion-uid"] = _username;
+      request.headers["Authorization"] = "Bearer $_authToken";
+      developer.log("multipartv2 u=$_username t=$_authToken", name: _TAG);
       for (String key in data.keys) {
         request.fields[key] = data[key].toString();
       }
@@ -680,15 +676,55 @@ class FusionConnection {
       for (http.MultipartFile file in files) {
         request.files.add(file);
       }
+      developer.log("multipartv2 headers ${request.headers}", name: _TAG);
 
       var uriResponse = await request.send();
       String responseBody =
           await uriResponse.stream.transform(utf8.decoder).join();
-      print(url);
-      print(responseBody);
-      var jsonResponse = convert.jsonDecode(responseBody);
+      if (uriResponse.statusCode == 401 &&
+          uriResponse.headers.containsKey("x-fusion-signature")) {
+        String serverCurrentSignature =
+            uriResponse.headers["x-fusion-signature"] ?? "";
+        if (serverCurrentSignature.isNotEmpty &&
+            serverCurrentSignature != _signature) {
+          developer.log(
+            "multipartv2 new signature $serverCurrentSignature}",
+            name: _TAG,
+          );
+          _signature = uriResponse.headers["x-fusion-signature"]!;
+          sharedPreferences.setString("signature", _signature);
+          if (retryCount >= 5) {
+            developer.log("multipartv2 retried $url 5 times", name: _TAG);
+          } else {
+            await Future.delayed(Duration(seconds: 1), () async {
+              developer.log("apiv2 retry future $url", name: _TAG);
+              await apiV2Multipart(
+                method,
+                route,
+                data,
+                files,
+                callback: callback,
+                retryCount: retryCount + 1,
+              );
+            });
+          }
+        }
+        developer.log(
+          "multipartv2 authFailed $responseBody ${uriResponse.statusCode}",
+          name: _TAG,
+        );
+      } else if (uriResponse.statusCode != 200) {
+        developer.log(
+            "multipartv2 failed $method url=$url resp=$responseBody code=${uriResponse.statusCode}",
+            name: _TAG);
+      } else {
+        var jsonResponse = convert.jsonDecode(responseBody);
 
-      callback(jsonResponse);
+        callback(jsonResponse);
+      }
+      developer.log(
+          "multipartv2 response $responseBody ${uriResponse.statusCode}",
+          name: _TAG);
     } finally {
       client.close();
     }
@@ -740,9 +776,7 @@ class FusionConnection {
       callback(true);
     }
     FirebaseMessaging.instance.getToken().then((token) {
-      print("got token");
-      print(token);
-      print(_pushkitToken);
+      developer.log("got token $token $_pushkitToken", name: _TAG);
       apiV1Call("post", "/clients/device_token",
           {"token": token, "pn_tok": _pushkitToken});
     });
@@ -823,7 +857,7 @@ class FusionConnection {
       "/authenticate",
       {"uid": username, "password": password},
       callback: (Map<String, dynamic> response) {
-        print("$_TAG Authed $response");
+        developer.log("Authed $response", name: _TAG);
         authenticated = response["success"];
         if (authenticated) {
           _username = username;
@@ -850,7 +884,7 @@ class FusionConnection {
   }
 
   loadDomainOptions() async {
-    await apiV1Call("post", "/clients/lookup_options", {},
+    apiV1Call("post", "/clients/lookup_options", {},
         callback: (Map<String, dynamic> response) {
       if (response.containsKey("access_key")) {
         if (response.containsKey("uses_v2")) {
@@ -867,7 +901,9 @@ class FusionConnection {
     _token = sharedPreferences.getString("token") ?? "";
     _signature = sharedPreferences.getString("signature") ?? "";
     _username = username;
-    print("$_TAG t=$_token s=$_signature u=$_username");
+    _domain = _username.split('@')[1];
+    _extension = _username.split('@')[0];
+    developer.log("autoLogin t=$_token s=$_signature u=$_username", name: _TAG);
     if (_token.isEmpty || _signature.isEmpty) return logout();
     loadDomainOptions();
   }
@@ -936,13 +972,19 @@ class FusionConnection {
     socketChannel.sink.add(convert.jsonEncode(payload));
   }
 
-  setupSocket() {
+  setupSocket() async {
     int messageNum = 0;
     final wsUrl = Uri.parse('wss://$host:8443/');
     socketChannel = WebSocketChannel.connect(wsUrl);
-    websocketStream.addStream(socketChannel.stream);
-    websocketStream.stream.listen((messageData) async {
-      print("MDBM wsMessage ${messageData}");
+    try {
+      await websocketStream.addStream(socketChannel.stream);
+    } catch (e) {
+      developer.log(
+          "wsMessage addError ${e} closed= ${websocketStream.isClosed}",
+          name: _TAG);
+    }
+    _wsStream = websocketStream.stream.listen((messageData) async {
+      developer.log("wsMessage ${messageData}", name: _TAG);
       Map<String, dynamic> message = convert.jsonDecode(messageData);
       if (message.containsKey('heartbeat')) {
         _heartbeats[message['heartbeat']] = true;
@@ -982,7 +1024,7 @@ class FusionConnection {
 
       if (_softphone != null) _softphone!.checkCallIds(message);
     }, onError: (e) {
-      print("MDBM WS ERROR ${e}");
+      developer.log("WS ERROR", error: jsonEncode(e), name: _TAG);
     });
     _reconnectSocket();
     _sendHeartbeat();
