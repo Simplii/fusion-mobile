@@ -26,6 +26,7 @@ import net.fusioncomm.android.notifications.Contact
 import net.fusioncomm.android.notifications.Notifiable
 import net.fusioncomm.android.notifications.NotificationsManager
 import org.linphone.core.Call
+import java.io.IOException
 import java.net.URL
 
 @TargetApi(31)
@@ -37,7 +38,12 @@ class Api31Compatibility {
 
         private suspend fun getImage(url:URL): Bitmap? = run {
             return withContext(Dispatchers.IO) {
-                BitmapFactory.decodeStream(url.openStream())
+                try {
+                    BitmapFactory.decodeStream(url.openStream())
+                } catch (e: IOException) {
+                    Log.d(debugTag, "${e.message} url=$url")
+                    null
+                }
             }
         }
 
@@ -110,6 +116,7 @@ class Api31Compatibility {
             val formattedCallerNumber = PhoneNumberUtils.formatNumber(callerNumber,"US")
             val contact:Contact? = NotificationsManager.contacts[callerNumber]
             val avatarLink: String = contact?.avatar ?: ""
+            Log.d(debugTag, "avatar $avatarLink")
             if(avatarLink.isNotEmpty()){
                 runBlocking {
                     pic = getImage(URL(avatarLink))

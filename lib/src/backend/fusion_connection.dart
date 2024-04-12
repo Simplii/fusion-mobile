@@ -74,11 +74,11 @@ class FusionConnection {
   Connectivity connectivity = Connectivity();
   ConnectivityResult connectivityResult = ConnectivityResult.none;
   bool internetAvailable = true;
-  final StreamController websocketStream = StreamController.broadcast();
   StreamSubscription? _wsStream;
   // static final String host = "fusioncom.co";
   static final String host = "zaid-fusion-dev.fusioncomm.net";
   String serverRoot = "http://$host";
+  StreamController websocketStream = StreamController();
   String mediaServer = "https://fusion-media.sfo2.digitaloceanspaces.com";
   String defaultAvatar = "https://$host/img/defaultuser.png";
   static const MethodChannel contactsChannel =
@@ -184,8 +184,10 @@ class FusionConnection {
   }
 
   logOut() {
-    developer.log("wsStream = $_wsStream", name: _TAG);
     _wsStream?.cancel();
+    websocketStream.done;
+    websocketStream.close();
+    websocketStream = StreamController();
     _softphone?.unregisterLinphone();
     FirebaseMessaging.instance.getToken().then((token) {
       if (_pushkitToken != null) {
@@ -193,7 +195,7 @@ class FusionConnection {
       }
       apiV1Call("delete", "/clients/device_token",
           {"token": token, "pn_tok": _pushkitToken}, callback: (data) {
-        apiV1Call("get", "/log_out", {}, callback: (data) async {
+        apiV1Call("get", "/log_out", {}, callback: (data) {
           _username = '';
           // _password = '';
           try {
@@ -264,7 +266,8 @@ class FusionConnection {
           missed TEXT,
           contacts BLOB,
           coworker BLOB,
-          phoneContact BLOB
+          phoneContact BLOB,
+          queue TEXT
           );'''));
 
         print(db.execute('''
@@ -976,15 +979,9 @@ class FusionConnection {
     int messageNum = 0;
     final wsUrl = Uri.parse('wss://$host:8443/');
     socketChannel = WebSocketChannel.connect(wsUrl);
-    try {
-      await websocketStream.addStream(socketChannel.stream);
-    } catch (e) {
-      developer.log(
-          "wsMessage addError ${e} closed= ${websocketStream.isClosed}",
-          name: _TAG);
-    }
+    websocketStream.addStream(socketChannel.stream);
     _wsStream = websocketStream.stream.listen((messageData) async {
-      developer.log("wsMessage ${messageData}", name: _TAG);
+      developer.log("wsMessage $messageData", name: _TAG);
       Map<String, dynamic> message = convert.jsonDecode(messageData);
       if (message.containsKey('heartbeat')) {
         _heartbeats[message['heartbeat']] = true;
@@ -1023,6 +1020,8 @@ class FusionConnection {
       }
 
       if (_softphone != null) _softphone!.checkCallIds(message);
+    }, onDone: () {
+      print("MDBM FUSIONCONNECTION ws done");
     }, onError: (e) {
       developer.log("WS ERROR", error: jsonEncode(e), name: _TAG);
     });

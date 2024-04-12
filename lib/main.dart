@@ -244,15 +244,15 @@ class _MyHomePageState extends State<MyHomePage> {
   Function? onMessagePosted;
   late StreamSubscription<ConnectivityResult> connectivitySubscription;
   ConnectivityResult connectionStatus = ConnectivityResult.none;
+  bool relogin = false;
 
   _logOut() {
-    SharedPreferences.getInstance().then((SharedPreferences prefs) {
-      prefs.remove('username');
-      prefs.setString("sub_login", "");
-      prefs.setString("aor", "");
-      prefs.setString("auth_key", "");
-      prefs.setString('selectedGroupId', "-2");
-    });
+    sharedPreferences.remove('username');
+    sharedPreferences.remove('sub_login');
+    sharedPreferences.remove('aor');
+    sharedPreferences.remove('auth_key');
+    sharedPreferences.remove('selectedGroupId');
+
     Navigator.of(context).popUntil((route) => route.isFirst);
     this.setState(() {
       _isRegistering = false;
@@ -263,9 +263,6 @@ class _MyHomePageState extends State<MyHomePage> {
       _logged_in = false;
     });
     softphone.unregisterLinphone();
-    // if(Platform.isAndroid){
-    //   SystemNavigator.pop();
-    // }
   }
 
   @override
@@ -294,6 +291,7 @@ class _MyHomePageState extends State<MyHomePage> {
     Future.delayed(Duration(seconds: 2), () {
       Connectivity().checkConnectivity().then((value) {
         if (value == ConnectivityResult.none) {
+          relogin = true;
           ScaffoldMessenger.of(context).showMaterialBanner(
             MaterialBanner(
               content: Text(
@@ -324,6 +322,7 @@ class _MyHomePageState extends State<MyHomePage> {
     FusionConnection.isInternetActive =
         await InternetConnectionChecker().hasConnection;
     if (!FusionConnection.isInternetActive) {
+      relogin = true;
       ScaffoldMessenger.of(context).showMaterialBanner(
         MaterialBanner(
           content: Text(
@@ -340,21 +339,25 @@ class _MyHomePageState extends State<MyHomePage> {
       );
     } else {
       ScaffoldMessenger.of(context).clearMaterialBanners();
-      _autoLogin();
+      if (relogin) {
+        _checkLoginStatus();
+      }
     }
   }
 
   Future<void> _setupPermissions() async {
-    await FirebaseMessaging.instance.requestPermission(
+    if (!await Permission.notification.isGranted) {
+      await FirebaseMessaging.instance.requestPermission(
         alert: true,
         announcement: false,
         badge: true,
         criticalAlert: true,
         provisional: false,
-        sound: true);
-    bool phonePermissionIsGranted = await Permission.phone.isGranted;
-    if (!phonePermissionIsGranted) {
-      Permission.phone.request();
+        sound: true,
+      );
+    }
+    if (!await Permission.phone.isGranted) {
+      await Permission.phone.request();
     }
   }
 
@@ -543,9 +546,6 @@ class _MyHomePageState extends State<MyHomePage> {
           _logged_in = true;
           _isRegistering = true;
         });
-        print(
-            "MDBM MAIN username= $username authKey= $auth_key aor= $aor domain=${fusionConnection.getDomain()} ext=${fusionConnection.getExtension()}");
-
         fusionConnection.autoLogin(username, _logOut);
         softphone.register(sub_login, auth_key, aor.replaceAll('sip:', ''));
         softphone.onUnregister(() {
@@ -577,14 +577,13 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  _autoLogin() {
-    SharedPreferences.getInstance().then((SharedPreferences prefs) async {
-      String? username = prefs.getString("username");
-    });
-  }
+  // _autoLogin() {
+  //   SharedPreferences.getInstance().then((SharedPreferences prefs) async {
+  //     String? username = prefs.getString("username");
+  //   });
+  // }
 
-  Future<void> _register() async {
-    print("MDBM MAIN _register $_isRegistering");
+  Future<void> _register({String? username}) async {
     if (_isRegistering) {
       return;
     } else if (_sub_login.isNotEmpty &&
@@ -592,33 +591,35 @@ class _MyHomePageState extends State<MyHomePage> {
         _aor.isNotEmpty) {
       softphone.register(_sub_login, _auth_key, _aor.replaceAll('sip:', ''));
     } else {
+      String _domain = fusionConnection.getDomain();
+      String _ext = fusionConnection.getExtension();
+      if (username != null) {
+        _domain = username.split("@")[1];
+        _ext = username.split("@")[0];
+      }
       fusionConnection.nsApiCall('device', 'read', {
-        'domain': fusionConnection.getDomain(),
-        'device':
-            'sip:${fusionConnection.getExtension()}fm@${fusionConnection.getDomain()}',
-        'user': fusionConnection.getExtension()
+        'domain': _domain,
+        'device': 'sip:${_ext}fm@${_domain}',
+        'user': _ext
       }, callback: (Map<String, dynamic> response) {
-        print("deviceread");
-        print(response);
         if (!response.containsKey('device')) {
           toast(
               "You don't seem to have a fusion mobile device registered, please contact support.",
               duration: Toast.LENGTH_LONG);
           fusionConnection.logOut();
+        } else {
+          Map<String, dynamic> device = response['device'];
+          _sub_login = device['sub_login'];
+          _auth_key = device['authentication_key'];
+          _aor = device['aor'];
+
+          sharedPreferences.setString("sub_login", _sub_login);
+          sharedPreferences.setString("auth_key", _auth_key);
+          sharedPreferences.setString("aor", _aor);
+
+          softphone.register(device['sub_login'], device['authentication_key'],
+              device['aor'].replaceAll('sip:', ''));
         }
-        Map<String, dynamic> device = response['device'];
-        _sub_login = device['sub_login'];
-        _auth_key = device['authentication_key'];
-        _aor = device['aor'];
-
-        SharedPreferences.getInstance().then((SharedPreferences prefs) {
-          prefs.setString("sub_login", _sub_login);
-          prefs.setString("auth_key", _auth_key);
-          prefs.setString("aor", _aor);
-        });
-
-        softphone.register(device['sub_login'], device['authentication_key'],
-            device['aor'].replaceAll('sip:', ''));
       });
     }
   }
@@ -645,12 +646,12 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  void _loginSuccess() {
+  void _loginSuccess(String username) {
     this.setState(() {
       _logged_in = true;
     });
     print("MDBM MAIN sub $_sub_login, $_auth_key, $_aor");
-    _register();
+    _register(username: username);
     // checkForInitialMessage();
   }
 

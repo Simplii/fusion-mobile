@@ -10,7 +10,7 @@ import 'styles.dart';
 
 class LoginView extends StatefulWidget {
   final FusionConnection _fusionConnection;
-  final Function() _onLogin;
+  final Function(String) _onLogin;
 
   LoginView(this._onLogin, this._fusionConnection, {Key? key})
       : super(key: key);
@@ -22,7 +22,7 @@ class LoginView extends StatefulWidget {
 class _LoginViewState extends State<LoginView> {
   FusionConnection get _fusionConnection => widget._fusionConnection;
 
-  Function() get _onLogin => widget._onLogin;
+  Function(String) get _onLogin => widget._onLogin;
   final _usernameController =
       TextEditingController.fromValue(TextEditingValue(text: ""));
   final _passwordController =
@@ -118,10 +118,8 @@ class _LoginViewState extends State<LoginView> {
   }
 
   _login() async {
-    // SharedPreferences.getInstance().then((SharedPreferences prefs) {
-    //   prefs.setString("username", _usernameController.value.text);
-    // });
-
+    String _username = _usernameController.value.text.trim();
+    String _pass = _passwordController.value.text.trim();
     this.setState(() {
       _isPending = true;
     });
@@ -132,12 +130,11 @@ class _LoginViewState extends State<LoginView> {
       });
     });
 
-    bool loginSucceed = await _fusionConnection.newLogin(
-        _usernameController.value.text, _passwordController.value.text);
+    bool loginSucceed = await _fusionConnection.newLogin(_username, _pass);
 
     if (loginSucceed) {
       _wasSuccessful = true;
-      _onLogin();
+      _onLogin(_username);
     } else {
       _wasSuccessful = false;
     }
