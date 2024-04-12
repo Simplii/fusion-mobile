@@ -125,9 +125,11 @@ class _LoginViewState extends State<LoginView> {
     });
 
     Timer loginTimeout = Timer(Duration(seconds: 15), () {
-      setState(() {
-        _isPending = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isPending = false;
+        });
+      }
     });
 
     bool loginSucceed = await _fusionConnection.newLogin(_username, _pass);
@@ -137,11 +139,11 @@ class _LoginViewState extends State<LoginView> {
       _onLogin(_username);
     } else {
       _wasSuccessful = false;
+      loginTimeout.cancel();
+      this.setState(() {
+        _isPending = false;
+      });
     }
-    loginTimeout.cancel();
-    this.setState(() {
-      _isPending = false;
-    });
   }
 
   @override

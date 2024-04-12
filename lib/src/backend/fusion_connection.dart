@@ -75,10 +75,10 @@ class FusionConnection {
   ConnectivityResult connectivityResult = ConnectivityResult.none;
   bool internetAvailable = true;
   StreamSubscription? _wsStream;
-  // static final String host = "fusioncom.co";
-  static final String host = "zaid-fusion-dev.fusioncomm.net";
+  static final String host = "fusioncom.co";
+  // static final String host = "zaid-fusion-dev.fusioncomm.net";
   String serverRoot = "http://$host";
-  StreamController websocketStream = StreamController();
+  StreamController websocketStream = StreamController.broadcast();
   String mediaServer = "https://fusion-media.sfo2.digitaloceanspaces.com";
   String defaultAvatar = "https://$host/img/defaultuser.png";
   static const MethodChannel contactsChannel =
@@ -86,7 +86,7 @@ class FusionConnection {
   static bool isInternetActive = false;
   String _token = "";
   String _signature = "";
-
+  bool loggingOut = false;
   // Switched fusion connection to Singleton so we don't have to pass it down each widget
   FusionConnection._internal() {
     // _getCookies();
@@ -184,10 +184,9 @@ class FusionConnection {
   }
 
   logOut() {
+    loggingOut = true;
     _wsStream?.cancel();
-    websocketStream.done;
-    websocketStream.close();
-    websocketStream = StreamController();
+    websocketStream = StreamController.broadcast();
     _softphone?.unregisterLinphone();
     FirebaseMessaging.instance.getToken().then((token) {
       if (_pushkitToken != null) {
@@ -879,6 +878,7 @@ class FusionConnection {
   }
 
   Future<bool> newLogin(String username, String password) async {
+    loggingOut = false;
     bool success = await auth(username, password);
     if (success) {
       loadDomainOptions();
@@ -943,6 +943,7 @@ class FusionConnection {
   // }
 
   _reconnectSocket() {
+    if (loggingOut) return;
     socketChannel.sink.add(convert.jsonEncode({
       "simplii_identification": [_extension, _domain],
       "pwd": _password
@@ -960,6 +961,7 @@ class FusionConnection {
 
   _sendHeartbeat() {
     String beat = randomString(30);
+    if (loggingOut) return;
     _sendToSocket({'heartbeat': beat});
     Future.delayed(const Duration(seconds: 15), () {
       if (_heartbeats[beat] != null && !_heartbeats[beat]!) {

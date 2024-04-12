@@ -577,12 +577,6 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  // _autoLogin() {
-  //   SharedPreferences.getInstance().then((SharedPreferences prefs) async {
-  //     String? username = prefs.getString("username");
-  //   });
-  // }
-
   Future<void> _register({String? username}) async {
     if (_isRegistering) {
       return;
