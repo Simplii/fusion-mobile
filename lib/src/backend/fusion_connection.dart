@@ -203,6 +203,7 @@ class FusionConnection {
               _softphone!.close();
               setSoftphone(null);
             }
+            sharedPreferences.remove("username");
             _onLogOut();
           } catch (e) {}
           _clearDataStores();
@@ -583,7 +584,7 @@ class FusionConnection {
       String urlParams = "";
 
       if (method.toLowerCase() == 'get') {
-        urlParams = "?";
+        urlParams = data.isNotEmpty ? "?" : "";
         for (String key in data.keys) {
           RegExp reg = RegExp((r'[^\x20-\x7E]'));
           urlParams += key +
@@ -591,6 +592,9 @@ class FusionConnection {
               Uri.encodeQueryComponent(
                   data[key].toString().trim().replaceAll(reg, '')) +
               '&';
+        }
+        if (urlParams.endsWith("&")) {
+          urlParams = urlParams.substring(0, urlParams.length - 1);
         }
       }
       Uri url = Uri.parse('https://$host/api/v2' + route + urlParams);
@@ -645,7 +649,7 @@ class FusionConnection {
         }
       } else if (uriResponse?.statusCode != 200) {
         developer.log(
-            "apiv2 request failing $method $url ${uriResponse?.statusCode}",
+            "apiv2 request failing $method $url ${uriResponse?.statusCode} ${_authToken}",
             name: _TAG);
       } else {
         var jsonResponse = convert.jsonDecode(uriResponse?.body ?? "");

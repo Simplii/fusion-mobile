@@ -644,7 +644,6 @@ class _MyHomePageState extends State<MyHomePage> {
     this.setState(() {
       _logged_in = true;
     });
-    print("MDBM MAIN sub $_sub_login, $_auth_key, $_aor");
     _register(username: username);
     // checkForInitialMessage();
   }
