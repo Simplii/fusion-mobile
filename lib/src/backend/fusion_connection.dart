@@ -67,7 +67,6 @@ class FusionConnection {
   late Database db;
   String? _pushkitToken;
   Softphone? _softphone;
-  // PersistCookieJar? _cookies;
   Function _onLogOut = () {};
   Function _refreshUi = () {};
   Map<String, bool> received_smses = {};
@@ -89,7 +88,6 @@ class FusionConnection {
   bool loggingOut = false;
   // Switched fusion connection to Singleton so we don't have to pass it down each widget
   FusionConnection._internal() {
-    // _getCookies();
     crmContacts = CrmContactsStore(this);
     integratedContacts = IntegratedContactsStore(this);
     contacts = ContactsStore(this);
@@ -125,27 +123,6 @@ class FusionConnection {
       _refreshUi();
     });
   }
-
-  // bool isLoginFinished() {
-  //   return _username != "" && _password != "";
-  // }
-
-  // _getCookies({Function? callback}) async {
-  //   getApplicationDocumentsDirectory().then((directory) {
-  //     _cookies = PersistCookieJar(
-  //         persistSession: true,
-  //         ignoreExpires: true,
-  //         storage: FileStorage(directory.path));
-
-  //     if (callback != null) {
-  //       callback();
-  //     }
-  //   }).onError((dynamic er, err) {
-  //     print("cookie error");
-  //     print(er);
-  //     callback!();
-  //   });
-  // }
 
   setSoftphone(Softphone? softphone) {
     _softphone = softphone;
@@ -186,6 +163,7 @@ class FusionConnection {
   logOut() {
     loggingOut = true;
     _wsStream?.cancel();
+    sharedPreferences.remove("username");
     websocketStream = StreamController.broadcast();
     _softphone?.unregisterLinphone();
     FirebaseMessaging.instance.getToken().then((token) {
@@ -196,14 +174,12 @@ class FusionConnection {
           {"token": token, "pn_tok": _pushkitToken}, callback: (data) {
         apiV1Call("get", "/log_out", {}, callback: (data) {
           _username = '';
-          // _password = '';
           try {
             if (_softphone != null) {
               _softphone!.stopInbound();
               _softphone!.close();
               setSoftphone(null);
             }
-            sharedPreferences.remove("username");
             _onLogOut();
           } catch (e) {}
           _clearDataStores();
@@ -387,63 +363,8 @@ class FusionConnection {
     });
   }
 
-  // _getUsername() async {
-  //   SharedPreferences prefs = await SharedPreferences.getInstance();
-  //   return prefs.getString("username");
-  // }
-
-  // _saveCookie(Response response) async {
-  //   SharedPreferences prefs = await SharedPreferences.getInstance();
-  //   if (response.headers.containsKey('set-cookie')) {
-  //     List<String> cookieStrings =
-  //         response.headers['set-cookie']!.split("HttpOnly,");
-  //     for (String cookieString in cookieStrings) {
-  //       Cookie cookie = Cookie.fromSetCookieValue(cookieString);
-  //       if (cookie.name == "fusionsession") {
-  //         prefs.setString("fusionCookie", cookie.value.toString());
-  //       } else if (cookie.name == "sec_session_id") {
-  //         prefs.setString("secSessionId", cookie.value.toString());
-  //       }
-
-  //       _cookies?.saveFromResponse(response.request!.url, [cookie]);
-  //     }
-  //   }
-  // }
-
-  // Future<Map<String, String>> _cookieHeaders(url) async {
-  //   Completer<Map<String, String>> c = new Completer<Map<String, String>>();
-  //   var runIt = () async {
-  //     SharedPreferences prefs = await SharedPreferences.getInstance();
-  //     String fusionCookie = prefs.getString("fusionCookie") ?? "";
-  //     String secSessionId = prefs.getString("secSessionId") ?? "";
-  //     String cookiesHeader = "";
-  //     Map<String, String> headers = {};
-  //     if (fusionCookie.isNotEmpty) {
-  //       cookiesHeader =
-  //           "fusionsession=$fusionCookie; sec_session_id=$secSessionId;";
-  //       headers['cookie'] = cookiesHeader;
-  //       return c.complete(headers);
-  //     }
-
-  //     List<Cookie> cookies = await _cookies!.loadForRequest(url);
-
-  //     for (Cookie c in cookies) {
-  //       cookiesHeader += c.name + "=" + c.value + "; ";
-  //     }
-  //     headers['cookie'] = cookiesHeader;
-  //     c.complete(headers);
-  //   };
-
-  //   if (_cookies == null) {
-  //     _getCookies(callback: runIt);
-  //   } else {
-  //     runIt();
-  //   }
-  //   return c.future;
-  // }
-
   nsApiCall(String object, String action, Map<String, dynamic> data,
-      {required Function callback}) async {
+      {required Function callback, int retryCount = 0}) async {
     var client = http.Client();
     try {
       data['action'] = action;
@@ -468,11 +389,30 @@ class FusionConnection {
         jsonResponse =
             convert.jsonDecode(uriResponse.body) as Map<String, dynamic>?;
       } catch (e) {}
-      developer.log(
-        "NS_API_Resp $action $object t=$_token s=$_signature u=$_username, body=$requestBody",
-        name: _TAG,
-      );
-      callback(jsonResponse);
+      if (uriResponse.statusCode == 401 &&
+          uriResponse.headers.containsKey("x-fusion-signature")) {
+        if (uriResponse.headers["x-fusion-signature"] != null &&
+            uriResponse.headers["x-fusion-signature"] != _signature) {
+          developer.log("nsApiCall new signature", name: _TAG);
+          _signature = uriResponse.headers["x-fusion-signature"]!;
+          sharedPreferences.setString("signature", _signature);
+          if (retryCount >= 5) {
+            developer.log("nsApiCall retried $url 5 times", name: _TAG);
+          } else {
+            await Future.delayed(Duration(seconds: 1), () async {
+              developer.log("nsApiCall retry future", name: _TAG);
+              await nsApiCall(object, action, data,
+                  callback: callback, retryCount: retryCount + 1);
+            });
+          }
+        }
+      } else {
+        developer.log(
+          "NS_API_Resp $action $object t=$_token s=$_signature u=$_username, body=$requestBody",
+          name: _TAG,
+        );
+        callback(jsonResponse);
+      }
     } finally {
       client.close();
     }
@@ -752,12 +692,7 @@ class FusionConnection {
     return _domain;
   }
 
-  // Creds getCreds() {
-  //   return Creds(_username, _password);
-  // }
-
   _postLoginSetup(Function(bool)? callback) async {
-    // _getCookies();
     settings.lookupSubscriber();
     coworkers.getCoworkers((data) {});
     await smsDepartments.getDepartments((List<SMSDepartment> lis) {});
@@ -1102,10 +1037,4 @@ class FusionConnection {
     await sharedPreferences.clear();
     _clearDataStores();
   }
-}
-
-class Creds {
-  String username;
-  String pass;
-  Creds(this.username, this.pass);
 }

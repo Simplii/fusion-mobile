@@ -376,12 +376,12 @@ class _MyHomePageState extends State<MyHomePage> {
     NotificationData notificationData = NotificationData.fromJson(d);
     String depId = notificationData.departmentId ?? DepartmentIds.AllMessages;
 
+    List<SMSDepartment> deps = fusionConnection.smsDepartments.allDepartments();
+    if (deps.isEmpty) {
+      //TODO:save departments to db for fast access
+      await fusionConnection.smsDepartments.getDepartments((p0) => deps = p0);
+    }
     if (notificationData.toNumber.isNotEmpty && notificationData.isGroup) {
-      List<SMSDepartment> deps =
-          fusionConnection.smsDepartments.allDepartments();
-      if (deps.isEmpty) {
-        await fusionConnection.smsDepartments.getDepartments((p0) => deps = p0);
-      }
       SMSDepartment? dep =
           deps.where((element) => element.id == depId).firstOrNull;
       String numberUsed = "";
@@ -435,13 +435,17 @@ class _MyHomePageState extends State<MyHomePage> {
                       [notificationData.fromNumber], contacts)
                   .then(
                 (convo) {
+                  SMSDepartment? department = fusionConnection.smsDepartments
+                      .getDepartmentByPhoneNumber(notificationData.toNumber);
                   showModalBottomSheet(
                       context: context,
                       backgroundColor: Colors.transparent,
                       isScrollControlled: true,
                       builder: (context) => ConversationView(
                           conversation: convo,
-                          departmentId: depId,
+                          departmentId: depId == DepartmentIds.AllMessages
+                              ? department?.id ?? DepartmentIds.Personal
+                              : depId,
                           isNewConversation: convo.conversationId == null));
                 },
               );
