@@ -536,7 +536,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   _checkLoginStatus() async {
     String? username = sharedPreferences.getString("username");
-    if (username != null) {
+    if (username != null && username.isNotEmpty) {
       String domain = username.split('@')[1];
       String sub_login = sharedPreferences.getString("sub_login") ?? "";
       String aor = sharedPreferences.getString("aor") ?? "";

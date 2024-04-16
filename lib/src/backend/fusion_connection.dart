@@ -163,28 +163,27 @@ class FusionConnection {
   logOut() {
     loggingOut = true;
     _wsStream?.cancel();
-    sharedPreferences.remove("username");
     websocketStream = StreamController.broadcast();
     _softphone?.unregisterLinphone();
     FirebaseMessaging.instance.getToken().then((token) {
       if (_pushkitToken != null) {
         apiV1Call("delete", "/clients/device_token", {"token": _pushkitToken});
       }
-      apiV1Call("delete", "/clients/device_token",
-          {"token": token, "pn_tok": _pushkitToken}, callback: (data) {
-        apiV1Call("get", "/log_out", {}, callback: (data) {
-          _username = '';
-          try {
-            if (_softphone != null) {
-              _softphone!.stopInbound();
-              _softphone!.close();
-              setSoftphone(null);
-            }
-            _onLogOut();
-          } catch (e) {}
-          _clearDataStores();
-        });
+      apiV1Call("delete", "/clients/device_token", {
+        "token": token,
+        "pn_tok": _pushkitToken,
       });
+      apiV1Call("get", "/log_out", {});
+      _username = '';
+      if (_softphone != null) {
+        _softphone?.stopInbound();
+        _softphone?.close();
+        setSoftphone(null);
+      }
+      _clearDataStores();
+      _token = "";
+      _signature = "";
+      _onLogOut();
     });
   }
 
@@ -473,7 +472,7 @@ class FusionConnection {
           uriResponse!.headers.containsKey("x-fusion-signature")) {
         if (uriResponse.headers["x-fusion-signature"] != null &&
             uriResponse.headers["x-fusion-signature"] != _signature) {
-          developer.log("apiv1 new signature", name: _TAG);
+          developer.log("apiv1 new signature url=$url", name: _TAG);
           _signature = uriResponse.headers["x-fusion-signature"]!;
           sharedPreferences.setString("signature", _signature);
           if (retryCount >= 5) {
@@ -483,7 +482,7 @@ class FusionConnection {
             }
           } else {
             await Future.delayed(Duration(seconds: 1), () async {
-              developer.log("apiv1 retry future", name: _TAG);
+              developer.log("apiv1 retry future url=$url", name: _TAG);
 
               await apiV1Call(method, route, data,
                   onError: onError,
