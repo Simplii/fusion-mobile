@@ -849,37 +849,6 @@ class FusionConnection {
     loadDomainOptions();
   }
 
-  // login(String username, String? password, Function(bool) callback) {
-  //   if (password == null) return;
-  //   apiV1Call(
-  //       "post",
-  //       "/clients/lookup_options",
-  //       password != null
-  //           ? {"username": username, "password": password}
-  //           : {"username": username}, onError: () {
-  //     callback(false);
-  //   }, callback: (Map<String, dynamic> response) {
-  //     if (response.containsKey("access_key")) {
-  //       _username = username.split('@')[0] + '@' + response['domain'];
-
-  //       // sharedPreferences.setString("username", _username);
-  //       if (response.containsKey("uses_v2")) {
-  //         sharedPreferences.setBool("v2User", response["uses_v2"]);
-  //         settings.usesV2 = response["uses_v2"];
-  //       }
-  //       // this.encryptFusionData(username, password);
-  //       _username = _username;
-  //       // _password = password;
-  //       _domain = _username.split('@')[1];
-  //       _extension = _username.split('@')[0];
-  //       settings.setOptions(response);
-  //       _postLoginSetup(callback);
-  //     } else {
-  //       callback(false);
-  //     }
-  //   });
-  // }
-
   _reconnectSocket() {
     if (loggingOut) return;
     socketChannel.sink.add(convert.jsonEncode({
@@ -887,15 +856,6 @@ class FusionConnection {
       "pwd": _password
     }));
   }
-
-  // _reconnectSocket() {
-  //   _socket.connect().then((val) {
-  //     _socket.send(convert.jsonEncode({
-  //       "simplii_identification": [_extension, _domain],
-  //       "pwd": _password
-  //     }));
-  //   });
-  // }
 
   _sendHeartbeat() {
     String beat = randomString(30);
