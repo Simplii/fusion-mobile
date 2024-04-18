@@ -84,14 +84,14 @@ class FusionConnection {
   Connectivity connectivity = Connectivity();
   ConnectivityResult connectivityResult = ConnectivityResult.none;
   bool internetAvailable = true;
-  final StreamController websocketStream = StreamController.broadcast();
+  StreamController websocketStream = StreamController();
   String serverRoot = "http://fusioncom.co";
   String mediaServer = "https://fusion-media.sfo2.digitaloceanspaces.com";
   String defaultAvatar = "https://fusioncom.co/img/defaultuser.png";
   static const MethodChannel contactsChannel =
       MethodChannel('net.fusioncomm.ios/contacts');
   static bool isInternetActive = false;
-
+  StreamSubscription? _wsStream;
   // Switched fusion connection to Singleton so we don't have to pass it down each widget
   FusionConnection._internal() {
     _getCookies();
@@ -188,6 +188,10 @@ class FusionConnection {
   }
 
   logOut() {
+    _wsStream?.cancel();
+    websocketStream.done;
+    websocketStream.close();
+    websocketStream = StreamController();
     _softphone?.unregisterLinphone();
     FirebaseMessaging.instance.getToken().then((token) {
       if (_pushkitToken != null) {
@@ -272,7 +276,8 @@ class FusionConnection {
           missed TEXT,
           contacts BLOB,
           coworker BLOB,
-          phoneContact BLOB
+          phoneContact BLOB,
+          queue TEXT
           );'''));
 
         print(db.execute('''
@@ -843,13 +848,15 @@ class FusionConnection {
     socketChannel.sink.add(convert.jsonEncode(payload));
   }
 
-  setupSocket() {
+  setupSocket() async {
     int messageNum = 0;
     final wsUrl = Uri.parse('wss://fusioncom.co:8443/');
     socketChannel = WebSocketChannel.connect(wsUrl);
     websocketStream.addStream(socketChannel.stream);
-    websocketStream.stream.listen((messageData) async {
-      print("MDBM wsMessage ${messageData}");
+    _wsStream = websocketStream.stream.listen((messageData) async {
+      if (kDebugMode) {
+        print("MDBM wsMessage ${messageData}");
+      }
       Map<String, dynamic> message = convert.jsonDecode(messageData);
       if (message.containsKey('heartbeat')) {
         _heartbeats[message['heartbeat']] = true;
@@ -888,6 +895,8 @@ class FusionConnection {
       }
 
       if (_softphone != null) _softphone!.checkCallIds(message);
+    }, onDone: () {
+      print("MDBM FUSIONCONNECTION ws done");
     }, onError: (e) {
       print("MDBM WS ERROR ${e}");
     });

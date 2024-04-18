@@ -5,12 +5,8 @@ import android.app.*
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.media.AudioAttributes
-import android.media.AudioManager
-import android.media.RingtoneManager
 import android.telephony.PhoneNumberUtils
 import android.util.Log
-import android.view.WindowManager
 import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -26,6 +22,7 @@ import net.fusioncomm.android.notifications.Contact
 import net.fusioncomm.android.notifications.Notifiable
 import net.fusioncomm.android.notifications.NotificationsManager
 import org.linphone.core.Call
+import java.io.IOException
 import java.net.URL
 
 @TargetApi(26)
@@ -36,7 +33,12 @@ class Api26Compatibility {
 
         private suspend fun getImage(url:URL): Bitmap? = run {
             return withContext(Dispatchers.IO) {
-                BitmapFactory.decodeStream(url.openStream())
+                try {
+                    BitmapFactory.decodeStream(url.openStream())
+                } catch (e: IOException) {
+                    Log.d(debugTag, "${e.message} url=$url")
+                    null
+                }
             }
         }
 

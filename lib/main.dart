@@ -238,6 +238,7 @@ class _MyHomePageState extends State<MyHomePage> {
   late SharedPreferences sharedPreferences;
   late StreamSubscription<ConnectivityResult> connectivitySubscription;
   ConnectivityResult connectionStatus = ConnectivityResult.none;
+  bool relogin = false;
 
   _logOut() {
     SharedPreferences.getInstance().then((SharedPreferences prefs) {
@@ -296,6 +297,7 @@ class _MyHomePageState extends State<MyHomePage> {
     Future.delayed(Duration(seconds: 2), () {
       Connectivity().checkConnectivity().then((value) {
         if (value == ConnectivityResult.none) {
+          relogin = true;
           ScaffoldMessenger.of(context).showMaterialBanner(
             MaterialBanner(
               content: Text(
@@ -326,6 +328,7 @@ class _MyHomePageState extends State<MyHomePage> {
     FusionConnection.isInternetActive =
         await InternetConnectionChecker().hasConnection;
     if (!FusionConnection.isInternetActive) {
+      relogin = true;
       ScaffoldMessenger.of(context).showMaterialBanner(
         MaterialBanner(
           content: Text(
@@ -342,12 +345,13 @@ class _MyHomePageState extends State<MyHomePage> {
       );
     } else {
       ScaffoldMessenger.of(context).clearMaterialBanners();
-      _autoLogin();
+      if (relogin) {
+        _autoLogin();
+      }
     }
   }
 
   Future<void> _setupPermissions() async {
-    await Permission.phone.request();
     await FirebaseMessaging.instance.requestPermission(
         alert: true,
         announcement: false,
@@ -355,6 +359,9 @@ class _MyHomePageState extends State<MyHomePage> {
         criticalAlert: true,
         provisional: false,
         sound: true);
+    if (!await Permission.phone.isGranted) {
+      await Permission.phone.request();
+    }
   }
   // FOR IOS
   // Future<void> _onLaunch(RemoteMessage m) async {
