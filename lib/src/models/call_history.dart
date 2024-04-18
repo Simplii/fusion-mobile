@@ -197,8 +197,9 @@ class CallHistoryStore extends FusionStore<CallHistory> {
     if (stored.isEmpty && !pullToRefresh) {
       // app just oppened
       // load coworkers store since recent call screen loads first before coworkers in postLogin
-      await fusionConnection.auth();
-      fusionConnection.coworkers.getCoworkers((c) {});
+      //TODO:remove after testing new auth
+      // await fusionConnection.auth();
+      // fusionConnection.coworkers.getCoworkers((c) {});
       getPersisted(limit, offset, callback);
     } else if (stored.isNotEmpty && !pullToRefresh) {
       callback(stored, false, false);

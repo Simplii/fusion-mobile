@@ -295,7 +295,9 @@ class _RecentCallsListState extends State<RecentCallsList> {
     if (_lookedUpTab != _selectedTab) {
       lookupState = 0;
     }
-    if (lookupState == 0 && _fusionConnection.isLoginFinished()) {
+    //TODO: remove after checking
+    // if (lookupState == 0 && _fusionConnection.isLoginFinished()) {
+    if (lookupState == 0) {
       _lookupHistory();
     }
 

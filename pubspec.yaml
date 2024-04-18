@@ -1,6 +1,6 @@
 name: fusion_mobile_revamped
 description: Fusion Mobile
-version: 1.2.27+259
+version: 1.2.27+262
 # The following line prevents the package from being accidentally published to
 # pub.dev using `pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -23,8 +23,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  encrypt: ^5.0.3
-  crypto: ^3.0.2
+  crypto: ^3.0.3
   firebase_core: ^2.17.0
   firebase_messaging: ^14.6.9
   firebase_core_platform_interface: ^4.8.0
@@ -34,9 +33,9 @@ dependencies:
   awesome_notifications: ^0.7.4+1
   sip_ua:
     path: "./dart-sip-ua"
-  http: ^1.1.0
+  http: ^1.2.1
   keyboard_attachable: ^2.1.0
-  web_socket_channel: ^2.4.0
+  web_socket_channel: ^2.4.4
   flutter_local_notifications: ^16.1.0
   cupertino_icons: ^1.0.6
   url_launcher: ^6.1.11
@@ -52,7 +51,6 @@ dependencies:
   just_audio: ^0.9.35
   dotted_border: ^2.1.0
   audioplayers: ^5.2.0
-  cookie_jar: ^4.0.8
   shared_preferences: ^2.2.1
   all_sensors: ^0.4.2
   flutter_background: ^1.2.0

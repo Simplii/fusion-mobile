@@ -9,7 +9,7 @@ import android.telephony.TelephonyManager
 import android.util.Log
 import android.view.KeyEvent
 import com.google.gson.Gson
-import io.flutter.embedding.android.FlutterFragmentActivity
+import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.EventChannel.EventSink
@@ -26,7 +26,7 @@ import net.fusioncomm.android.telecom.CallQualityStream
 import net.fusioncomm.android.telecom.CallsManager
 import org.linphone.core.*
 
-class MainActivity : FlutterFragmentActivity() {
+class MainActivity : FlutterActivity() {
     private val debugTag = "MDBM MainActivity"
     private val core: Core = FMCore.core
     private val channel: MethodChannel = FusionMobileApplication.callingChannel
