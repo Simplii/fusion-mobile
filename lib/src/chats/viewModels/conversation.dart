@@ -285,7 +285,9 @@ class ConversationVM with ChangeNotifier {
     }
     sendingMessage = false;
     notifyListeners();
-    _chatsVM?.refreshView(departmentId: conversationDepartmentId);
+    if (_chatsVM?.selectedDepartmentId != DepartmentIds.Unread) {
+      _chatsVM?.refreshView(departmentId: conversationDepartmentId);
+    }
   }
 
   void _showLargeMMSError() {

@@ -138,6 +138,18 @@ class SMSDepartmentsStore extends FusionStore<SMSDepartment> {
           'users': []
         }));
 
+        storeRecord(SMSDepartment({
+          'id': DepartmentIds.Unread,
+          'group_name': 'Unread Messages',
+          'numbers': allNumbers,
+          'mms_numbers': allMMSNumbers,
+          'unread': 0,
+          'uses_dynamic_outbound': false,
+          'primary_user': null,
+          'protocol': null,
+          'users': []
+        }));
+
         callback(allDepartments());
       });
     }
@@ -181,6 +193,7 @@ abstract class DepartmentIds {
   static const String Personal = "-1";
   static const String AllMessages = "-2";
   static const String FusionChats = "-3";
+  static const String Unread = "-4";
 }
 
 abstract class DepartmentProtocols {

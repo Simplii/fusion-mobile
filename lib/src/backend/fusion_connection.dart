@@ -703,7 +703,7 @@ class FusionConnection {
     }
     conversations.getConversations(
         "-2", 100, 0, (convos, fromServer, departmentId, errorMessage) {});
-    refreshUnreads();
+    unreadMessages.getUnreads((p0, p1) => null);
     if (Platform.isAndroid) {
       phoneContacts.sync();
     } else {
