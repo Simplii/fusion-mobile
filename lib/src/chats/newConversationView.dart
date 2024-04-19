@@ -66,10 +66,12 @@ class _NewMessageViewState extends State<NewMessageView> {
     // String myImageUrl = fusionConnection.myAvatarUrl();
     List<SMSDepartment> groups = fusionConnection.smsDepartments
         .allDepartments()
-        .where((department) => department.id != DepartmentIds.AllMessages)
+        .where((department) =>
+            department.id != DepartmentIds.AllMessages &&
+            department.id != DepartmentIds.Unread)
         .toList();
 
-    groups.sort(((a, b) => int.parse(a.id!) < int.parse(b.id!) ? -1 : 1));
+    groups.sort(((a, b) => int.parse(a.id) < int.parse(b.id) ? -1 : 1));
     return Column(children: [
       Container(
           alignment: Alignment.center,

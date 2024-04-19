@@ -262,6 +262,9 @@ class SMSConversationsStore extends FusionStore<SMSConversation> {
       return callback([], false);
     }
     SMSDepartment group = fusionConnection.smsDepartments.lookupRecord(groupId);
+    if (group.id == DepartmentIds.Unread) {
+      group.numbers = [];
+    }
     fusionConnection.db
         .query('sms_conversation',
             limit: limit,
@@ -322,7 +325,6 @@ class SMSConversationsStore extends FusionStore<SMSConversation> {
               .first
           : null;
     });
-    fusionConnection.refreshUnreads();
     List<PhoneContact> phoneContacts =
         fusionConnection.phoneContacts.getRecords();
     List<Coworker> coworkers = fusionConnection.coworkers.getRecords();

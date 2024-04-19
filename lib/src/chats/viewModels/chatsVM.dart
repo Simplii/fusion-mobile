@@ -53,7 +53,6 @@ class ChatsVM extends ChangeNotifier {
       if (fromServer) {
         int total = 0;
         for (var unread in unreads) {
-          print("$DebugTag ${unread.unread} ${unread.departmentId}");
           if (unread.departmentId != int.parse(selectedDepartmentId)) {
             total += unread.unread!;
           }
@@ -118,17 +117,20 @@ class ChatsVM extends ChangeNotifier {
 
     departments.sort((a, b) => a.groupName == "All Messages"
         ? -1
-        : (a.groupName != "All Messages" && int.parse(a.id!) < int.parse(b.id!))
+        : (a.groupName != "All Messages" && int.parse(a.id) < int.parse(b.id))
             ? -1
             : 1);
     for (SMSDepartment d in departments) {
       options.add([
         d.groupName ?? "",
-        d.id ?? "",
+        d.id,
         d.unreadCount.toString(),
-        d.id ?? "",
+        d.id,
         d.protocol ?? ""
       ]);
+    }
+    if (unreadsCount == 0) {
+      options.removeWhere((element) => element.contains(DepartmentIds.Unread));
     }
     return options;
   }
@@ -139,6 +141,7 @@ class ChatsVM extends ChangeNotifier {
     if (_offset > 0) {
       _offset = 0;
     }
+    conversations = [];
     lookupMessages();
     _updateUnreadCount();
   }
@@ -253,6 +256,10 @@ class ChatsVM extends ChangeNotifier {
 
   void markConversationAsRead(SMSConversation conversation) async {
     await fusionConnection.conversations.markRead(conversation);
+    if (selectedDepartmentId == DepartmentIds.Unread) {
+      conversations.removeWhere(
+          (element) => element.conversationId == conversation.conversationId);
+    }
     _updateUnreadCount();
   }
 

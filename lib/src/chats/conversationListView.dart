@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:fusion_mobile_revamped/src/chats/components/conversationListRow.dart';
 import 'package:fusion_mobile_revamped/src/chats/conversationView.dart';
 import 'package:fusion_mobile_revamped/src/chats/viewModels/chatsVM.dart';
 import 'package:fusion_mobile_revamped/src/models/conversations.dart';
+import 'package:fusion_mobile_revamped/src/models/sms_departments.dart';
 import 'package:fusion_mobile_revamped/src/styles.dart';
 
 class ConversationListView extends StatefulWidget {
@@ -64,6 +66,18 @@ class _ConversationListViewState extends State<ConversationListView> {
     return ListenableBuilder(
         listenable: _chatsVM,
         builder: (context, child) {
+          if (_conversations.isEmpty) {
+            if (_chatsVM.selectedDepartmentId == DepartmentIds.Unread) {
+              return Center(
+                child: Text("All caught up no unread messages"),
+              );
+            }
+            if (_chatsVM.selectedDepartmentId == DepartmentIds.AllMessages) {
+              return Center(
+                child: Text("No messages"),
+              );
+            }
+          }
           return ListView.builder(
             controller: _scrollController,
             itemCount: _chatsVM.loadingMoreConversations

@@ -288,7 +288,9 @@ class _FusionDropdownState extends State<FusionDropdown> {
                   child: Text(
                     selected == DepartmentIds.FusionChats
                         ? "Fusion Chats"
-                        : selected!,
+                        : selected == DepartmentIds.Unread
+                            ? "Personal"
+                            : selected!,
                     overflow: TextOverflow.ellipsis,
                     softWrap: false,
                     style: _style != null ? _style : subHeaderTextStyle,

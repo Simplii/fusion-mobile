@@ -23,12 +23,14 @@ class NewConversationVM with ChangeNotifier {
   String getMyNumber() {
     String myPhoneNumber = "";
     SMSDepartment department = fusionConnection.smsDepartments.getDepartment(
-      selectedDepartmentId == DepartmentIds.AllMessages
+      selectedDepartmentId == DepartmentIds.AllMessages ||
+              selectedDepartmentId == DepartmentIds.Unread
           ? DepartmentIds.Personal
           : selectedDepartmentId,
     );
     if (department.numbers.length > 0 &&
-        department.id != DepartmentIds.AllMessages) {
+        department.id != DepartmentIds.AllMessages &&
+        department.id != DepartmentIds.Unread) {
       myPhoneNumber = department.numbers[0];
     }
     return myPhoneNumber;

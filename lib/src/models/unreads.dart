@@ -17,7 +17,17 @@ class DepartmentUnreadRecord extends FusionModel {
     this.departmentId = obj['id'];
     this.unread = obj['unread'];
     this.inq = obj['inq'];
+    this.to = obj['to'];
     this.numbers = numbers.map((e) => e.toString()).toList();
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      "departmentId": this.departmentId,
+      "unread": this.unread,
+      "to": this.to,
+      "numbers": this.numbers,
+    };
   }
 }
 
@@ -44,8 +54,8 @@ class UnreadsStore extends FusionStore<DepartmentUnreadRecord> {
         clearRecords();
         List<SMSDepartment> allDeps =
             fusionConnection.smsDepartments.getRecords();
-        SMSDepartment allMessages = fusionConnection.smsDepartments
-            .getDepartment(DepartmentIds.AllMessages);
+        SMSDepartment UnreadMessages =
+            fusionConnection.smsDepartments.getDepartment(DepartmentIds.Unread);
 
         RegExp reg = RegExp(r'(^[+]*[(]{0,1}[0-9]{1,4}[)]{0,1}[-\s\./0-9]*$)');
         int allUnreads = 0;
@@ -53,32 +63,31 @@ class UnreadsStore extends FusionStore<DepartmentUnreadRecord> {
           if (datas.isEmpty) {
             dep.unreadCount = 0;
           } else {
+            int depUnreadCount = 0;
             for (var item in datas) {
               DepartmentUnreadRecord obj = DepartmentUnreadRecord(item);
               if (!obj.numbers.any((item) => reg.hasMatch(item))) {
                 obj.departmentId = -3;
               }
               storeRecord(obj);
-              print("MDBM ${obj.unread} ${obj.departmentId}");
 
               if (dep.id == obj.departmentId.toString()) {
                 response.add(obj);
-                dep.unreadCount = obj.unread!;
                 allUnreads += obj.unread!;
-                break;
+                depUnreadCount += obj.unread!;
               } else {
                 dep.unreadCount = 0;
               }
+            }
+            if (dep.unreadCount != depUnreadCount) {
+              dep.unreadCount = depUnreadCount;
             }
           }
           fusionConnection.smsDepartments.storeRecord(dep);
         }
 
-        allMessages.unreadCount = allUnreads;
-        fusionConnection.smsDepartments.storeRecord(allMessages);
-        for (var r in response) {
-          print("MDBM Unreads ${r.departmentId} ${r.unread}");
-        }
+        UnreadMessages.unreadCount = allUnreads;
+        fusionConnection.smsDepartments.storeRecord(UnreadMessages);
         callback(response, true);
       }
     });

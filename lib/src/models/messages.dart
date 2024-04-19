@@ -515,7 +515,7 @@ class SMSMessagesStore extends FusionStore<SMSMessage> {
         });
       }
     } else {
-      List<String> numbers = conversation.number!.split(',');
+      List<String> numbers = conversation.number.split(',');
 
       fusionConnection
           .apiV2Call("post", "/messaging/group/${departmentId}/conversations", {
