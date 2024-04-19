@@ -37,12 +37,15 @@ class MessageBody extends StatelessWidget {
         texts.add(TextSpan(
             text: messageText.substring(start, urlMatch.start), style: style));
       }
-      TapGestureRecognizer recognizer = new TapGestureRecognizer();
-      recognizer.onTap = () {
-        Uri uri =
-            Uri.https(messageText.substring(urlMatch.start, urlMatch.end));
-        launchUrl(uri);
-      };
+      TapGestureRecognizer recognizer = TapGestureRecognizer()
+        ..onTap = () {
+          String url = messageText.substring(urlMatch.start, urlMatch.end);
+          Uri uri = Uri(
+              scheme: 'https',
+              host: "fusioncomm.net",
+              path: url.replaceAll("https://fusioncomm.net", ""));
+          launchUrl(uri);
+        };
       texts.add(TextSpan(
           text: messageText.substring(urlMatch.start, urlMatch.end),
           style: TextStyle(color: crimsonDark),
@@ -72,7 +75,7 @@ class MessageBody extends StatelessWidget {
                 size: 12,
               ),
             )
-          : SelectableText.rich(TextSpan(children: texts)),
+          : RichText(text: TextSpan(children: texts)),
     );
   }
 }

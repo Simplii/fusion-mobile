@@ -31,14 +31,14 @@ class SingleMessageHeader extends StatelessWidget {
                 maxWidth: MediaQuery.of(context).size.width - 200,
                 child: Wrap(
                   children: [
-                    Text(
+                    SelectableText(
                       conversation.contactName(coworker: coworker),
                       style: headerTextStyle,
                     )
                   ],
                 ),
               ),
-              Text(
+              SelectableText(
                 conversation.number.formatPhone(),
                 style: subHeaderTextStyle,
               )
