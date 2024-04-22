@@ -506,7 +506,7 @@ class _CallHistorySummaryViewState extends State<CallHistorySummaryView> {
 
     if (_historyItem.coworker != null) {
       name =
-          "${_historyItem.coworker?.firstName ?? "Unknown"} ${_historyItem.coworker?.firstName ?? ""}";
+          "${_historyItem.coworker?.firstName ?? "Unknown"} ${_historyItem.coworker?.lastName ?? ""}";
     } else if (_historyItem.contact != null) {
       name = _historyItem.contact?.name?.toTitleCase() ?? "Unknown Contact";
     } else if (_historyItem.crmContact != null) {
