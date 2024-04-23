@@ -471,35 +471,36 @@ class FusionConnection {
         developer.log("apiCallV1 error", name: _TAG, error: e);
       }
 
-      if (uriResponse?.statusCode == 401 &&
-          uriResponse!.headers.containsKey("x-fusion-signature")) {
-        Map<String, dynamic> jsonResponse =
-            convert.jsonDecode(uriResponse.body);
-        if (uriResponse.headers["x-fusion-signature"] != null &&
+      if (uriResponse?.statusCode == 401) {
+        //unauthorized request, checking if signature has changed
+        if (uriResponse!.headers.containsKey("x-fusion-signature") &&
             uriResponse.headers["x-fusion-signature"] != _signature) {
+          //fusion signature was updated
           developer.log("apiv1 new signature url=$url", name: _TAG);
           _signature = uriResponse.headers["x-fusion-signature"]!;
           sharedPreferences.setString("signature", _signature);
-          if (retryCount >= 5) {
-            developer.log("apiv1 retried $url 5 times", name: _TAG);
-            if (onError != null) {
-              onError();
-            }
-          } else {
-            await Future.delayed(Duration(seconds: 1), () async {
-              developer.log("apiv1 retry future url=$url", name: _TAG);
-
-              await apiV1Call(method, route, data,
-                  onError: onError,
-                  callback: callback,
-                  retryCount: retryCount + 1);
-            });
-          }
         } else {
           print(
-              "$_TAG apiv1 auth failed ${uriResponse.headers["x-fusion-signature"]} $_signature $_username $_token");
+              "$_TAG apiv1 auth failed ${uriResponse.headers} $_signature $_username $_token");
+          print(
+              "$_TAG apiv1 auth failed statuscode=${uriResponse.statusCode} ${uriResponse.body}");
           print(
               "$_TAG apiv1 auth to hash $_token:$_username:/api/v1$route$urlParams:${requestBody.isEmpty ? requestBody : ""}:$_signature");
+        }
+        if (retryCount >= 5) {
+          developer.log("apiv1 retried $url 5 times", name: _TAG);
+          if (onError != null) {
+            onError();
+          }
+        } else {
+          await Future.delayed(Duration(seconds: 1), () async {
+            developer.log("apiv1 retry future url=$url", name: _TAG);
+
+            await apiV1Call(method, route, data,
+                onError: onError,
+                callback: callback,
+                retryCount: retryCount + 1);
+          });
         }
       } else {
         if (uriResponse?.statusCode != 200) {
@@ -572,34 +573,37 @@ class FusionConnection {
         toast("${e}");
         developer.log("apiCallV2 error", name: _TAG, error: e);
       }
-      if (uriResponse?.statusCode == 401 &&
-          uriResponse!.headers.containsKey("x-fusion-signature")) {
-        if (uriResponse.headers["x-fusion-signature"] != null &&
+      if (uriResponse?.statusCode == 401) {
+        // unauthorized request, checking if signature has changed
+        if (uriResponse!.headers.containsKey("x-fusion-signature") &&
             uriResponse.headers["x-fusion-signature"] != _signature) {
+          // fusion signature was updated
           developer.log(
               "apiv2 new signature=${uriResponse.headers["x-fusion-signature"]}",
               name: _TAG);
           _signature = uriResponse.headers["x-fusion-signature"]!;
           sharedPreferences.setString("signature", _signature);
-          if (retryCount >= 5) {
-            developer.log("apiv2 retried $url 5 times", name: _TAG);
-            if (onError != null) {
-              onError();
-            }
-          } else {
-            await Future.delayed(Duration(seconds: 1), () async {
-              developer.log("apiv2 retry future $url", name: _TAG);
-              await apiV2Call(method, route, data,
-                  onError: onError,
-                  callback: callback,
-                  retryCount: retryCount + 1);
-            });
-          }
         } else {
           print(
-              "$_TAG apiv2 auth failed ${uriResponse.headers["x-fusion-signature"]} $_signature $_username $_token");
+              "$_TAG apiv2 auth failed ${uriResponse.headers} $_signature $_username $_token");
+          print(
+              "$_TAG apiv2 auth failed statuscode=${uriResponse.statusCode} ${uriResponse.body}");
           print(
               "$_TAG apiv2 auth to hash $_token:$_username:/api/v1$route$urlParams:${requestBody.isEmpty ? requestBody : ""}:$_signature");
+        }
+        if (retryCount >= 5) {
+          developer.log("apiv2 retried $url 5 times", name: _TAG);
+          if (onError != null) {
+            onError();
+          }
+        } else {
+          await Future.delayed(Duration(seconds: 1), () async {
+            developer.log("apiv2 retry future $url", name: _TAG);
+            await apiV2Call(method, route, data,
+                onError: onError,
+                callback: callback,
+                retryCount: retryCount + 1);
+          });
         }
       } else if (uriResponse?.statusCode != 200) {
         developer.log(
