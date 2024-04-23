@@ -10,14 +10,26 @@ class UserSettings {
   String myOutboundCallerId = "";
   bool isDynamicDialingDept = false;
   bool dynamicDialingIsActive = false;
-  UserSettings(this._fusionConnection);
   String myCellPhoneNumber = "";
   bool usesCarrier = false;
   String devices = "";
   bool dnd = false;
   bool forceDispositionEnabled = false;
   bool usesV2 = false;
-  
+  UserSettings(this._fusionConnection);
+
+  void clearRecord() {
+    myOutboundCallerId = "";
+    isDynamicDialingDept = false;
+    dynamicDialingIsActive = false;
+    myCellPhoneNumber = "";
+    usesCarrier = false;
+    devices = "";
+    dnd = false;
+    forceDispositionEnabled = false;
+    usesV2 = false;
+  }
+
   myContact() {
     if (subscriber!['first_name'] == null) subscriber!['first_name'] = "";
     if (subscriber!['last_name'] == null) subscriber!['last_name'] = "";
@@ -28,7 +40,9 @@ class UserSettings {
       'deleted': false,
       'domain': options['domain'],
       'emails': subscriber!['email'].runtimeType == String
-          ? [{'email': subscriber!['email'], 'type': 'Work'}]
+          ? [
+              {'email': subscriber!['email'], 'type': 'Work'}
+            ]
           : [],
       'first_contact_diate': '',
       'first_name': subscriber!['first_name'],
@@ -61,21 +75,19 @@ class UserSettings {
   }
 
   lookupSubscriber() {
-    _fusionConnection.nsApiCall(
-        'subscriber',
-        'read',
-        {'uid': _fusionConnection.getUid()},
-        callback: (Map<String, dynamic> data) {
-          if (data.containsKey('subscriber') && data['subscriber'].containsKey('user')) {
-            subscriber = data['subscriber'];
-            if (subscriber!['callid_nmbr'] == null)
-              subscriber!['callid_nmbr'] = '';
-            // netsapians returns empty object if last name not provided
-            if(subscriber!['last_name'].runtimeType != String ){
-              subscriber!['last_name'] = '';
-            }
-          }
-        });
+    _fusionConnection
+        .nsApiCall('subscriber', 'read', {'uid': _fusionConnection.getUid()},
+            callback: (Map<String, dynamic> data) {
+      if (data.containsKey('subscriber') &&
+          data['subscriber'].containsKey('user')) {
+        subscriber = data['subscriber'];
+        if (subscriber!['callid_nmbr'] == null) subscriber!['callid_nmbr'] = '';
+        // netsapians returns empty object if last name not provided
+        if (subscriber!['last_name'].runtimeType != String) {
+          subscriber!['last_name'] = '';
+        }
+      }
+    });
   }
 
   String? userScope() {
@@ -83,8 +95,8 @@ class UserSettings {
   }
 
   bool hasFusionPlus() {
-    return options['registration'] != null
-        && options['registration']['domain_package_id'].toString() == "8";
+    return options['registration'] != null &&
+        options['registration']['domain_package_id'].toString() == "8";
   }
 
   bool hasManagerPermissions() {
@@ -94,12 +106,11 @@ class UserSettings {
 
   String avatarForUser(String uid) {
     if (options['avatars'].containsKey(uid.toLowerCase())) {
-      String serverRoot = this.isV2User() 
-        ? "https://fusion-media.sfo2.digitaloceanspaces.com"
-        : "http://fusioncom.co";
+      String serverRoot = this.isV2User()
+          ? "https://fusion-media.sfo2.digitaloceanspaces.com"
+          : "http://fusioncom.co";
       return serverRoot + options['avatars'][uid.toLowerCase()];
-    }
-    else {
+    } else {
       return _fusionConnection.defaultAvatar;
     }
   }
@@ -109,7 +120,8 @@ class UserSettings {
   }
 
   List<Map<String, dynamic>> crmData() {
-    return (options['crm_features'] as Map<String, dynamic>).values as List<Map<String, dynamic>>;
+    return (options['crm_features'] as Map<String, dynamic>).values
+        as List<Map<String, dynamic>>;
   }
 
   String? crmIcon(crmName) {
@@ -138,9 +150,10 @@ class UserSettings {
     List<Map<String, dynamic>> numbers = [];
 
     for (Map<String, dynamic> user in options['sms_users']) {
-      numbers.add({'phoneNumber': options['phone_number_id'],
-                    'isMMS': options['is_mms']
-                  });
+      numbers.add({
+        'phoneNumber': options['phone_number_id'],
+        'isMMS': options['is_mms']
+      });
     }
 
     return numbers;
@@ -150,65 +163,64 @@ class UserSettings {
     myOutboundCallerId = newDid;
     isDynamicDialingDept = isDepartment;
     _fusionConnection.apiV2Call("post", "/clients/setOutboundDid/" + newDid, {
-      "dynamicDialingDepartment" : isDepartment
-    },
-        callback: (Map<String, dynamic> datas) {
-          Map<String, dynamic> oldSubscriber = subscriber!;
-          oldSubscriber['callid_nmbr'] = newDid;
-          setSubscriber(oldSubscriber);
-        });
+      "dynamicDialingDepartment": isDepartment
+    }, callback: (Map<String, dynamic> datas) {
+      Map<String, dynamic> oldSubscriber = subscriber!;
+      oldSubscriber['callid_nmbr'] = newDid;
+      setSubscriber(oldSubscriber);
+    });
   }
 
   domainPrefixes() {
     return options["prefixes"];
   }
 
-  bool isV2User(){
+  bool isV2User() {
     return usesV2;
   }
 
   void setMyUserInfo({
-    required String outboundCallerId, 
-    required bool isDepartment, 
+    required String outboundCallerId,
+    required bool isDepartment,
     required String cellPhoneNumber,
     required bool useCarrier,
     required String simParams,
     required bool dndIsOn,
     required bool forceDispoEnabled,
-    }) {
-      usesCarrier = useCarrier;
-      myCellPhoneNumber = cellPhoneNumber;
-      myOutboundCallerId = outboundCallerId;
-      isDynamicDialingDept = isDepartment;
-      devices = simParams;
-      dynamicDialingIsActive = isFeatureEnabled("Dynamic Dialing");
-      dnd = dndIsOn;
-      forceDispositionEnabled = forceDispoEnabled;
+  }) {
+    usesCarrier = useCarrier;
+    myCellPhoneNumber = cellPhoneNumber;
+    myOutboundCallerId = outboundCallerId;
+    isDynamicDialingDept = isDepartment;
+    devices = simParams;
+    dynamicDialingIsActive = isFeatureEnabled("Dynamic Dialing");
+    dnd = dndIsOn;
+    forceDispositionEnabled = forceDispoEnabled;
   }
 
-  bool updateUserSettings (List<SettingsPayload> settings) {
+  bool updateUserSettings(List<SettingsPayload> settings) {
     bool ret = false;
     _fusionConnection.apiV1Call("post", "/clients/user_settings", {
-      "uid" : _fusionConnection.getUid(),
-      "settings" : [...settings],
-      },
-      callback: (Map<String,dynamic> data){
-        if(data["success"] != null){
-          settings.forEach((SettingsPayload setting){
-            if(setting.setting == "uses_carrier"){
+      "uid": _fusionConnection.getUid(),
+      "settings": [...settings],
+    }, callback: (Map<String, dynamic> data) {
+      if (data["success"] != null) {
+        settings.forEach(
+          (SettingsPayload setting) {
+            if (setting.setting == "uses_carrier") {
               usesCarrier = setting.value!.isNotEmpty;
             }
-            if(setting.setting == "cell_phone_number"){
+            if (setting.setting == "cell_phone_number") {
               myCellPhoneNumber = setting.value ?? "";
             }
-            if(setting.setting == "fm_on_dnd"){
+            if (setting.setting == "fm_on_dnd") {
               dnd = setting.value == "true" ? true : false;
             }
-          },);
-          ret = true;
-        } 
+          },
+        );
+        ret = true;
       }
-    );
+    });
     return ret;
   }
 }
@@ -217,12 +229,8 @@ class SettingsPayload {
   String uid;
   String setting;
   String? value;
-  SettingsPayload(this.uid,this.setting,this.value);
-  Map<String,dynamic> toJson(){
-    return {
-      "uid" : uid,
-      "setting": setting,
-      "value": value
-    };
+  SettingsPayload(this.uid, this.setting, this.value);
+  Map<String, dynamic> toJson() {
+    return {"uid": uid, "setting": setting, "value": value};
   }
 }

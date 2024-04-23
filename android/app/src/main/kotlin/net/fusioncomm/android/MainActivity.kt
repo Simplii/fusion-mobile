@@ -365,7 +365,8 @@ class MainActivity : FlutterActivity() {
                 Call.State.Released -> {
                     if(appOpenedFromBackground){
                         appOpenedFromBackground= false
-                        moveTaskToBack(true)
+//                        moveTaskToBack(true)
+                        finishAndRemoveTask()
                     }
                     audioManager.mode = AudioManager.MODE_NORMAL
                     channel.invokeMethod(
