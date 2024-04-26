@@ -42,10 +42,10 @@ class FusionConnection {
   String _TAG = "MDBM FUSIONCONNECTION";
   String _extension = '';
   String _username = '';
-  String _password = '';
+  // String _password = '';
   String _domain = '';
   late SharedPreferences sharedPreferences;
-  Map<String, bool> _heartbeats = {};
+  // Map<String, bool> _heartbeats = {};
   late CrmContactsStore crmContacts;
   late ContactsStore contacts;
   late PhoneContactsStore phoneContacts;
@@ -75,11 +75,11 @@ class FusionConnection {
   ConnectivityResult connectivityResult = ConnectivityResult.none;
   bool internetAvailable = true;
   StreamSubscription? _wsStream;
-  // static final String host = "fusioncom.co";
-  static final String host = "zaid-fusion-dev.fusioncomm.net";
+  static final String host = "fusioncom.co";
+  // static final String host = "zaid-fusion-dev.fusioncomm.net";
   String serverRoot = "http://$host";
-  StreamController<FusionStreamEventData> websocketStream =
-      StreamController.broadcast(); //FIXME: change name
+  StreamController<FusionStreamEventData> fusionStreamEvents =
+      StreamController.broadcast();
   String mediaServer = "https://fusion-media.sfo2.digitaloceanspaces.com";
   String defaultAvatar = "https://$host/img/defaultuser.png";
   static const MethodChannel contactsChannel =
@@ -167,7 +167,7 @@ class FusionConnection {
   logOut() async {
     loggingOut = true;
     _wsStream?.cancel();
-    websocketStream = StreamController.broadcast();
+    fusionStreamEvents = StreamController.broadcast();
     _softphone?.unregisterLinphone();
     String? FBtoken = await FirebaseMessaging.instance.getToken();
     if (_pushkitToken != null) {
@@ -826,7 +826,7 @@ class FusionConnection {
         authenticated = response["success"];
         if (authenticated) {
           _username = username;
-          _password = password;
+          // _password = password;
           _domain = _username.split('@')[1];
           _extension = _username.split('@')[0];
           _token = response["token"];
@@ -976,7 +976,7 @@ class FusionConnection {
             resp.stream != null &&
             resp.status == FusionStreamEventConnectionStatus.connected) {
           print("$_TAG adding new stream $resp");
-          websocketStream.addStream(resp.stream!);
+          fusionStreamEvents.addStream(resp.stream!);
         } else {
           print(
               "$_TAG streamEvents StreamEventResp=$resp StreamEventRespStream=${resp?.stream} StreamEventRespConnectionStatus=${resp?.status}");

@@ -49,7 +49,8 @@ class ConversationVM with ChangeNotifier {
         conversation.getDepartmentId(
           fusionConnection: fusionConnection,
         );
-    wsStream = fusionConnection.websocketStream.stream.listen(_updateFromWS);
+    wsStream =
+        fusionConnection.fusionStreamEvents.stream.listen(_updateFromStream);
     notificationStream =
         FirebaseMessaging.onMessage.listen(_onNotificationReceived);
     lookupMessages();
@@ -70,7 +71,7 @@ class ConversationVM with ChangeNotifier {
     });
   }
 
-  void _updateFromWS(FusionStreamEventData event) {
+  void _updateFromStream(FusionStreamEventData event) {
     print("$DebugTag streamEvent ${event.data}");
     if (event.data.isEmpty) return;
     var decodedEvent = jsonDecode(event.data);
