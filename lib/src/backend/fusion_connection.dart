@@ -75,8 +75,8 @@ class FusionConnection {
   ConnectivityResult connectivityResult = ConnectivityResult.none;
   bool internetAvailable = true;
   StreamSubscription? _wsStream;
-  static final String host = "fusioncom.co";
-  // static final String host = "zaid-fusion-dev.fusioncomm.net";
+  // static final String host = "fusioncom.co";
+  static final String host = "zaid-fusion-dev.fusioncomm.net";
   String serverRoot = "http://$host";
   StreamController<FusionStreamEventData> websocketStream =
       StreamController.broadcast(); //FIXME: change name
@@ -956,11 +956,11 @@ class FusionConnection {
 
   void startStreamEvents(String? FBDeviceToken) {
     Uri url = Uri.parse(
-        'https://$host/api/v2/client/streamEvents?username=$_username&password=Zeejay90&deviceToken=$FBDeviceToken');
+        'https://$host/api/v2/client/streamEvents?username=$_username&deviceToken=$FBDeviceToken');
 
     String _authToken = generateMd5(
-        "$_token:$_username:/api/v2/client/streamEvents?username=2232@SimpliiDev&deviceToken=$FBDeviceToken::$_signature");
-    Map<String, String> headers = {
+        "$_token:$_username:/api/v2/client/streamEvents?username=$_username&deviceToken=$FBDeviceToken::$_signature");
+    Map<String, String> header = {
       "X-fusion-uid": _username,
       "Authorization": "Bearer $_authToken"
     };
@@ -968,7 +968,7 @@ class FusionConnection {
     streamEvents.connect(
       "GET",
       url,
-      {},
+      header,
       autoReconnect: true,
       onSuccessCallback: (resp) {
         print("$_TAG streamEvents resp= $resp");
@@ -980,6 +980,15 @@ class FusionConnection {
         } else {
           print(
               "$_TAG streamEvents StreamEventResp=$resp StreamEventRespStream=${resp?.stream} StreamEventRespConnectionStatus=${resp?.status}");
+        }
+      },
+      onReAuth: (newSignature) {
+        if (newSignature != null && newSignature != _signature) {
+          _signature = newSignature;
+          sharedPreferences.setString("signature", _signature);
+          Future.delayed(Duration(seconds: 5), () {
+            startStreamEvents(FBDeviceToken);
+          });
         }
       },
     );

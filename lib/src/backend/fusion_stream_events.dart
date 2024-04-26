@@ -31,6 +31,7 @@ class FusionStreamEvents {
     bool autoReconnect = false,
     required Function(FusionStreamEventResponse?) onSuccessCallback,
     Function(String)? onError,
+    required Function(String? newSignature) onReAuth,
   }) {
     _isExplicitDisconnect = false;
     Map<String, String> header = {
@@ -46,6 +47,7 @@ class FusionStreamEvents {
       header,
       onSuccessCallback: onSuccessCallback,
       autoReconnect: autoReconnect,
+      onReAuth: onReAuth,
     );
   }
 
@@ -57,7 +59,7 @@ class FusionStreamEvents {
     bool autoReconnect = false,
     required Function(FusionStreamEventResponse?) onSuccessCallback,
     Function(String)? onError,
-    int retryCount = 0,
+    required Function(String? newSignature) onReAuth,
   }) {
     _client = Client();
     _isExplicitDisconnect = false;
@@ -76,31 +78,18 @@ class FusionStreamEvents {
     response.then(
       (data) async {
         if (data.statusCode < 200 || data.statusCode >= 300) {
-          print(
-              '$_TAG Connection failed Connection Error Status:${data.statusCode}, Connection Error Reason: ${data.reasonPhrase}');
-          if (data.statusCode == 401) {
-            //TODO: renew auth signature
-            print(
-                '$_TAG Connection failed Connection Error Status:${data.statusCode}, Connection Error Reason: ${data.reasonPhrase}');
-          }
-          if (onError != null) {
-            onError(
-                'Connection Error Status:${data.statusCode}, Connection Error Reason: ${data.reasonPhrase}');
+          if (data.statusCode == 401 &&
+              data.headers.containsKey("x-fusion-signature")) {
+            log("reauth new sig ${data.headers["x-fusion-signature"]} ",
+                name: _TAG, level: 3);
+            onReAuth(data.headers["x-fusion-signature"]);
+            return;
           }
         }
 
         if (autoReconnect && data.statusCode != 200) {
-          // _reconnectWithDelay(
-          //   _isExplicitDisconnect,
-          //   autoReconnect,
-          //   type,
-          //   url,
-          //   header,
-          //   onSuccessCallback,
-          //   onError: onError,
-          //   onConnectionClose: onConnectionClose,
-          //   body: body,
-          // );
+          log("Request failed code=${data.statusCode} body=${data.reasonPhrase}",
+              name: _TAG);
           print("$_TAG autoReconnect is active");
           return;
         }
@@ -150,11 +139,26 @@ class FusionStreamEvents {
               },
               cancelOnError: true,
               onDone: () async {
-                await _stop();
-                print('$_TAG Stream closed');
+                if (_isExplicitDisconnect) {
+                  await _stop();
+                  if (onConnectionClose != null) onConnectionClose();
+                  return;
+                }
 
-                /// When the stream is closed, onClose can be called to execute a function.
-                if (onConnectionClose != null) onConnectionClose();
+                await _stop();
+                if (autoReconnect) {
+                  _reconnectWithDelay(
+                    _isExplicitDisconnect,
+                    autoReconnect,
+                    method,
+                    url,
+                    header,
+                    onSuccessCallback,
+                    onReAuth,
+                    onError: onError,
+                    onConnectionClose: onConnectionClose,
+                  );
+                }
               },
               onError: (error, s) async {
                 log("$_TAG ${error.toString()}");
@@ -166,10 +170,7 @@ class FusionStreamEvents {
                 if (onError != null) {
                   onError("$_TAG error: ${error.toString()}");
                 }
-                if (retryCount >= 5) {
-                  return print(
-                      '$_TAG Data Stream error, retried to reconnect 5 times');
-                } else {
+                if (autoReconnect) {
                   _reconnectWithDelay(
                     _isExplicitDisconnect,
                     autoReconnect,
@@ -177,6 +178,7 @@ class FusionStreamEvents {
                     url,
                     header,
                     onSuccessCallback,
+                    onReAuth,
                     onError: onError,
                     onConnectionClose: onConnectionClose,
                   );
@@ -196,7 +198,7 @@ class FusionStreamEvents {
       if (onError != null) {
         onError(e.toString());
       }
-      log("$_TAG ${e.toString()}");
+      log("$_TAG catchError ${e.toString()} ${e}");
       await _stop();
     });
   }
@@ -223,7 +225,8 @@ class FusionStreamEvents {
     String method,
     Uri url,
     Map<String, String> header,
-    Function(FusionStreamEventResponse?) onSuccessCallback, {
+    Function(FusionStreamEventResponse?) onSuccessCallback,
+    Function(String? newSignature) onReAuth, {
     Function(String)? onError,
     Function()? onConnectionClose,
   }) async {
@@ -241,6 +244,7 @@ class FusionStreamEvents {
           autoReconnect: autoReconnect,
           onError: onError,
           onConnectionClose: onConnectionClose,
+          onReAuth: onReAuth,
         );
       });
     }
