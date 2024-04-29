@@ -158,33 +158,34 @@ class FusionConnection {
     unreadMessages.clearRecords();
     quickResponses.clearRecords();
     phoneContacts.clearRecords();
+    settings.clearRecord();
   }
 
-  logOut() {
+  logOut() async {
     loggingOut = true;
     _wsStream?.cancel();
     websocketStream = StreamController.broadcast();
     _softphone?.unregisterLinphone();
-    FirebaseMessaging.instance.getToken().then((token) {
-      if (_pushkitToken != null) {
-        apiV1Call("delete", "/clients/device_token", {"token": _pushkitToken});
-      }
-      apiV1Call("delete", "/clients/device_token", {
-        "token": token,
-        "pn_tok": _pushkitToken,
-      });
-      apiV1Call("get", "/log_out", {});
-      _username = '';
-      if (_softphone != null) {
-        _softphone?.stopInbound();
-        _softphone?.close();
-        setSoftphone(null);
-      }
-      _clearDataStores();
-      _token = "";
-      _signature = "";
-      _onLogOut();
+    String? FBtoken = await FirebaseMessaging.instance.getToken();
+    if (_pushkitToken != null) {
+      await apiV1Call(
+          "delete", "/clients/device_token", {"token": _pushkitToken});
+    }
+    await apiV1Call("delete", "/clients/device_token", {
+      "token": FBtoken,
+      "pn_tok": _pushkitToken,
     });
+    await apiV1Call("get", "/log_out", {});
+    _username = '';
+    if (_softphone != null) {
+      _softphone?.stopInbound();
+      _softphone?.close();
+      setSoftphone(null);
+    }
+    _clearDataStores();
+    _token = "";
+    _signature = "";
+    _onLogOut();
   }
 
   // need to change this in the future to use database versioning and run migrations
@@ -368,12 +369,15 @@ class FusionConnection {
     try {
       data['action'] = action;
       data['object'] = object;
-
+      data['username'] = _username;
+      if (!data.containsKey("domain") || data['domain'] == "") {
+        data['domain'] = _domain;
+      }
       Uri url = Uri.parse('https://$host/api/v1/clients/api_request');
 
       String requestBody = convert.jsonEncode(data);
       String _authToken = generateMd5(
-          "$_token:$_username:/api/v1/clients/api_request:$requestBody:$_signature");
+          "$_token:$_username:/api/v1/clients/api_request:${requestBody.isEmpty ? "" : requestBody}:$_signature");
 
       Map<String, String> headers = {
         "X-fusion-uid": _username,
@@ -407,7 +411,7 @@ class FusionConnection {
         }
       } else {
         developer.log(
-          "NS_API_Resp $action $object t=$_token s=$_signature u=$_username, body=$requestBody",
+          "NS_API_Resp ${jsonResponse} $action $object",
           name: _TAG,
         );
         callback(jsonResponse);
@@ -444,7 +448,7 @@ class FusionConnection {
       }
       Uri url = Uri.parse('https://$host/api/v1' + route + urlParams);
       String requestBody = convert.jsonEncode(data);
-      String _authToken = method == "get"
+      String _authToken = method == "get" || requestBody.isEmpty
           ? generateMd5(
               "$_token:$_username:/api/v1$route$urlParams::$_signature")
           : generateMd5(
@@ -464,32 +468,39 @@ class FusionConnection {
       try {
         uriResponse = await Function.apply(fn, [url], args);
       } catch (e) {
-        toast("${e}");
         developer.log("apiCallV1 error", name: _TAG, error: e);
       }
 
-      if (uriResponse?.statusCode == 401 &&
-          uriResponse!.headers.containsKey("x-fusion-signature")) {
-        if (uriResponse.headers["x-fusion-signature"] != null &&
+      if (uriResponse?.statusCode == 401) {
+        //unauthorized request, checking if signature has changed
+        if (uriResponse!.headers.containsKey("x-fusion-signature") &&
             uriResponse.headers["x-fusion-signature"] != _signature) {
+          //fusion signature was updated
           developer.log("apiv1 new signature url=$url", name: _TAG);
           _signature = uriResponse.headers["x-fusion-signature"]!;
           sharedPreferences.setString("signature", _signature);
-          if (retryCount >= 5) {
-            developer.log("apiv1 retried $url 5 times", name: _TAG);
-            if (onError != null) {
-              onError();
-            }
-          } else {
-            await Future.delayed(Duration(seconds: 1), () async {
-              developer.log("apiv1 retry future url=$url", name: _TAG);
-
-              await apiV1Call(method, route, data,
-                  onError: onError,
-                  callback: callback,
-                  retryCount: retryCount + 1);
-            });
+        } else {
+          print(
+              "$_TAG apiv1 auth failed ${uriResponse.headers} $_signature $_username $_token");
+          print(
+              "$_TAG apiv1 auth failed statuscode=${uriResponse.statusCode} ${uriResponse.body}");
+          print(
+              "$_TAG apiv1 auth to hash $_token:$_username:/api/v1$route$urlParams:${requestBody.isEmpty ? requestBody : ""}:$_signature");
+        }
+        if (retryCount >= 5) {
+          developer.log("apiv1 retried $url 5 times", name: _TAG);
+          if (onError != null) {
+            onError();
           }
+        } else {
+          await Future.delayed(Duration(seconds: 1), () async {
+            developer.log("apiv1 retry future url=$url", name: _TAG);
+
+            await apiV1Call(method, route, data,
+                onError: onError,
+                callback: callback,
+                retryCount: retryCount + 1);
+          });
         }
       } else {
         if (uriResponse?.statusCode != 200) {
@@ -539,7 +550,7 @@ class FusionConnection {
       Uri url = Uri.parse('https://$host/api/v2' + route + urlParams);
 
       String requestBody = convert.jsonEncode(data);
-      String _authToken = method == "get"
+      String _authToken = method == "get" || requestBody.isEmpty
           ? generateMd5(
               "$_token:$_username:/api/v2$route$urlParams::$_signature")
           : generateMd5(
@@ -562,29 +573,37 @@ class FusionConnection {
         toast("${e}");
         developer.log("apiCallV2 error", name: _TAG, error: e);
       }
-      if (uriResponse?.statusCode == 401 &&
-          uriResponse!.headers.containsKey("x-fusion-signature")) {
-        if (uriResponse.headers["x-fusion-signature"] != null &&
+      if (uriResponse?.statusCode == 401) {
+        // unauthorized request, checking if signature has changed
+        if (uriResponse!.headers.containsKey("x-fusion-signature") &&
             uriResponse.headers["x-fusion-signature"] != _signature) {
+          // fusion signature was updated
           developer.log(
               "apiv2 new signature=${uriResponse.headers["x-fusion-signature"]}",
               name: _TAG);
           _signature = uriResponse.headers["x-fusion-signature"]!;
           sharedPreferences.setString("signature", _signature);
-          if (retryCount >= 5) {
-            developer.log("apiv2 retried $url 5 times", name: _TAG);
-            if (onError != null) {
-              onError();
-            }
-          } else {
-            await Future.delayed(Duration(seconds: 1), () async {
-              developer.log("apiv2 retry future $url", name: _TAG);
-              await apiV2Call(method, route, data,
-                  onError: onError,
-                  callback: callback,
-                  retryCount: retryCount + 1);
-            });
+        } else {
+          print(
+              "$_TAG apiv2 auth failed ${uriResponse.headers} $_signature $_username $_token");
+          print(
+              "$_TAG apiv2 auth failed statuscode=${uriResponse.statusCode} ${uriResponse.body}");
+          print(
+              "$_TAG apiv2 auth to hash $_token:$_username:/api/v1$route$urlParams:${requestBody.isEmpty ? requestBody : ""}:$_signature");
+        }
+        if (retryCount >= 5) {
+          developer.log("apiv2 retried $url 5 times", name: _TAG);
+          if (onError != null) {
+            onError();
           }
+        } else {
+          await Future.delayed(Duration(seconds: 1), () async {
+            developer.log("apiv2 retry future $url", name: _TAG);
+            await apiV2Call(method, route, data,
+                onError: onError,
+                callback: callback,
+                retryCount: retryCount + 1);
+          });
         }
       } else if (uriResponse?.statusCode != 200) {
         developer.log(

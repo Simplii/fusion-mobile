@@ -19,11 +19,7 @@ class Menu extends StatefulWidget {
   final FusionConnection? _fusionConnection;
   final Softphone? _softphone;
 
-  Menu(
-    this._fusionConnection, 
-    this._softphone, 
-    {Key? key}
-  ) : super(key: key);
+  Menu(this._fusionConnection, this._softphone, {Key? key}) : super(key: key);
 
   @override
   State<StatefulWidget> createState() => _MenuState();
@@ -42,52 +38,46 @@ class _MenuState extends State<Menu> {
   bool? DND = false;
 
   @override
-  initState(){
-    super.initState(); 
+  initState() {
+    super.initState();
     userSettings = _fusionConnection!.settings;
     DND = userSettings!.dnd;
-    myPhoneNumber =  userSettings!.myCellPhoneNumber!.isNotEmpty 
-      ? userSettings!.myCellPhoneNumber!.formatPhone() 
-      : _softphone!.devicePhoneNumber;
+    myPhoneNumber = userSettings!.myCellPhoneNumber!.isNotEmpty
+        ? userSettings!.myCellPhoneNumber!.formatPhone()
+        : _softphone!.devicePhoneNumber;
     usingCarrierCalls = userSettings!.usesCarrier;
-    _fusionConnection!.nsAnsweringRules()
-    .then((Map<String,dynamic> value){
+    _fusionConnection!.nsAnsweringRules().then((Map<String, dynamic> value) {
       userSettings!.devices = value['devices'];
-      if(userSettings!.usesCarrier != value["usesCarrier"]){
+      if (userSettings!.usesCarrier != value["usesCarrier"]) {
         setState(() {
           usingCarrierCalls = value["usesCarrier"];
-          if(value["usesCarrier"]){
+          if (value["usesCarrier"]) {
             myPhoneNumber = value["phoneNumber"];
           }
         });
-        List<SettingsPayload> payload = [ 
-          SettingsPayload(
-            _fusionConnection!.getUid(), 
-            "uses_carrier", 
-            value["usesCarrier"] ? value["usesCarrier"].toString() : ""
-          )
+        List<SettingsPayload> payload = [
+          SettingsPayload(_fusionConnection!.getUid(), "uses_carrier",
+              value["usesCarrier"] ? value["usesCarrier"].toString() : "")
         ];
-        if(value["usesCarrier"]){
-          payload.add(
-            SettingsPayload(
-              _fusionConnection!.getUid(), 
-              "cell_phone_number", 
-              value['phoneNumber']
-            )
-          );
+        if (value["usesCarrier"]) {
+          payload.add(SettingsPayload(_fusionConnection!.getUid(),
+              "cell_phone_number", value['phoneNumber']));
         }
         userSettings!.updateUserSettings(payload);
       }
     });
-    List<SMSDepartment> deps = _fusionConnection!.smsDepartments.allDepartments();
+    List<SMSDepartment> deps =
+        _fusionConnection!.smsDepartments.allDepartments();
     selectedOutboundDid = userSettings!.myOutboundCallerId;
-    Iterable filter = deps.where((SMSDepartment dep) => dep.usesDynamicOutbound!);
-    List<SMSDepartment> dynamicDailingDepts = userSettings!.dynamicDialingIsActive &&
-      deps.isNotEmpty && 
-      filter.isNotEmpty 
-        ? filter.toList() as List<SMSDepartment>
-        : [];
-    dynamicDailingDepts.forEach((SMSDepartment dep) { 
+    Iterable filter =
+        deps.where((SMSDepartment dep) => dep.usesDynamicOutbound!);
+    List<SMSDepartment> dynamicDailingDepts =
+        userSettings!.dynamicDialingIsActive &&
+                deps.isNotEmpty &&
+                filter.isNotEmpty
+            ? filter.toList() as List<SMSDepartment>
+            : [];
+    dynamicDailingDepts.forEach((SMSDepartment dep) {
       dynamicDailingDids.add(dep.toDid());
     });
   }
@@ -145,10 +135,12 @@ class _MenuState extends State<Menu> {
   }
 
   _changeDefaultOutputDevice() {
-    List<List<String?>> options = Platform.isAndroid ? _softphone!.devicesList
-        .where((element) => element[2] != "Microphone")
-        .toList()
-        .cast<List<String>>() : _softphone!.devicesList;
+    List<List<String?>> options = Platform.isAndroid
+        ? _softphone!.devicesList
+            .where((element) => element[2] != "Microphone")
+            .toList()
+            .cast<List<String>>()
+        : _softphone!.devicesList;
     showModalBottomSheet(
         context: context,
         backgroundColor: Colors.transparent,
@@ -181,7 +173,9 @@ class _MenuState extends State<Menu> {
                                       bottom: BorderSide(
                                           color: lightDivider, width: 1.0))),
                               child: Row(children: [
-                                Text(option[0]!.replaceAll('Microphone', 'Earpiece'),
+                                Text(
+                                    option[0]!
+                                        .replaceAll('Microphone', 'Earpiece'),
                                     style: TextStyle(
                                         color: Colors.white,
                                         fontSize: 16,
@@ -226,7 +220,9 @@ class _MenuState extends State<Menu> {
                                       offset: Offset.zero,
                                       blurRadius: 36)
                                 ]),
-                            child: Text(_softphone!.defaultOutput!.replaceAll('Microphone', 'Earpiece'),
+                            child: Text(
+                                _softphone!.defaultOutput!
+                                    .replaceAll('Microphone', 'Earpiece'),
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w700,
@@ -370,8 +366,11 @@ class _MenuState extends State<Menu> {
 
   _header() {
     UserSettings settings = _fusionConnection!.settings!;
-    Iterable<Did> didFilter = dynamicDailingDids.where((Did did) => did.did == selectedOutboundDid);
-    var callid = settings.dynamicDialingIsActive && settings.isDynamicDialingDept! && didFilter.isNotEmpty
+    Iterable<Did> didFilter =
+        dynamicDailingDids.where((Did did) => did.did == selectedOutboundDid);
+    var callid = settings.dynamicDialingIsActive &&
+            settings.isDynamicDialingDept! &&
+            didFilter.isNotEmpty
         ? didFilter.first.groupName!
         : settings.myOutboundCallerId!;
     var user = settings.subscriber!.containsKey('user')
@@ -407,66 +406,63 @@ class _MenuState extends State<Menu> {
         ]));
   }
 
-  _row(
-    String icon, 
-    String label, 
-    String smallText, 
-    Function? onTap, 
-    Icon? ico, 
-    { Widget? trailingWidget }) {
+  _row(String icon, String label, String smallText, Function? onTap, Icon? ico,
+      {Widget? trailingWidget}) {
     return GestureDetector(
         onTap: onTap as void Function()?,
         child: Container(
             decoration: BoxDecoration(color: Colors.transparent),
             margin: EdgeInsets.only(left: 18, right: 18, top: 12, bottom: 12),
             child: Row(
-              crossAxisAlignment: trailingWidget != null 
-                ? CrossAxisAlignment.center
-                : CrossAxisAlignment.start, 
-              children: [
-              Container(
-                  margin: EdgeInsets.only(right: 24),
-                  width: 22,
-                  height: 22,
-                  child: 
-                  ico != null 
-                    ? label == "Log Out" && loggingOut 
-                        ? CircularProgressIndicator()
-                        : ico 
-                    : Opacity(
-                          opacity: icon.contains("call_view") ? 0.45 : 1.0,
-                          child: Image.asset("assets/icons/" + icon + ".png",
-                              width: 22, height: 22))),
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(label,
-                    textAlign: TextAlign.left,
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700)),
-                if (smallText.length > 0) Container(height: 4),
-                if (smallText.length > 0)
-                  Text(smallText,
-                      textAlign: TextAlign.left,
-                      style: TextStyle(
-                          color: smoke,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w400))
-              ]), 
-              if(trailingWidget != null)
-                Expanded(
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        border: Border( left: BorderSide(width: 1, color: smoke))
+                crossAxisAlignment: trailingWidget != null
+                    ? CrossAxisAlignment.center
+                    : CrossAxisAlignment.start,
+                children: [
+                  Container(
+                      margin: EdgeInsets.only(right: 24),
+                      width: 22,
+                      height: 22,
+                      child: ico != null
+                          ? label == "Log Out" && loggingOut
+                              ? CircularProgressIndicator()
+                              : ico
+                          : Opacity(
+                              opacity: icon.contains("call_view") ? 0.45 : 1.0,
+                              child: Image.asset(
+                                  "assets/icons/" + icon + ".png",
+                                  width: 22,
+                                  height: 22))),
+                  Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(label,
+                            textAlign: TextAlign.left,
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700)),
+                        if (smallText.length > 0) Container(height: 4),
+                        if (smallText.length > 0)
+                          Text(smallText,
+                              textAlign: TextAlign.left,
+                              style: TextStyle(
+                                  color: smoke,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w400))
+                      ]),
+                  if (trailingWidget != null)
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: Container(
+                            decoration: BoxDecoration(
+                                border: Border(
+                                    left: BorderSide(width: 1, color: smoke))),
+                            // height: 24,
+                            child: trailingWidget),
                       ),
-                      // height: 24,
-                      child: trailingWidget
-                    ),
-                  ),
-                )
-            ])));
+                    )
+                ])));
   }
 
   _line() {
@@ -481,20 +477,20 @@ class _MenuState extends State<Menu> {
   _openOutboundDIDMenu() {
     List<Did> _dids = [];
     _fusionConnection!.dids.getDids(((dids, fromServer) => _dids = dids));
-    if(dynamicDailingDids.length > 0){
+    if (dynamicDailingDids.length > 0) {
       dynamicDailingDids.forEach((element) {
         _dids.add(element);
       });
     }
 
-    _dids.sort((Did a, Did b) => a.did == selectedOutboundDid || 
-      (a.did == selectedOutboundDid && a.favorite!) ||  
-      (a.did == selectedOutboundDid && a.groupName != null )
-      ? -1 
-      : (a.favorite! || (a.groupName != null && !b.favorite!)) && 
-        b.did != selectedOutboundDid 
-          ? -1 
-          : 1 );
+    _dids.sort((Did a, Did b) => a.did == selectedOutboundDid ||
+            (a.did == selectedOutboundDid && a.favorite!) ||
+            (a.did == selectedOutboundDid && a.groupName != null)
+        ? -1
+        : (a.favorite! || (a.groupName != null && !b.favorite!)) &&
+                b.did != selectedOutboundDid
+            ? -1
+            : 1);
 
     showModalBottomSheet(
         context: context,
@@ -508,77 +504,92 @@ class _MenuState extends State<Menu> {
                     maxHeight: MediaQuery.of(context).size.height - 250,
                     minWidth: 90,
                     maxWidth: MediaQuery.of(context).size.width),
-                child: _dids.isEmpty 
-                  ? Center(
-                    child: Text(
-                      'No Outbound Dids Found',
-                    style: TextStyle(
-                      color: Colors.white60,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500)),)
-                  : ListView(
-                    padding: EdgeInsets.all(8),
-                    children: _dids.map((Did option) {
-                      return GestureDetector(
-                          onTap: () {
-                            _fusionConnection!.settings!
-                                .setOutboundDid(option.did!, option.groupName != null);
-                            setState(() {
-                              selectedOutboundDid = option.did;
-                            });
-                            Navigator.pop(context);
-                          },
-                          child: Container(
-                              padding: EdgeInsets.only(
-                                  top: 12, bottom: 12, left: 18, right: 18),
-                              decoration: BoxDecoration(
-                                  color: (option.did ==
-                                          selectedOutboundDid
-                                      ? lightHighlight
-                                      : Color.fromARGB(0, 0, 0, 0)),
-                                  border: Border(
-                                      bottom: BorderSide(
-                                          color: lightDivider, width: 1.0))),
-                              child: Row(children: [
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    LimitedBox(
-                                      maxWidth: 175,
-                                      child: Text(
-                                        option.groupName ?? (option.did! + "").formatPhone(),
-                                        style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.w700),
-                                      ),
+                child: _dids.isEmpty
+                    ? Center(
+                        child: Text('No Outbound Dids Found',
+                            style: TextStyle(
+                                color: Colors.white60,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500)),
+                      )
+                    : ListView(
+                        padding: EdgeInsets.all(8),
+                        children: _dids.map((Did option) {
+                          return GestureDetector(
+                              onTap: () {
+                                _fusionConnection!.settings!.setOutboundDid(
+                                    option.did!, option.groupName != null);
+                                setState(() {
+                                  selectedOutboundDid = option.did;
+                                });
+                                Navigator.pop(context);
+                              },
+                              child: Container(
+                                  padding: EdgeInsets.only(
+                                      top: 12, bottom: 12, left: 18, right: 18),
+                                  decoration: BoxDecoration(
+                                      color: (option.did == selectedOutboundDid
+                                          ? lightHighlight
+                                          : Color.fromARGB(0, 0, 0, 0)),
+                                      border: Border(
+                                          bottom: BorderSide(
+                                              color: lightDivider,
+                                              width: 1.0))),
+                                  child: Row(children: [
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        LimitedBox(
+                                          maxWidth: 175,
+                                          child: Text(
+                                            option.groupName ??
+                                                (option.did! + "")
+                                                    .formatPhone(),
+                                            style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.w700),
+                                          ),
+                                        ),
+                                        Container(height: 6),
+                                        Text(
+                                            option.notes!.replaceFirst(
+                                                RegExp(r"^ *-[ 0-9]+- *"), ""),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                                color: Colors.white60,
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w500))
+                                      ],
                                     ),
-                                    Container(height: 6),
-                                    Text(
-                                        option.notes!.replaceFirst(
-                                            RegExp(r"^ *-[ 0-9]+- *"), ""),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                            color: Colors.white60,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w500))
-                                  ],
-                                ),
-                                Spacer(),
-                                if (option.did == selectedOutboundDid)
-                                  Icon(Icons.check,color: Colors.white,),
-                                if(option.favorite! && option.did != selectedOutboundDid)
-                                  Icon(Icons.star, color: Colors.white,),
-                                if(option.groupName != null && option.did != selectedOutboundDid)
-                                  Icon(Icons.bolt, color: Colors.white, size: 28,)
-                              ]))
-                          );
-                    }).toList()))));
+                                    Spacer(),
+                                    if (option.did == selectedOutboundDid)
+                                      Icon(
+                                        Icons.check,
+                                        color: Colors.white,
+                                      ),
+                                    if (option.favorite! &&
+                                        option.did != selectedOutboundDid)
+                                      Icon(
+                                        Icons.star,
+                                        color: Colors.white,
+                                      ),
+                                    if (option.groupName != null &&
+                                        option.did != selectedOutboundDid)
+                                      Icon(
+                                        Icons.bolt,
+                                        color: Colors.white,
+                                        size: 28,
+                                      )
+                                  ])));
+                        }).toList()))));
   }
-  void _editProfilePic (){
+
+  void _editProfilePic() {
     showModalBottomSheet(
-      context: context, 
+      context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (BuildContext context) => PopupMenu(
@@ -589,39 +600,35 @@ class _MenuState extends State<Menu> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               GestureDetector(
-                onTap: ()=>_selectImage("camera"),
+                onTap: () => _selectImage("camera"),
                 child: Container(
-                  padding: EdgeInsets.only(
-                    bottom:10,
-                    top: 14,
-                    left: 12),
+                  padding: EdgeInsets.only(bottom: 10, top: 14, left: 12),
                   decoration: BoxDecoration(
-                    border: Border(bottom: BorderSide(color: lightDivider, width: 1.0))
-                  ),
-                  child: Text('Camera', 
+                      border: Border(
+                          bottom: BorderSide(color: lightDivider, width: 1.0))),
+                  child: Text(
+                    'Camera',
                     style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
               ),
               GestureDetector(
-                onTap: ()=>_selectImage("photos"),
+                onTap: () => _selectImage("photos"),
                 child: Container(
-                  padding: EdgeInsets.only(
-                    bottom:10,
-                    top: 14,
-                    left: 12),
+                  padding: EdgeInsets.only(bottom: 10, top: 14, left: 12),
                   decoration: BoxDecoration(
-                    border: Border(bottom: BorderSide(color: lightDivider, width: 1.0))
-                  ),
-                  child: Text('Photos', 
+                      border: Border(
+                          bottom: BorderSide(color: lightDivider, width: 1.0))),
+                  child: Text(
+                    'Photos',
                     style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
@@ -632,28 +639,28 @@ class _MenuState extends State<Menu> {
       ),
     );
   }
-  void _uploadPic (XFile image, Contact user){
-    _fusionConnection!.contacts.uploadProfilePic("profile", image, user, (Contact contact){
-      setState(() {
-      });
+
+  void _uploadPic(XFile image, Contact user) {
+    _fusionConnection!.contacts.uploadProfilePic("profile", image, user,
+        (Contact contact) {
+      setState(() {});
     });
   }
 
-  void _selectImage(String source){
+  void _selectImage(String source) {
     final ImagePicker _picker = ImagePicker();
     final Contact user = _fusionConnection!.settings!.myContact();
     if (source == "camera") {
       _picker.pickImage(source: ImageSource.camera).then((XFile? image) {
-
         setState(() {
-          if(image == null) return;
+          if (image == null) return;
           _uploadPic(image, user);
           Navigator.of(context).pop();
         });
       });
     } else {
       _picker.pickImage(source: ImageSource.gallery).then((XFile? image) {
-        if(image == null) return;
+        if (image == null) return;
         _uploadPic(image, user);
         Navigator.of(context).pop();
       });
@@ -697,286 +704,287 @@ class _MenuState extends State<Menu> {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setDialogState) {
-            return AlertDialog(
-              title: const Text('Add Phone Number'),
-              content: Wrap(
-                runSpacing: 16,
-                children: [
-                  Text("Please enter a phone number to forward outbound and inbound calls to"),
-                  TextFormField(
-                    initialValue: myPhoneNumber!.formatPhone(),
-                    keyboardType: TextInputType.phone,
-                    inputFormatters: <TextInputFormatter>[
-                      FilteringTextInputFormatter.digitsOnly,
-                      InputPhoneFormatter(),
-                    ],
-                    maxLength: 14,
-                    onChanged: (value){
-                      setDialogState(() {
-                        setState(() {
-                          myPhoneNumber = value.onlyNumbers();
-                        });
-                      });
-                    },
-                    style: TextStyle(color: coal),
-                    decoration: InputDecoration(
-                      counterText: "",
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16),
-                      enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: smoke)),
-                      border: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.white)
-                      ),
-                      labelText: "Phone Number",
-                      labelStyle: TextStyle(color: smoke),
-                    ),
-                  ),
-                ],
-              ),
-              actions: <Widget>[
-                TextButton(
-                  style: TextButton.styleFrom(
-                  ),
-                  child: Text('Save', 
-                    style: TextStyle(
-                      color: myPhoneNumber!.length < 10
-                        ? null 
-                        :crimsonDark
-                      ),
-                    ),
-                  onPressed: myPhoneNumber!.length < 10
-                    ? null 
-                    : ()  {
-                      String uid = _fusionConnection!.getUid();
-                      List<SettingsPayload> payload = [
-                        SettingsPayload(
-                          uid, 
-                          "uses_carrier", 
-                          usingCarrierCalls.toString()
-                        ),
-                        SettingsPayload(
-                          uid, 
-                          "cell_phone_number", 
-                          myPhoneNumber!.onlyNumbers()
-                        )
-                      ];
+            builder: (BuildContext context, StateSetter setDialogState) {
+          return AlertDialog(
+            title: const Text('Add Phone Number'),
+            content: Wrap(
+              runSpacing: 16,
+              children: [
+                Text(
+                    "Please enter a phone number to forward outbound and inbound calls to"),
+                TextFormField(
+                  initialValue: myPhoneNumber!.formatPhone(),
+                  keyboardType: TextInputType.phone,
+                  inputFormatters: <TextInputFormatter>[
+                    FilteringTextInputFormatter.digitsOnly,
+                    InputPhoneFormatter(),
+                  ],
+                  maxLength: 14,
+                  onChanged: (value) {
+                    setDialogState(() {
                       setState(() {
-                        userSettings!.updateUserSettings(payload);
+                        myPhoneNumber = value.onlyNumbers();
                       });
-                      if(usingCarrierCalls!){
-                        RegExp fmDevice = RegExp(r'\d{4}(fm)');
-                        RegExp allDevices = RegExp(r'(<OwnDevices>)');
-                        String devices = "";
-                        devices = userSettings!.devices!.replaceAll(allDevices,"");
-                        if(userSettings!.devices!.contains(allDevices)){
-                          _fusionConnection!.nsApiCall(
-                            'device', 
-                            'read', 
-                            { "domain" : _fusionConnection!.getDomain(), "user": _fusionConnection!.getExtension()  },
-                            callback: (devices){
-                               
+                    });
+                  },
+                  style: TextStyle(color: coal),
+                  decoration: InputDecoration(
+                    counterText: "",
+                    contentPadding: EdgeInsets.symmetric(horizontal: 16),
+                    enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: smoke)),
+                    border: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.white)),
+                    labelText: "Phone Number",
+                    labelStyle: TextStyle(color: smoke),
+                  ),
+                ),
+              ],
+            ),
+            actions: <Widget>[
+              TextButton(
+                style: TextButton.styleFrom(),
+                child: Text(
+                  'Save',
+                  style: TextStyle(
+                      color: myPhoneNumber!.length < 10 ? null : crimsonDark),
+                ),
+                onPressed: myPhoneNumber!.length < 10
+                    ? null
+                    : () {
+                        String uid = _fusionConnection!.getUid();
+                        List<SettingsPayload> payload = [
+                          SettingsPayload(uid, "uses_carrier",
+                              usingCarrierCalls.toString()),
+                          SettingsPayload(uid, "cell_phone_number",
+                              myPhoneNumber!.onlyNumbers())
+                        ];
+                        setState(() {
+                          userSettings!.updateUserSettings(payload);
+                        });
+                        if (usingCarrierCalls!) {
+                          RegExp fmDevice = RegExp(r'\d{4}(fm)');
+                          RegExp allDevices = RegExp(r'(<OwnDevices>)');
+                          String devices = "";
+                          devices =
+                              userSettings!.devices!.replaceAll(allDevices, "");
+                          if (userSettings!.devices!.contains(allDevices)) {
+                            _fusionConnection!.nsApiCall('device', 'read', {
+                              "domain": _fusionConnection!.getDomain(),
+                              "user": _fusionConnection!.getExtension()
+                            }, callback: (devices) {
                               String devicesString = "";
 
                               for (var device in devices['device']) {
-                                  String deviceName = device['aor'].split("@")[0];
-                                  devicesString += " ${deviceName.replaceAll("sip:", "")}";
+                                String deviceName = device['aor'].split("@")[0];
+                                devicesString +=
+                                    " ${deviceName.replaceAll("sip:", "")}";
                               }
 
-                              devicesString = devicesString.replaceAll(fmDevice, "");
+                              devicesString =
+                                  devicesString.replaceAll(fmDevice, "");
 
                               _updateAnsweringRule(
-                                forControl: "d", 
-                                simControl: "e", 
-                                simParams: "${devicesString.trim()} confirm_${myPhoneNumber!.onlyNumbers()}"
-                              );
-                            }
-                          );
-                        } else {
-                          List<String> devicesArray = devices.split(' ');
-                          String devicesName = "";
-                          for (String device in devicesArray) {
-                            if(device.startsWith(';')) continue;
-                            if(device.contains("${myPhoneNumber!.onlyNumbers()}") && !device.startsWith("confirm_")){
-                              if(device.contains(";delay")){
-                                devicesName += " confirm_${device.substring(0,device.indexOf(';'))}";
+                                  forControl: "d",
+                                  simControl: "e",
+                                  simParams:
+                                      "${devicesString.trim()} confirm_${myPhoneNumber!.onlyNumbers()}");
+                            });
+                          } else {
+                            List<String> devicesArray = devices.split(' ');
+                            String devicesName = "";
+                            for (String device in devicesArray) {
+                              if (device.startsWith(';')) continue;
+                              if (device.contains(
+                                      "${myPhoneNumber!.onlyNumbers()}") &&
+                                  !device.startsWith("confirm_")) {
+                                if (device.contains(";delay")) {
+                                  devicesName +=
+                                      " confirm_${device.substring(0, device.indexOf(';'))}";
+                                } else {
+                                  devicesName += " confirm_$device";
+                                }
+                                SharedPreferences.getInstance().then((prefs) {
+                                  prefs.setString(
+                                      "phoneNumberSelected", device);
+                                });
+                              } else if (device.contains(fmDevice)) {
+                                SharedPreferences.getInstance().then((prefs) {
+                                  prefs.setString("fmDevice", device);
+                                });
                               } else {
-                                devicesName += " confirm_$device";
+                                devicesName += " $device";
                               }
-                              SharedPreferences.getInstance().then((prefs){
-                                prefs.setString("phoneNumberSelected", device);
-                              });
-                            } else if(device.contains(fmDevice)){
-                              SharedPreferences.getInstance().then((prefs){
-                                prefs.setString("fmDevice", device);
-                              });
-                            } else {
-                              devicesName += " $device";
                             }
-                          }
-                          if(!devicesName.contains("${myPhoneNumber!.onlyNumbers()}")){
-                            devicesName += " confirm_${myPhoneNumber!.onlyNumbers()}";
-                          }
+                            if (!devicesName
+                                .contains("${myPhoneNumber!.onlyNumbers()}")) {
+                              devicesName +=
+                                  " confirm_${myPhoneNumber!.onlyNumbers()}";
+                            }
 
-                          _updateAnsweringRule(
-                            forControl: "d", 
-                            simControl: "e", 
-                            simParams: devices.isNotEmpty 
-                              ? devicesName.trim()
-                              : "${_fusionConnection!.getExtension()} confirm_${myPhoneNumber!.onlyNumbers()}"
-                          );
+                            _updateAnsweringRule(
+                                forControl: "d",
+                                simControl: "e",
+                                simParams: devices.isNotEmpty
+                                    ? devicesName.trim()
+                                    : "${_fusionConnection!.getExtension()} confirm_${myPhoneNumber!.onlyNumbers()}");
+                          }
                         }
-                      }
-                      Navigator.of(context).pop();
-                  },
+                        Navigator.of(context).pop();
+                      },
+              ),
+              TextButton(
+                child: const Text(
+                  'Cancel',
+                  style: TextStyle(color: Colors.black),
                 ),
-                TextButton(
-                  child: const Text('Cancel', style: TextStyle(color: Colors.black),),
-                  onPressed: () {
-                    setState(() {
-                      usingCarrierCalls = false;
-                    });
-                    Navigator.of(context).pop();
-                  },
-                ),
-              ],
-            );
-          }
-        );
+                onPressed: () {
+                  setState(() {
+                    usingCarrierCalls = false;
+                  });
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          );
+        });
       },
     );
   }
 
-  void _updateAnsweringRule({ 
-    required String forControl, 
-    required String simControl, 
-    required String simParams}){
+  void _updateAnsweringRule(
+      {required String forControl,
+      required String simControl,
+      required String simParams}) {
     String domain = _fusionConnection!.getDomain();
     String ext = _fusionConnection!.getExtension();
     String uid = _fusionConnection!.getUid();
     _fusionConnection!.nsApiCall("answerrule", "read", {
       'domain': domain,
-      'user': ext
-    }, callback: (Map<String,dynamic> data){
-      if(data['answering_rule'] !=  null){
+      'user': ext,
+    }, callback: (Map<String, dynamic> data) {
+      if (data['answering_rule'] != null) {
         String? ruleName = "";
-        
-        if(data['answering_rule'][0] == null && data['answering_rule']['time_frame'] != null){
+
+        if (data['answering_rule'][0] == null &&
+            data['answering_rule']['time_frame'] != null) {
           ruleName = data['answering_rule']['time_frame'];
         } else {
           for (var rule in data['answering_rule']) {
-              if(rule['active'] == "1"){
-                ruleName = rule['time_frame'];
-                break;
-              }
+            if (rule['active'] == "1") {
+              ruleName = rule['time_frame'];
+              break;
+            }
           }
         }
 
-        _fusionConnection!.nsApiCall("answerrule", "update", {
-          "domain": domain,
-          "user": ext,
-          "uid": uid,
-          "time_frame": ruleName,
-          "for_control": forControl,
-          "sim_control": simControl,
-          "sim_parameters": simParams
-        },callback: ()=>{});
+        _fusionConnection!.nsApiCall(
+            "answerrule",
+            "update",
+            {
+              "domain": domain,
+              "user": ext,
+              "uid": uid,
+              "time_frame": ruleName,
+              "for_control": forControl,
+              "sim_control": simControl,
+              "sim_parameters": simParams
+            },
+            callback: (Map data) => {});
       }
     });
   }
 
-
   Widget _toggleUseCarrier() {
     return Switch(
-      value: usingCarrierCalls!, 
-      activeColor: crimsonLight,
-      inactiveTrackColor: smoke,
-      onChanged: ((value) {
-        if(usingCarrierCalls!){
-          SettingsPayload payload = SettingsPayload(
-            _fusionConnection!.getUid(), 
-            "uses_carrier", 
-            value ? value.toString() : ""
-          );
-          setState(() {
-            usingCarrierCalls = value;
-            userSettings!.updateUserSettings([payload]);
-          });
-          if(!value){
-            RegExp answerConfDevice = RegExp(r'(confirm_)\d{10}');
-            _fusionConnection!.nsApiCall(
-              "device", 
-              "read", 
-              {"domain":_fusionConnection!.getDomain(), "user": _fusionConnection!.getExtension()}, 
-              callback:(devices) {
+        value: usingCarrierCalls!,
+        activeColor: crimsonLight,
+        inactiveTrackColor: smoke,
+        onChanged: ((value) {
+          if (usingCarrierCalls!) {
+            SettingsPayload payload = SettingsPayload(
+                _fusionConnection!.getUid(),
+                "uses_carrier",
+                value ? value.toString() : "");
+            setState(() {
+              usingCarrierCalls = value;
+              userSettings!.updateUserSettings([payload]);
+            });
+            if (!value) {
+              RegExp answerConfDevice = RegExp(r'(confirm_)\d{10}');
+              _fusionConnection!.nsApiCall("device", "read", {
+                "domain": _fusionConnection!.getDomain(),
+                "user": _fusionConnection!.getExtension()
+              }, callback: (devices) {
                 String allDevices = "";
-                if(devices['device'].length == userSettings!.devices!.split(" ").where((element) => element.isNotEmpty).length){
+                if (devices['device'].length ==
+                    userSettings!.devices!
+                        .split(" ")
+                        .where((element) => element.isNotEmpty)
+                        .length) {
                   allDevices = "<OwnDevices>";
                 }
-                SharedPreferences.getInstance().then(
-                  (prefs){ 
-                    String fmDeviceSelected = prefs.getString("fmDevice") ?? "";
-                    String phoneNumber = prefs.getString("phoneNumberSelected") ?? "";
-                    String devicesString = userSettings!.devices!.replaceAll(answerConfDevice, "");
-                    String fm = fmDeviceSelected.isNotEmpty ? "$fmDeviceSelected" : '' ;
-                    String sanitized = "";
-                    
-                    for (String device in devicesString.split(' ')) {
-                      if(device.startsWith(';'))continue;
-                      sanitized += " $device";
-                    }
+                SharedPreferences.getInstance().then((prefs) {
+                  String fmDeviceSelected = prefs.getString("fmDevice") ?? "";
+                  String phoneNumber =
+                      prefs.getString("phoneNumberSelected") ?? "";
+                  String devicesString =
+                      userSettings!.devices!.replaceAll(answerConfDevice, "");
+                  String fm =
+                      fmDeviceSelected.isNotEmpty ? "$fmDeviceSelected" : '';
+                  String sanitized = "";
 
-                    _updateAnsweringRule(
-                      forControl: "d",
-                      simControl: "e", 
-                      simParams: allDevices.isNotEmpty 
-                        ? "${_fusionConnection!.getExtension()} $allDevices"
-                        : "${sanitized} ${fm} ${sanitized.contains(phoneNumber) ? '' : phoneNumber}"
-                    );
-                    
-                    if(fmDeviceSelected.isNotEmpty ){
-                      prefs.setString("fmDevice", "");
-                    }
-                    if(phoneNumber.isNotEmpty){
-                      prefs.setString("phoneNumberSelected", "");
-                    }
+                  for (String device in devicesString.split(' ')) {
+                    if (device.startsWith(';')) continue;
+                    sanitized += " $device";
                   }
-                );
-              }
-            );
+
+                  _updateAnsweringRule(
+                      forControl: "d",
+                      simControl: "e",
+                      simParams: allDevices.isNotEmpty
+                          ? "${_fusionConnection!.getExtension()} $allDevices"
+                          : "${sanitized} ${fm} ${sanitized.contains(phoneNumber) ? '' : phoneNumber}");
+
+                  if (fmDeviceSelected.isNotEmpty) {
+                    prefs.setString("fmDevice", "");
+                  }
+                  if (phoneNumber.isNotEmpty) {
+                    prefs.setString("phoneNumberSelected", "");
+                  }
+                });
+              });
+            }
+          } else {
+            _savePhoneMyPhoneNumber();
+            setState(() {
+              usingCarrierCalls = value;
+            });
           }
-        } else {
-          _savePhoneMyPhoneNumber();
-          setState(() {
-            usingCarrierCalls = value;
-          });
-        }
-      })
-    );
+        }));
   }
 
-  Widget _toggleDND(){
+  Widget _toggleDND() {
     return Switch(
-      value: DND!,
-      activeColor: crimsonLight,
-      inactiveTrackColor: smoke, 
-      onChanged: (value) => setState((){
-        DND = value;
-        SettingsPayload payload = SettingsPayload(
-          _fusionConnection!.getUid(), 
-          "fm_on_dnd", 
-          value ? value.toString() : ""
-        );
-        userSettings!.updateUserSettings([payload]);
-      })
-    );
+        value: DND!,
+        activeColor: crimsonLight,
+        inactiveTrackColor: smoke,
+        onChanged: (value) => setState(() {
+              DND = value;
+              SettingsPayload payload = SettingsPayload(
+                  _fusionConnection!.getUid(),
+                  "fm_on_dnd",
+                  value ? value.toString() : "");
+              userSettings!.updateUserSettings([payload]);
+            }));
   }
 
-  void _performLogout(){
+  void _performLogout() {
     setState(() {
       loggingOut = true;
     });
-    _fusionConnection!.clearCache().then((value){
-      if(Platform.isIOS){
+    _fusionConnection!.clearCache().then((value) {
+      if (Platform.isIOS) {
         Navigator.of(context).pop();
       }
       _fusionConnection!.logOut();
@@ -992,23 +1000,48 @@ class _MenuState extends State<Menu> {
       _row("call_view/audio_phone", "Audio Settings", "", () {
         _onAudioBtnPress();
       }, null),
-      
-      _row("", "Edit Profile Picture", "", _editProfilePic, 
-        Icon(Icons.edit, color: smoke.withOpacity(0.45), size: 26,)),
 
-      // _row("", "Clear Cache", "", _clearCache, 
+      _row(
+          "",
+          "Edit Profile Picture",
+          "",
+          _editProfilePic,
+          Icon(
+            Icons.edit,
+            color: smoke.withOpacity(0.45),
+            size: 26,
+          )),
+
+      // _row("", "Clear Cache", "", _clearCache,
       //   Icon(Icons.cached, color: smoke.withOpacity(0.45), size: 26,)),
 
-      _row("", "Use Carrier", usingCarrierCalls! ? myPhoneNumber!.formatPhone() : "",null,
-        Icon(Icons.phone_forwarded, color: smoke.withOpacity(0.45), size: 26,), 
-        trailingWidget: _toggleUseCarrier()),
-      
-      _row("", "Silence","Mute Calls & Chats",null,
-        Icon(Icons.dark_mode_outlined, color: smoke.withOpacity(0.45), size: 26,), 
-        trailingWidget: _toggleDND()),
+      _row(
+          "",
+          "Use Carrier",
+          usingCarrierCalls! ? myPhoneNumber!.formatPhone() : "",
+          null,
+          Icon(
+            Icons.phone_forwarded,
+            color: smoke.withOpacity(0.45),
+            size: 26,
+          ),
+          trailingWidget: _toggleUseCarrier()),
+
+      _row(
+          "",
+          "Silence",
+          "Mute Calls & Chats",
+          null,
+          Icon(
+            Icons.dark_mode_outlined,
+            color: smoke.withOpacity(0.45),
+            size: 26,
+          ),
+          trailingWidget: _toggleDND()),
       _line(),
 
-      _row("", "Log Out", "", _performLogout, Icon(Icons.logout, color: smoke.withOpacity(0.45), size: 26))
+      _row("", "Log Out", "", _performLogout,
+          Icon(Icons.logout, color: smoke.withOpacity(0.45), size: 26))
     ];
     return response;
   }
@@ -1047,17 +1080,18 @@ class _MenuState extends State<Menu> {
                         child: Column(
                           children: [
                             Text(isFusionPlus ? "Fusion Plus" : "Fusion",
-                            style: TextStyle(
-                                color: halfSmoke,
-                                fontStyle: FontStyle.italic,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700)),
-                            Text("v."+_softphone!.appVersion!,
-                            style: TextStyle(
-                                color: halfSmoke,
-                                fontStyle: FontStyle.italic,
-                                fontSize: 9,
-                                fontWeight: FontWeight.w700),
+                                style: TextStyle(
+                                    color: halfSmoke,
+                                    fontStyle: FontStyle.italic,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700)),
+                            Text(
+                              "v." + _softphone!.appVersion!,
+                              style: TextStyle(
+                                  color: halfSmoke,
+                                  fontStyle: FontStyle.italic,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w700),
                             )
                           ],
                         ))
