@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:fusion_mobile_revamped/src/backend/softphone.dart';
 import 'package:fusion_mobile_revamped/src/callpop/call_action_button.dart';
 import 'package:fusion_mobile_revamped/src/components/contact_circle.dart';
@@ -23,12 +24,11 @@ class IncomingWhileOnCall extends StatefulWidget {
 
 class _IncomingWhileOnCallState extends State<IncomingWhileOnCall> {
   Call? get call => widget.call;
-
+  Softphone? get _softphone => widget.softphone;
   _hangupButton() {
     return GestureDetector(
       onTap: () {
-        widget.softphone!.blockAndroidAudioEvents(500);
-        widget.softphone!.hangUp(widget.call!);
+        _softphone!.endCall(call);
       },
       child: Center(
           child: Container(
@@ -50,8 +50,37 @@ class _IncomingWhileOnCallState extends State<IncomingWhileOnCall> {
   _answerButton() {
     return GestureDetector(
       onTap: () {
-        widget.softphone!.blockAndroidAudioEvents(500);
-        widget.softphone!.answerCall(widget.call);
+        if (_softphone?.confCreated == true) {
+          showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(
+                        "No",
+                        style: TextStyle(color: char),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        _softphone?.answerWhileOnCall(call);
+                        Navigator.pop(context);
+                      },
+                      child: Text(
+                        "Yes",
+                        style: TextStyle(color: crimsonDark),
+                      ),
+                    ),
+                  ],
+                  content: Text(
+                      "Taking this phone call will end current conference, are you okay with that?"),
+                );
+              });
+        } else {
+          _softphone?.answerWhileOnCall(call);
+        }
       },
       child: Center(
           child: Container(
@@ -93,26 +122,26 @@ class _IncomingWhileOnCallState extends State<IncomingWhileOnCall> {
                   ContactCircle.withDiameter(info != null ? info.contacts : [],
                       info != null ? info.crmContacts : [], 56),
                   Container(width: 0),
-                  Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(widget.softphone!.getCallerCompany(widget.call)!,
-                            style: TextStyle(
-                                fontSize: 12,
-                                color: translucentWhite(0.66),
-                                fontWeight: FontWeight.w700)),
-                        Text(widget.softphone!.getCallerName(widget.call),
-                            style: TextStyle(
-                                fontSize: 24,
-                                color: translucentWhite(1.0),
-                                fontWeight: FontWeight.w700)),
-                        Text(widget.softphone!.getCallerNumber(widget.call!),
-                            style: TextStyle(
-                                fontSize: 12,
-                                color: translucentWhite(0.66),
-                                fontWeight: FontWeight.w700)),
-                      ])
+                  LimitedBox(
+                    maxWidth: MediaQuery.of(context).size.width - 180,
+                    child: Wrap(children: [
+                      Text(widget.softphone!.getCallerCompany(widget.call)!,
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: translucentWhite(0.66),
+                              fontWeight: FontWeight.w700)),
+                      Text(widget.softphone!.getCallerName(widget.call),
+                          style: TextStyle(
+                              fontSize: 24,
+                              color: translucentWhite(1.0),
+                              fontWeight: FontWeight.w700)),
+                      Text(widget.softphone!.getCallerNumber(widget.call!),
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: translucentWhite(0.66),
+                              fontWeight: FontWeight.w700)),
+                    ]),
+                  )
                 ],
               ),
               Container(height: 12),

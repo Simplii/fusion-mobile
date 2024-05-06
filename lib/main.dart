@@ -555,7 +555,7 @@ class _MyHomePageState extends State<MyHomePage> {
         softphone.onUnregister(() {
           fusionConnection.nsApiCall('device', 'read', {
             'domain': domain,
-            'device': 'sip:${ext}fm@$domain',
+            'device': 'sip:${ext}fy@$domain',
             'user': ext
           }, callback: (Map<String, dynamic> response) {
             print("deviceread");
@@ -597,7 +597,7 @@ class _MyHomePageState extends State<MyHomePage> {
       }
       fusionConnection.nsApiCall('device', 'read', {
         'domain': _domain,
-        'device': 'sip:${_ext}fm@${_domain}',
+        'device': 'sip:${_ext}fy@${_domain}',
         'user': _ext
       }, callback: (Map<String, dynamic> response) {
         if (!response.containsKey('device')) {

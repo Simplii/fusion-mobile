@@ -85,7 +85,7 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
         if(!username.isNullOrEmpty() && !password.isNullOrEmpty() && !domain.isNullOrEmpty() ){
             register(username, password, domain)
         }
-        callsManager = CallsManager.getInstance(context)
+        callsManager = CallsManager.getInstance(context, channel)
         notificationsManager = NotificationsManager(context, callsManager)
         notificationsManager.onCoreReady()
         Log.d(debugTag, "started ${this.lifecycle.currentState}")
@@ -301,6 +301,10 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
                 val args = call.arguments as List<*>
                 val lpCall = callsManager.findCallByUuid(args[0] as String)
                 lpCall?.terminate()
+            } else if (call.method == "lpEndConference") {
+                if(core.conference?.isIn == true){
+                    core.terminateConference()
+                }
             } else if (call.method == "lpAssistedTransfer") {
                 val args = call.arguments as List<*>
                 val lpCallToTransfer = callsManager.findCallByUuid(args[0] as String)
@@ -477,7 +481,10 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
                 core.defaultInputAudioDevice = device
             }
 
-            if(device.type == AudioDevice.Type.Speaker && device.id.contains("openSLES")){
+            if(
+                device.type == AudioDevice.Type.Earpiece &&
+                device.id.contains("openSLES")
+            ) {
                 core.defaultOutputAudioDevice = device
             }
         }

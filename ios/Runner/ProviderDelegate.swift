@@ -46,6 +46,8 @@ class ProviderDelegate: NSObject, CXCallObserverDelegate {
     }
     var isBluetoothOn: Bool = false
     var regState: RegistrationState = RegistrationState.None
+    var conferenceStarting: Bool = false
+    
     @objc func handleInterruption(notification: Notification) {
         guard let userInfo = notification.userInfo,
             let typeValue = userInfo[AVAudioSessionInterruptionTypeKey] as? UInt,
@@ -110,6 +112,7 @@ print("audiointerruption")
         try! mCore?.start()
         sendDevices()
         mCore?.ipv6Enabled = false
+        mCore?.nortpTimeout = 0
 
         var mCoreDelegate = CoreDelegateStub( onCallStateChanged: { (core: Core, call: Call, state: Call.State, message: String) in
             // This function will be called each time a call state changes,
@@ -123,7 +126,7 @@ print("audiointerruption")
             print(call.remoteParams);
             print(call.remoteContact);
             print(call.remoteUserAgent);
-            print(call.remoteContact.description)
+            print(call.remoteContact?.description)
             print(call.remoteAddress!.displayName);
             var uuid: String? = self.findUuidByCall(call: call);
             if (state == .OutgoingInit) {
@@ -134,7 +137,7 @@ print("audiointerruption")
                 print(call.callLog!)
                 print(call.callLog?.toStr())
                 print(call.callLog!.callId)
-                uuid = self.uuidFromString(str: call.callLog!.callId).uuidString;
+                uuid = self.uuidFromString(str: call.callLog!.callId!).uuidString;
                 print(uuid);
                 self.uuidCalls[uuid!] = call;
                self.callkitChannel.invokeMethod("lnOutgoingInit", arguments: [uuid, call.callLog?.callId, call.remoteAddressAsString])
@@ -168,6 +171,7 @@ print("audiointerruption")
                     self.callkitChannel.invokeMethod("lnCurrentRoute", arguments: [isBluetooth!.portName,isBluetooth!.portType])
                 }
             } else if (state == .StreamsRunning) {
+                print("MDBM StreamRunning")
                 print("outoging call info streamsrunning here")
                 print(call.callLog!)
                 print(call.callLog?.toStr())
@@ -181,6 +185,7 @@ print("audiointerruption")
                 // We check if core.videoDevicesList.size > 2 because of the fake camera with static image created by our SDK (see below)e
                 self.canChangeCamera = core.videoDevicesList.count > 2
             } else if (state == .Paused) {
+                print("MDBM Paused")
                 self.callkitChannel.invokeMethod("lnCallPaused", arguments: [uuid])                // When you put a call in pause, it will became Paused
                 if (self.unpausePauseState == 2 && uuid == self.unpausePauseUuid) {
                     print("unpause2")
@@ -193,7 +198,6 @@ print("audiointerruption")
                     self.requestTransaction(transaction)
                 
                 }
-                
                 self.canChangeCamera = false
             } else if (state == .PausedByRemote) {
                 self.callkitChannel.invokeMethod("lnCallPausedByRemote", arguments: [uuid])                // When the remote end of the call pauses it, it will be PausedByRemote
@@ -223,7 +227,7 @@ print("audiointerruption")
                 }
             } else if (state == .IncomingReceived) { // When a call is received
                 do {
-                    try uuid = self.uuidFromString(str: call.callLog!.callId).uuidString
+                    try uuid = self.uuidFromString(str: call.callLog!.callId!).uuidString
                     
                     print(uuid)
                     self.uuidCalls[uuid!] = call;
@@ -243,12 +247,12 @@ print("audiointerruption")
 //        },
         onAudioDevicesListUpdated: { (core: Core) in
 //            let devices = AVAudioSession.sharedInstance().availableInputs
-            let btDevice = core.audioDevices.filter({$0.type == .Bluetooth || $0.type == .BluetoothA2DP})
-            if(!btDevice.isEmpty){
-                self.callkitChannel.invokeMethod("lnAudioDeviceListUpdated", arguments: [btDevice[0].id, btDevice[0].deviceName, btDevice[0].driverName])
-            } else {
-                self.callkitChannel.invokeMethod("lnAudioDeviceListUpdated", arguments: [])
-            }
+//            let btDevice = core.audioDevices.filter({$0.type == .Bluetooth || $0.type == .BluetoothA2DP})
+//            if(!btDevice.isEmpty){
+//                self.callkitChannel.invokeMethod("lnAudioDeviceListUpdated", arguments: [btDevice[0].id, btDevice[0].deviceName, btDevice[0].driverName])
+//            } else {
+//                self.callkitChannel.invokeMethod("lnAudioDeviceListUpdated", arguments: [])
+//            }
         }, onAccountRegistrationStateChanged: { (core: Core, account: Account, state: RegistrationState, message: String) in
             self.regState = state
             NSLog("New registration state is \(state) for user id \( String(describing: account.params?.identityAddress?.asString()))\n")
@@ -322,7 +326,7 @@ print("audiointerruption")
             print(passwd);
             try! accountParams!.setIdentityaddress(newValue: identity)
             
-            let address = try Factory.Instance.createAddress(addr: String("sip:services.fusioncom.co:5060"))
+            let address = try Factory.Instance.createAddress(addr: String("sip:zaid-fusion-dev.fusioncomm.net:5060"))
             
             try address.setTransport(newValue: transport)
             try accountParams!.setServeraddress(newValue: address)
@@ -349,8 +353,8 @@ print("audiointerruption")
     func createProxyConfig(proxyConfig: ProxyConfig, aor: String, authInfo: AuthInfo) throws -> ProxyConfig {
         let address = try mCore?.createAddress(address: aor)
         try proxyConfig.setIdentityaddress(newValue: address!)
-        try proxyConfig.setServeraddr(newValue: "<sip:services.fusioncom.co:5060;transport=tcp>")
-        try proxyConfig.setRoute(newValue: "<sip:services.fusioncom.co:5060;transport=tcp>")
+        try proxyConfig.setServeraddr(newValue: "<sip:zaid-fusion-dev.fusioncomm.net:5060;transport=tcp>")
+        try proxyConfig.setRoute(newValue: "<sip:zaid-fusion-dev.fusioncomm.net:5060;transport=tcp>")
         proxyConfig.realm = authInfo.realm
         proxyConfig.registerEnabled = true
         proxyConfig.avpfMode = .Disabled
@@ -452,7 +456,7 @@ print("audiointerruption")
             // For IOS, the Speaker is an exception, Linphone cannot differentiate Input and Output.
             // This means that the default output device, the earpiece, is paired with the default phone microphone.
             // Setting the output audio device to the microphone will redirect the sound to the earpiece.
-            if (!speakerOn && !bluetoothOn && audioDevice.type == AudioDeviceType.Microphone) {
+            if (!speakerOn && !bluetoothOn && audioDevice.type == AudioDevice.Kind.Microphone) {
                 mCore!.currentCall?.outputAudioDevice = audioDevice
                 
                 //work around to switch current audio session
@@ -466,10 +470,10 @@ print("audiointerruption")
                 
                 isSpeakerEnabled = false
 
-            } else if (speakerOn && audioDevice.type == AudioDeviceType.Speaker) {
+            } else if (speakerOn && audioDevice.type == AudioDevice.Kind.Speaker) {
                 mCore?.currentCall?.outputAudioDevice = audioDevice
                 isSpeakerEnabled = true
-            } else if (bluetoothOn && audioDevice.type == AudioDeviceType.Bluetooth) {
+            } else if (bluetoothOn && audioDevice.type == AudioDevice.Kind.Bluetooth) {
                 mCore!.currentCall?.outputAudioDevice = audioDevice
             }
         }
@@ -477,20 +481,144 @@ print("audiointerruption")
 
     func toggleBluetooth() {
         for audioDevice in mCore!.audioDevices {
-             if (audioDevice.type == AudioDeviceType.Bluetooth) {
+            if (audioDevice.type == AudioDevice.Kind.Bluetooth) {
                  mCore!.currentCall?.outputAudioDevice = audioDevice
                  isBluetoothOn = true
              }
         }
     }
+    
+    func startLocalConf() {
+        let calls: [Call]? = mCore?.calls
+        if (conferenceStarting || calls == nil || calls!.isEmpty) {
+            return
+        }
+        
+        conferenceStarting = true
+        
+        let call1UUID: UUID? = UUID(
+            uuidString: findUuidByCall(call: calls!.first!) ?? ""
+        )
+        var call2UUID: UUID?
+        for c in calls! {
+            if(c.callLog?.callId != calls?.first?.callLog?.callId) {
+               call2UUID = UUID(
+                    uuidString: findUuidByCall(call: calls!.last!) ?? ""
+                )
+            }
+        }
+        print("MDBM call1UUID=\(call1UUID) call2UUID=\(call2UUID)")
+        let groupAction = CXSetGroupCallAction(
+            call: call1UUID!,
+            callUUIDToGroupWith: call2UUID
+        )
+        let transcation = CXTransaction(action: groupAction)
+        requestTransaction(transcation)
+        setResumeCalls()
+    }
+    func setResumeCalls() {
+        for call in mCore!.calls {
+            if (call.state == .Paused || call.state == .Pausing || call.state == .PausedByRemote) {
+                setHeld(call: call, hold: false)
+            }
+        }
+    }
+    func setHeld(call: Call, hold: Bool) {
+//        #if targetEnvironment(simulator)
+//            if (hold) {
+//                try?call.pause()
+//            } else {
+//                try?call.resume()
+//            }
+        let callid = call.callLog?.callId ?? ""
+        let uuid = UUID(
+            uuidString: findUuidByCall(call: call) ?? ""
+        )
+        if (uuid == nil) {
+            print( "Can not find correspondant call to set held.")
+            return
+        }
+        let setHeldAction = CXSetHeldCallAction(call: uuid!, onHold: hold)
+        let transaction = CXTransaction(action: setHeldAction)
+        requestTransaction(transaction)
+
+    }
+    
+    func addAllToLocalConference() {
+        do {
+            if let core = mCore, let params = try? core.createConferenceParams(conference: nil) {
+                params.videoEnabled = false // We disable video for local conferencing (cf Android)
+                params.subject = "Conference"
+                let conference = core.conference != nil ? core.conference : try core.createConferenceWithParams(params: params)
+                try conference?.addParticipants(calls: core.calls)
+            }
+        } catch {
+            print( "accept call failed \(error)")
+        }
+    }
+
+    func startConference() {
+        let calls: [Call]? = mCore?.calls
+        if (conferenceStarting || calls == nil || calls!.isEmpty) {
+            return
+        }
+        
+        conferenceStarting = true
+        do {
+            var conference: Conference? = mCore!.currentCall?.conference
+            var call1UUID: UUID? = UUID(
+                uuidString: findUuidByCall(call: mCore!.currentCall!) ?? ""
+            )
+            var call2UUID: UUID?
+            if(conference == nil){
+                let params: ConferenceParams = try mCore!.createConferenceParams(conference: nil)
+                params.videoEnabled = false
+                conference = try mCore!.createConferenceWithParams(params: params)
+                print("[Conference] created conf")
+            }
+            for call in calls! {
+                if (call.conference == nil) {
+                   try conference?.addParticipant(call: call)
+                }
+                if (call.callLog?.callId != mCore!.currentCall?.callLog?.callId) {
+                    call2UUID = UUID(
+                        uuidString: findUuidByCall(call: call) ?? ""
+                    )
+                }
+            }
+            if(call1UUID != nil && call2UUID != nil) {
+                let mergeCallsAction = CXSetGroupCallAction(
+                    call: call1UUID!,
+                    callUUIDToGroupWith: call2UUID!
+                )
+                let transaction = CXTransaction(action: mergeCallsAction)
+                self.requestTransaction(transaction)
+                conference?.enter()
+//                let update = CXCallUpdate()
+//                update.hasVideo = false
+//                update.supportsHolding = true
+//                update.supportsDTMF = false
+//                update.supportsGrouping = false
+//                update.supportsUngrouping = true
+//                
+//                self.provider.reportCall(
+//                    with: call1UUID!,
+//                    updated: update
+//                )
+            }
+        } catch let error as NSError {
+            print("[Conference] error \(error.localizedDescription)")
+        }
+    }
 
     @objc func handleRouteChange(notification: Notification) {
-        let currentRoute: [AVAudioSessionPortDescription] = AVAudioSession.sharedInstance().currentRoute.outputs
-        if(!currentRoute.isEmpty){
-            print("THIS RAN handleRouteChange", currentRoute)
-            self.callkitChannel.invokeMethod("lnAudioDeviceChanged", arguments: [currentRoute[0].portType.rawValue, currentRoute[0].portName, ""])
-        }
+//        let currentRoute: [AVAudioSessionPortDescription] = AVAudioSession.sharedInstance().currentRoute.outputs
+//        if(!currentRoute.isEmpty){
+//            print("THIS RAN handleRouteChange", currentRoute)
+//            self.callkitChannel.invokeMethod("lnAudioDeviceChanged", arguments: [currentRoute[0].portType.rawValue, currentRoute[0].portName, ""])
+//        }
 //        mCore?.audioRouteChanged()
+//        2024-05-02 15:46:54:013
     }
     
     func clearCache(){
@@ -830,6 +958,9 @@ print("audiointerruption")
                 let args = call.arguments as! [Any]
                 var uuid = args[0] as! String
                 terminateCall(uuid: uuid)
+            } else if (call.method == "start3Way") {
+//                startConference()
+                startLocalConf()
             }
             else if (call.method == "lpAssistedTransfer") {
                 let args = call.arguments as! [Any]
@@ -984,7 +1115,23 @@ print("audiointerruption")
                 let uuid = args[0] as! String
                 let answerAction = CXAnswerCallAction(call:  UUID(uuidString: uuid)!)
                 let transaction = CXTransaction(action: answerAction)
+                let call: Call? = self.findCallByUuid(uuid: uuid)
+                do {
+                    try call?.accept()
+                } catch {
+                    print("error answering")
+                }
                 self.requestTransaction(transaction)
+            } else if (call.method == "lpEndConference") {
+                print("MDBM terminating conference \(mCore?.conference?.isIn)")
+                if(mCore?.conference?.isIn == true){
+                    do {
+                        try mCore!.terminateConference()
+                        print("MDBM terminated conference")
+                    } catch {
+                        print("MDBM error terminating conference \(error)")
+                    }
+                }
             }
             else if (call.method == "muteCall") {
                 print("mute call callkit")
@@ -1028,7 +1175,7 @@ print("audiointerruption")
             if let error = error {
                 print("Error requesting transaction: \(error)")
             } else {
-                print("request transaction success");
+                print("request transaction success \(transaction.description)");
                 print(transaction);
             }
         }
@@ -1059,7 +1206,8 @@ print("audiointerruption")
         update.hasVideo = hasVideo
         update.supportsHolding = true
         update.supportsDTMF = true
-    
+        update.supportsGrouping = true
+        
         provider.reportNewIncomingCall(with: uuid, update: update) { error in
             if error == nil {
                 print("call reported no error provider callkit")
@@ -1077,7 +1225,7 @@ print("audiointerruption")
     private func startRingingTimer(uuid: String )
     {
         let vTimer = Timer(
-            timeInterval: 40,
+            timeInterval: 120,
             repeats: false,
             block: { [weak self] _ in
                 self?.ringingDidTimeout(uuid: uuid)
@@ -1111,9 +1259,16 @@ extension ProviderDelegate: CXProviderDelegate {
         callkitChannel.invokeMethod("dtmfPressed", arguments: [action.callUUID.uuidString, action.digits])
     }
     
-  func providerDidReset(_ provider: CXProvider) {
+    func provider(_ provider: CXProvider, perform action: CXSetGroupCallAction) {
+        print("callkit merge calls")
+        addAllToLocalConference()
+        action.fulfill()
+        callkitChannel.invokeMethod("3wayStarted", arguments: true)
+    }
+    
+    func providerDidReset(_ provider: CXProvider) {
     print("provider didreset callkit");
-  }
+    }
     
     func configureAudioSession() {
         

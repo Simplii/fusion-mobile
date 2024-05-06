@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:fusion_mobile_revamped/src/backend/softphone.dart';
 import 'package:fusion_mobile_revamped/src/callpop/call_action_button.dart';
 import 'package:fusion_mobile_revamped/src/styles.dart';
 
@@ -43,7 +44,7 @@ class CallActionButtons extends StatefulWidget {
 class _CallActionButtonsState extends State<CallActionButtons> {
   bool? get dialPadOpen => widget.dialPadOpen;
   bool? get _loading => widget.loading;
-
+  Softphone? _softphone = Softphone.instance;
   String get _currentAudioSource => widget.currentAudioSource;
 
   Widget _getMainView(bool onHold) {
@@ -87,9 +88,25 @@ class _CallActionButtonsState extends State<CallActionButtons> {
                         width: 24, height: 24)),
                 CallActionButton(
                     onPressed: widget.actions!['onConfBtnPress'],
-                    title: 'Merge',
-                    icon: Image.asset("assets/icons/call_view/merge.png",
-                        width: 24, height: 24),
+                    title: _softphone?.confCreated == true ? "3 Way" : 'Merge',
+                    icon: _softphone?.mergingCalls == true
+                        ? SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                            ))
+                        : _softphone?.confCreated == true
+                            ? LimitedBox(
+                                maxHeight: 24,
+                                child: Icon(
+                                  Icons.groups,
+                                  color: Colors.white,
+                                  size: 32,
+                                ),
+                              )
+                            : Image.asset("assets/icons/call_view/merge.png",
+                                width: 24, height: 24),
                     disabled: widget.isMergeDisabled),
               ],
             ),
