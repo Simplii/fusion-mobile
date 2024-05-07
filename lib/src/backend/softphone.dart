@@ -431,13 +431,20 @@ class Softphone implements SipUaHelperListener {
       case "lnReleased":
       case "lnCallReleased":
         print("released call");
-        print(args[0]);
-        print(_getCallByUuid(args[0]));
+        LnCall? call = _getCallByUuid(args[0]);
         if (Platform.isAndroid) {
           activeCallOutput = "";
           activeCallOutputDevice = "";
         }
-        _setLpCallState(_getCallByUuid(args[0]), CallStateEnum.ENDED);
+        if (call != null) {
+          _setLpCallState(call, CallStateEnum.ENDED);
+          print("released call $call ${calls.length}");
+          if (confCreated) {
+            endCall(call);
+          } else {
+            hangUp(call);
+          }
+        }
         break;
       case "lnIncomingReceived":
         print("processincoming");
@@ -677,7 +684,11 @@ class Softphone implements SipUaHelperListener {
 
       case 'endButtonPressed':
         String? callUuid = methodCall.arguments[0] as String?;
-        hangUp(_getCallByUuid(callUuid));
+        if (confCreated) {
+          endCall(_getCallByUuid(callUuid));
+        } else {
+          hangUp(_getCallByUuid(callUuid));
+        }
         return;
 
       case 'holdButtonPressed':
@@ -915,12 +926,12 @@ class Softphone implements SipUaHelperListener {
     }
     if (Platform.isIOS) {
       //FIXME:
-      // for (Call c in calls) {
-      //   if (c.id != call.id) {
-      //     print("setholdonothercall");
-      //     setHold(c, true, true);
-      //   }
-      // }
+      for (Call c in calls) {
+        if (c.id != call.id) {
+          print("setholdonothercall");
+          setHold(c, true, true);
+        }
+      }
 
       // call.unmute();
       // setHold(call, false, true);
@@ -1087,7 +1098,7 @@ class Softphone implements SipUaHelperListener {
 
   transfer(Call call, String destination) {
     call.refer(destination);
-    _removeCall(call);
+    _removeCall(call, false);
   }
 
   assistedTransfer(Call? call, String destination) {
@@ -1100,8 +1111,8 @@ class Softphone implements SipUaHelperListener {
       _getMethodChannel().invokeMethod(
           "lpAssistedTransfer", [_uuidFor(originalCall), _uuidFor(toCall)]);
       assistedTransferInit = false;
-      _removeCall(originalCall);
-      _removeCall(toCall);
+      _removeCall(originalCall, false);
+      _removeCall(toCall, false);
     }
   }
 
@@ -1112,17 +1123,16 @@ class Softphone implements SipUaHelperListener {
     if (confCreated) {
       _getMethodChannel().invokeMethod("lpEndConference", []);
       for (var call in calls) {
-        _removeCall(call);
+        _removeCall(call, true);
       }
-      confCreated = false;
     } else {
-      _removeCall(call);
+      _removeCall(call, false);
     }
   }
 
   void endCall(Call? call) {
     if (call != null) {
-      _removeCall(call);
+      _removeCall(call, calls.length == 1 ? true : false);
     }
   }
 
@@ -1133,10 +1143,9 @@ class Softphone implements SipUaHelperListener {
       await Future.delayed(Duration(seconds: 2), () {
         for (var c in calls) {
           if (c.id != call.id) {
-            _removeCall(call);
+            _removeCall(call, true);
           }
         }
-        confCreated = false;
       });
       answerCall(call);
     } else {
@@ -1312,7 +1321,7 @@ class Softphone implements SipUaHelperListener {
 
   _didDisplayCall() {}
 
-  _removeCall(Call call) {
+  _removeCall(Call call, bool endConf) {
     //FIXME: temp fix for phone contact name to show in call view
     if (phoneContactName.containsKey(call.id)) {
       phoneContactName.remove(call.id!);
@@ -1347,6 +1356,9 @@ class Softphone implements SipUaHelperListener {
 
     for (Call c in toRemove) calls.remove(c);
 
+    if (endConf) {
+      confCreated = false;
+    }
     if (calls.length > 0) {
       var newActive =
           calls.where((element) => element.id != activeCall?.id).firstOrNull;
@@ -1905,7 +1917,7 @@ class Softphone implements SipUaHelperListener {
         case CallStateEnum.ENDED:
           stopOutbound();
           stopInbound();
-          _removeCall(call);
+          _removeCall(call, false);
           break;
         case CallStateEnum.FAILED:
           if (Platform.isAndroid) {
@@ -1929,7 +1941,7 @@ class Softphone implements SipUaHelperListener {
           }
           stopOutbound();
           stopInbound();
-          _removeCall(call);
+          _removeCall(call, confCreated ? true : false);
           break;
         case CallStateEnum.UNMUTED:
           _setCallDataValue(call.id, "muted", false);

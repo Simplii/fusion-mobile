@@ -515,6 +515,7 @@ print("audiointerruption")
         let transcation = CXTransaction(action: groupAction)
         requestTransaction(transcation)
         setResumeCalls()
+        conferenceStarting = false
     }
     func setResumeCalls() {
         for call in mCore!.calls {
@@ -547,7 +548,7 @@ print("audiointerruption")
     func addAllToLocalConference() {
         do {
             if let core = mCore, let params = try? core.createConferenceParams(conference: nil) {
-                params.videoEnabled = false // We disable video for local conferencing (cf Android)
+                params.videoEnabled = false
                 params.subject = "Conference"
                 let conference = core.conference != nil ? core.conference : try core.createConferenceWithParams(params: params)
                 try conference?.addParticipants(calls: core.calls)
@@ -594,17 +595,6 @@ print("audiointerruption")
                 let transaction = CXTransaction(action: mergeCallsAction)
                 self.requestTransaction(transaction)
                 conference?.enter()
-//                let update = CXCallUpdate()
-//                update.hasVideo = false
-//                update.supportsHolding = true
-//                update.supportsDTMF = false
-//                update.supportsGrouping = false
-//                update.supportsUngrouping = true
-//                
-//                self.provider.reportCall(
-//                    with: call1UUID!,
-//                    updated: update
-//                )
             }
         } catch let error as NSError {
             print("[Conference] error \(error.localizedDescription)")
@@ -1161,7 +1151,7 @@ print("audiointerruption")
     }
   
     func callObserver(_ callObserver: CXCallObserver, callChanged call: CXCall) {
-        print("MyDebugMessage call uuid \(call.hasConnected)")
+        print("MDBM call OBS callUUID=\(call.uuid) connected=\(call.hasConnected)")
         print(call.isOnHold)
         if call.hasConnected == true {
             print("marking answered", call.uuid.uuidString)
@@ -1186,7 +1176,7 @@ print("audiointerruption")
         let providerConfiguration = CXProviderConfiguration(localizedName: "Fusion")
     
         providerConfiguration.supportsVideo = false
-        providerConfiguration.maximumCallsPerCallGroup = 10
+        providerConfiguration.maximumCallsPerCallGroup = 2
         providerConfiguration.supportedHandleTypes = [.phoneNumber]
     
         return providerConfiguration
@@ -1260,7 +1250,7 @@ extension ProviderDelegate: CXProviderDelegate {
     }
     
     func provider(_ provider: CXProvider, perform action: CXSetGroupCallAction) {
-        print("callkit merge calls")
+        print("MDBM callkit merge calls actionCallUUID=\(action.callUUID)")
         addAllToLocalConference()
         action.fulfill()
         callkitChannel.invokeMethod("3wayStarted", arguments: true)

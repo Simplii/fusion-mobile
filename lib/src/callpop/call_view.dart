@@ -144,7 +144,18 @@ class _CallViewState extends State<CallView> {
 
   _onMergeBtnPress() {
     if (_softphone.mergingCalls) return;
-    _softphone.mergeCalls();
+    if (_softphone.calls.length == 1) {
+      setState(() {
+        dialpadVisible = false;
+        showModalBottomSheet(
+            context: context,
+            backgroundColor: Colors.transparent,
+            isScrollControlled: true,
+            builder: (context) => DialPadModal(_fusionConnection, _softphone));
+      });
+    } else {
+      _softphone.mergeCalls();
+    }
   }
 
   _onRecBtnPress() {

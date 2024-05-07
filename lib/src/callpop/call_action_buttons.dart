@@ -88,7 +88,12 @@ class _CallActionButtonsState extends State<CallActionButtons> {
                         width: 24, height: 24)),
                 CallActionButton(
                     onPressed: widget.actions!['onConfBtnPress'],
-                    title: _softphone?.confCreated == true ? "3 Way" : 'Merge',
+                    title: _softphone?.confCreated == true
+                        ? "3 Way"
+                        : _softphone?.activeCall != null &&
+                                _softphone?.calls.length == 1
+                            ? 'Add'
+                            : 'Merge',
                     icon: _softphone?.mergingCalls == true
                         ? SizedBox(
                             height: 24,
@@ -105,9 +110,17 @@ class _CallActionButtonsState extends State<CallActionButtons> {
                                   size: 32,
                                 ),
                               )
-                            : Image.asset("assets/icons/call_view/merge.png",
-                                width: 24, height: 24),
-                    disabled: widget.isMergeDisabled),
+                            : _softphone?.activeCall != null &&
+                                    _softphone?.calls.length == 1
+                                ? Image.asset(
+                                    "assets/icons/call_view/conference.png",
+                                    width: 24,
+                                    height: 24)
+                                : Image.asset(
+                                    "assets/icons/call_view/merge.png",
+                                    width: 24,
+                                    height: 24),
+                    disabled: _softphone?.activeCall == null),
               ],
             ),
             Row(
