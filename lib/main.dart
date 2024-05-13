@@ -181,10 +181,9 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       builder: (BuildContext context, Widget? child) {
-        final double scaleRange =
-            MediaQuery.of(context).textScaleFactor.clamp(0.8, 1.2);
-        return MediaQuery(
-          data: MediaQuery.of(context).copyWith(textScaleFactor: scaleRange),
+        return MediaQuery.withClampedTextScaling(
+          maxScaleFactor: 1.3,
+          minScaleFactor: 0.8,
           child: child!,
         );
       },
