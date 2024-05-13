@@ -326,7 +326,7 @@ print("audiointerruption")
             print(passwd);
             try! accountParams!.setIdentityaddress(newValue: identity)
             
-            let address = try Factory.Instance.createAddress(addr: String("sip:zaid-fusion-dev.fusioncomm.net:5060"))
+            let address = try Factory.Instance.createAddress(addr: String("sip:services.fusioncom.co:5060"))
             
             try address.setTransport(newValue: transport)
             try accountParams!.setServeraddress(newValue: address)
@@ -353,8 +353,8 @@ print("audiointerruption")
     func createProxyConfig(proxyConfig: ProxyConfig, aor: String, authInfo: AuthInfo) throws -> ProxyConfig {
         let address = try mCore?.createAddress(address: aor)
         try proxyConfig.setIdentityaddress(newValue: address!)
-        try proxyConfig.setServeraddr(newValue: "<sip:zaid-fusion-dev.fusioncomm.net:5060;transport=tcp>")
-        try proxyConfig.setRoute(newValue: "<sip:zaid-fusion-dev.fusioncomm.net:5060;transport=tcp>")
+        try proxyConfig.setServeraddr(newValue: "<sip:services.fusioncom.co:5060;transport=tcp>")
+        try proxyConfig.setRoute(newValue: "<sip:services.fusioncom.co:5060;transport=tcp>")
         proxyConfig.realm = authInfo.realm
         proxyConfig.registerEnabled = true
         proxyConfig.avpfMode = .Disabled
@@ -552,6 +552,9 @@ print("audiointerruption")
                 params.subject = "Conference"
                 let conference = core.conference != nil ? core.conference : try core.createConferenceWithParams(params: params)
                 try conference?.addParticipants(calls: core.calls)
+                for call in core.calls {
+                    try conference?.addParticipant(call: call)
+                }
             }
         } catch {
             print( "accept call failed \(error)")
@@ -1305,8 +1308,11 @@ extension ProviderDelegate: CXProviderDelegate {
   
   func provider(_ provider: CXProvider, perform action: CXEndCallAction) {
       print("theendcallaction from callkit")
+      let call:Call? = findCallByUuid(uuid: action.callUUID.uuidString)
+      let incomingWhileOnConference:Bool = mCore?.conference?.isIn ?? false && call?.state ?? Call.State.Error == Call.State.IncomingReceived && answeredUuids.count >= 2
+      print("MDBM incomingWhileOnCon = \(incomingWhileOnConference)")
       action.fulfill()
-      callkitChannel.invokeMethod("endButtonPressed", arguments: [action.callUUID.uuidString])
+      callkitChannel.invokeMethod("endButtonPressed", arguments: [action.callUUID.uuidString, incomingWhileOnConference])
     // end call
   }
   
@@ -1314,8 +1320,23 @@ extension ProviderDelegate: CXProviderDelegate {
       if (!action.isOnHold) {
           print("holdbuttonpressed configure audio")
       }
-      action.fulfill()
-      callkitChannel.invokeMethod("holdButtonPressed", arguments: [action.callUUID.uuidString, action.isOnHold])
+      if(mCore?.isInConference ?? false && action.isOnHold){
+          print("MDBM sss leaving conference \(action.isOnHold)")
+          do {
+              if(action.isOnHold){
+                  try mCore?.enterConference()
+              } else {
+                  try mCore?.leaveConference()
+              }
+              action.fulfill()
+          } catch {
+              print("MDBM error leaving conference")
+          }
+      } else {
+          print("MDBM sss set hold")
+          action.fulfill()
+          callkitChannel.invokeMethod("holdButtonPressed", arguments: [action.callUUID.uuidString, action.isOnHold])
+      }
 
   }
   

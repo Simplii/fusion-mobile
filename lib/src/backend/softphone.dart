@@ -105,6 +105,7 @@ class Softphone implements SipUaHelperListener {
   List<Call> endedCalls = []; // call dispositions
   bool mergingCalls = false;
   bool confCreated = false;
+  bool? incomingWhileOnConf = false;
   static Softphone? instance;
   Map<String, String> phoneContactName =
       {}; //FIXME: change this temp fix for phoneContact
@@ -684,9 +685,20 @@ class Softphone implements SipUaHelperListener {
 
       case 'endButtonPressed':
         String? callUuid = methodCall.arguments[0] as String?;
-        if (confCreated) {
+        incomingWhileOnConf = methodCall.arguments[1] as bool?;
+
+        if (incomingWhileOnConf == true) {
+          LnCall? call = _getCallByUuid(callUuid);
+          if (phoneContactName.containsKey(call?.id)) {
+            phoneContactName.remove(call?.id);
+          }
+          _getMethodChannel().invokeMethod("lpEndCall", [callUuid]);
+          print("MDBM endButtonPressed ${calls.length}");
+        } else if (confCreated) {
+          print("MDBM endButtonPressed elseif ");
           endCall(_getCallByUuid(callUuid));
         } else {
+          print("MDBM endButtonPressed else ");
           hangUp(_getCallByUuid(callUuid));
         }
         return;
@@ -1917,7 +1929,9 @@ class Softphone implements SipUaHelperListener {
         case CallStateEnum.ENDED:
           stopOutbound();
           stopInbound();
+          if (incomingWhileOnConf == true) return;
           _removeCall(call, false);
+
           break;
         case CallStateEnum.FAILED:
           if (Platform.isAndroid) {

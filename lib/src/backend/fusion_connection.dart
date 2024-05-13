@@ -74,8 +74,8 @@ class FusionConnection {
   ConnectivityResult connectivityResult = ConnectivityResult.none;
   bool internetAvailable = true;
   StreamSubscription? _wsStream;
-  // static final String host = "fusioncom.co";
-  static final String host = "zaid-fusion-dev.fusioncomm.net";
+  static final String host = "fusioncom.co";
+  // static final String host = "zaid-fusion-dev.fusioncomm.net";
   String serverRoot = "http://$host";
   StreamController websocketStream = StreamController.broadcast();
   String mediaServer = "https://fusion-media.sfo2.digitaloceanspaces.com";
