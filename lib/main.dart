@@ -21,6 +21,7 @@ import 'package:fusion_mobile_revamped/src/chats/chats.dart';
 import 'package:fusion_mobile_revamped/src/chats/conversationView.dart';
 import 'package:fusion_mobile_revamped/src/chats/newConversationView.dart';
 import 'package:fusion_mobile_revamped/src/chats/viewModels/chatsVM.dart';
+import 'package:fusion_mobile_revamped/src/components/fusion_bottom_sheet.dart';
 import 'package:fusion_mobile_revamped/src/dialpad/dialpad_modal.dart';
 import 'package:fusion_mobile_revamped/src/models/contact.dart';
 import 'package:fusion_mobile_revamped/src/models/conversations.dart';
@@ -46,6 +47,7 @@ import 'src/messages/new_message_popup.dart';
 import 'src/messages/sms_conversation_view.dart';
 import 'src/styles.dart';
 import 'src/utils.dart';
+import 'package:feedback/feedback.dart';
 
 final navigatorKey = GlobalKey<NavigatorState>();
 Map<String, dynamic> messageData = {};
@@ -146,8 +148,23 @@ Future<void> main() async {
   runApp(OverlaySupport.global(
       child: MaterialApp(
     debugShowCheckedModeBanner: false,
-    home: MyApp(
-      sharedPreferences: sharedPrefs,
+    home: BetterFeedback(
+      feedbackBuilder: (context, onSubmit, scrollController) =>
+          FusionFeedbackSheet(
+        onSubmit: onSubmit,
+        scrollController: scrollController,
+      ),
+      theme: FeedbackThemeData(
+        drawColors: [fusionChats, personalChat, telegramChat, facebookChat],
+        background: char,
+        feedbackSheetColor: coal,
+        bottomSheetTextInputStyle: TextStyle(color: Colors.white),
+        bottomSheetDescriptionStyle: TextStyle(color: Colors.white),
+        dragHandleColor: Colors.white,
+      ),
+      child: MyApp(
+        sharedPreferences: sharedPrefs,
+      ),
     ),
   )));
   // runApp(MaterialApp(home: MyApp()));
