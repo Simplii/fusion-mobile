@@ -4,11 +4,12 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:ui';
 
-import 'package:all_sensors/all_sensors.dart';
+// import 'package:all_sensors/all_sensors.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:firebase_performance/firebase_performance.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -130,7 +131,8 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   FirebaseMessaging.onBackgroundMessage(backgroundMessageHandler); // }
-
+  await FirebasePerformance.instance.setPerformanceCollectionEnabled(true);
+  HttpClient.enableTimelineLogging = true;
   registerNotifications();
   SharedPreferences sharedPrefs = await SharedPreferences.getInstance();
   SystemChrome.setPreferredOrientations(
@@ -256,7 +258,7 @@ class _MyHomePageState extends State<MyHomePage> {
   bool _logged_in = false;
   bool _callInProgress = false;
   bool _isProximityListening = false;
-  late StreamSubscription<ProximityEvent> _proximitySub;
+  // late StreamSubscription<ProximityEvent> _proximitySub;
   bool flutterBackgroundInitialized = false;
   Function? onMessagePosted;
   late StreamSubscription<ConnectivityResult> connectivitySubscription;
@@ -711,15 +713,15 @@ class _MyHomePageState extends State<MyHomePage> {
         !softphone.isSpeakerEnabled() &&
         !_isProximityListening) {
       _isProximityListening = true;
-      _proximitySub = proximityEvents!.listen((ProximityEvent event) {
-        setState(() {});
-      });
+      // _proximitySub = proximityEvents!.listen((ProximityEvent event) {
+      //   setState(() {});
+      // });
     } else if (_isProximityListening &&
         (softphone.activeCall == null ||
             softphone.getHoldState(softphone.activeCall) ||
             softphone.isSpeakerEnabled())) {
       _isProximityListening = false;
-      _proximitySub.cancel();
+      // _proximitySub.cancel();
     }
 
     if (!_logged_in) {

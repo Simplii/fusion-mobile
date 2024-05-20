@@ -5,6 +5,7 @@ import 'dart:core';
 import 'dart:io';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:firebase_performance/firebase_performance.dart';
 import 'package:flutter/services.dart';
 import 'package:fusion_mobile_revamped/src/models/contact_fields.dart';
 import 'package:fusion_mobile_revamped/src/models/dids.dart';
@@ -366,6 +367,7 @@ class FusionConnection {
   nsApiCall(String object, String action, Map<String, dynamic> data,
       {required Function callback, int retryCount = 0}) async {
     var client = http.Client();
+    final _MetricHttpClient metricHttpClient = _MetricHttpClient(client);
     try {
       data['action'] = action;
       data['object'] = object;
@@ -386,7 +388,7 @@ class FusionConnection {
       headers["Content-Type"] = "application/json";
 
       var uriResponse =
-          await client.post(url, headers: headers, body: requestBody);
+          await metricHttpClient.post(url, headers: headers, body: requestBody);
       Map<String, dynamic>? jsonResponse = {};
       try {
         jsonResponse =
@@ -424,13 +426,14 @@ class FusionConnection {
   apiV1Call(String method, String route, Map<String, dynamic> data,
       {Function? callback, Function? onError, int retryCount = 0}) async {
     var client = http.Client();
+    final _MetricHttpClient metricHttpClient = _MetricHttpClient(client);
     try {
       Function fn = {
-        'post': client.post,
-        'get': client.get,
-        'patch': client.patch,
-        'put': client.put,
-        'delete': client.delete
+        'post': metricHttpClient.post,
+        'get': metricHttpClient.get,
+        'patch': metricHttpClient.patch,
+        'put': metricHttpClient.put,
+        'delete': metricHttpClient.delete
       }[method.toLowerCase()]!;
 
       Map<Symbol, dynamic> args = {};
@@ -522,13 +525,14 @@ class FusionConnection {
   apiV2Call(String method, String route, Map<String, dynamic> data,
       {Function? callback, Function? onError, int retryCount = 0}) async {
     var client = http.Client();
+    final _MetricHttpClient metricHttpClient = _MetricHttpClient(client);
     try {
       Function fn = {
-        'post': client.post,
-        'get': client.get,
-        'patch': client.patch,
-        'put': client.put,
-        'delete': client.delete
+        'post': metricHttpClient.post,
+        'get': metricHttpClient.get,
+        'patch': metricHttpClient.patch,
+        'put': metricHttpClient.put,
+        'delete': metricHttpClient.delete
       }[method.toLowerCase()]!;
       Map<Symbol, dynamic> args = {};
       String urlParams = "";
@@ -1014,5 +1018,49 @@ class FusionConnection {
 
     await sharedPreferences.clear();
     _clearDataStores();
+  }
+}
+
+class _MetricHttpClient extends http.BaseClient {
+  _MetricHttpClient(this._inner);
+
+  final http.Client _inner;
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    // Custom network monitoring is not supported for web.
+    // https://firebase.google.com/docs/perf-mon/custom-network-traces?platform=android
+    final HttpMetric metric = FirebasePerformance.instance
+        .newHttpMetric(request.url.toString(), HttpMethod.Get);
+
+    metric.requestPayloadSize = request.contentLength;
+    await metric.start();
+
+    http.StreamedResponse response;
+    try {
+      response = await _inner.send(request);
+      print(
+        'Called ${request.url} with custom monitoring, response code: ${response.statusCode}',
+      );
+
+      metric.responseContentType = 'text/html';
+      metric.httpResponseCode = response.statusCode;
+      metric.responsePayloadSize = response.contentLength;
+
+      metric.putAttribute('score', '15');
+      metric.putAttribute('to_be_removed', 'should_not_be_logged');
+    } finally {
+      metric.removeAttribute('to_be_removed');
+      await metric.stop();
+    }
+
+    final attributes = metric.getAttributes();
+
+    print('Http metric attributes: $attributes.');
+
+    String? score = metric.getAttribute('score');
+    print('Http metric score attribute value: $score');
+
+    return response;
   }
 }

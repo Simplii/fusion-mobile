@@ -43,6 +43,7 @@ class Softphone implements SipUaHelperListener {
   MethodChannel? _callKit;
   late MethodChannel _telecom;
   MethodChannel? _android;
+  MethodChannel? android;
 
   bool? registered = false;
   bool connected = false;
@@ -111,6 +112,7 @@ class Softphone implements SipUaHelperListener {
       _callKit = MethodChannel('net.fusioncomm.ios/callkit');
     else if (Platform.isAndroid) {
       _android = MethodChannel('net.fusioncomm.android/calling');
+      android = MethodChannel('net.fusioncomm.android/calling');
       _telecom = MethodChannel('net.fusioncomm.android/telecom');
     }
     instance = this;

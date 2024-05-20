@@ -21,6 +21,9 @@ import androidx.core.content.getSystemService
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
+import com.google.firebase.Firebase
+import com.google.firebase.crashlytics.FirebaseCrashlytics
+import com.google.firebase.crashlytics.crashlytics
 import com.google.gson.Gson
 import io.flutter.plugin.common.MethodChannel
 import kotlinx.coroutines.CoroutineScope
@@ -52,7 +55,7 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
         "net.fusioncomm.android.fusionValues",
         Context.MODE_PRIVATE
     )
-
+    private var crashlytics: FirebaseCrashlytics
     companion object{
         private const val debugTag = "MDBM FMCore"
         lateinit var core:Core
@@ -72,6 +75,9 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
     init {
         _lifecycleRegistry.currentState = Lifecycle.State.INITIALIZED
         Log.d(debugTag, "Init ${this.lifecycle.currentState}")
+        crashlytics = Firebase.crashlytics
+        crashlytics.setUserId("123456789")
+
         setupCore()
         setFlutterActionsHandler()
         val started: Int = core.start()
@@ -338,7 +344,7 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
                 val gson = Gson()
                 channel.invokeMethod(
                     "setAppVersion",
-                    gson.toJson(BuildConfig.VERSION_NAME)
+                    gson.toJson("1.2.29")
                 )
                 var myPhoneNumber = ""
 
@@ -368,6 +374,28 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
                 //this is not being hit from flutter
                 Log.d(debugTag, "lpUnregister")
                 unregister()
+            }
+            else if (call.method == "crashTest") {
+                //this is not being hit from flutter
+                val args = call.arguments as List<*>
+
+//                try {
+//                    throw RuntimeException("test crash")
+//                } catch (ex: RuntimeException) {
+//                    // [START crashlytics_log_and_report]
+//                    crashlytics.log("RTE caught!")
+//                    crashlytics.recordException(ex)
+//                    // [END crashlytics_log_and_report]
+//                }
+                Log.d(debugTag,"ttt $args")
+
+            }
+            else if (call.method == "testANR") {
+                //this is not being hit from flutter
+                val args = call.arguments as List<*>
+                Thread.sleep(9000)
+                Log.d(debugTag,"ttt $args")
+
             } else {
                 Log.d(debugTag,"setFlutterActionHandler call = ${call.method}")
                 results.notImplemented()

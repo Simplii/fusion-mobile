@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:feedback/feedback.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:firebase_performance/firebase_performance.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -829,6 +831,30 @@ class _SearchCallsBarState extends State<SearchCallsBar> {
     });
   }
 
+  Future<void> _testTrace1() async {
+    FirebasePerformance _performance = FirebasePerformance.instance;
+
+    final Trace trace = _performance.newTrace('test_trace');
+    await trace.start();
+    trace.putAttribute('favorite_color', 'blue');
+    trace.putAttribute('to_be_removed', 'should_not_be_logged');
+
+    trace.incrementMetric('sum', 200);
+    trace.incrementMetric('total', 342);
+
+    trace.removeAttribute('to_be_removed');
+    await trace.stop();
+
+    final sum = trace.getMetric('sum');
+    print('MDBM test_trace_1 sum value: $sum');
+
+    final attributes = trace.getAttributes();
+    print('MDBM test_trace_1 attributes: $attributes');
+
+    final favoriteColor = trace.getAttribute('favorite_color');
+    print('MDBM test_trace_1 favorite_color: $favoriteColor');
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -858,7 +884,31 @@ class _SearchCallsBarState extends State<SearchCallsBar> {
                       child: TextField(
                           onChanged: _search,
                           style: TextStyle(color: Colors.white),
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
+                              // suffixIcon: IconButton(
+                              //     onPressed: _testTrace1,
+                              //     icon: Icon(Icons.error)),
+                              // suffixIcon: IconButton(
+                              //     onPressed: () {
+                              //       print("MDBM Crash");
+                              //       FirebaseCrashlytics.instance.crash();
+                              //     },
+                              //     icon: Icon(Icons.error)),
+                              suffixIcon: IconButton(
+                                  onPressed: () {
+                                    print("MDBM ANR");
+                                    Softphone.instance?.android
+                                        ?.invokeMethod("testANR", []);
+                                  },
+                                  icon: Icon(Icons.error)),
+                              // suffixIcon: IconButton(
+                              //     onPressed: () {
+                              //       print("MDBM Crash");
+                              //       FirebaseCrashlytics.instance.recordError(
+                              //           null, null,
+                              //           information: ["test report error"]);
+                              //     },
+                              //     icon: Icon(Icons.error)),
                               border: InputBorder.none,
                               hintStyle: TextStyle(
                                   color: Color.fromARGB(255, 154, 148, 149)),
