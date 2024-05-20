@@ -6,6 +6,7 @@ import 'dart:io';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/services.dart';
+import 'package:fusion_mobile_revamped/src/backend/fusion_stream_events.dart';
 import 'package:fusion_mobile_revamped/src/models/contact_fields.dart';
 import 'package:fusion_mobile_revamped/src/models/dids.dart';
 import 'package:fusion_mobile_revamped/src/models/park_lines.dart';
@@ -41,10 +42,10 @@ class FusionConnection {
   String _TAG = "MDBM FUSIONCONNECTION";
   String _extension = '';
   String _username = '';
-  String _password = '';
+  // String _password = '';
   String _domain = '';
   late SharedPreferences sharedPreferences;
-  Map<String, bool> _heartbeats = {};
+  // Map<String, bool> _heartbeats = {};
   late CrmContactsStore crmContacts;
   late ContactsStore contacts;
   late PhoneContactsStore phoneContacts;
@@ -77,7 +78,8 @@ class FusionConnection {
   static final String host = "fusioncom.co";
   // static final String host = "zaid-fusion-dev.fusioncomm.net";
   String serverRoot = "http://$host";
-  StreamController websocketStream = StreamController.broadcast();
+  StreamController<FusionStreamEventData> fusionStreamEvents =
+      StreamController.broadcast();
   String mediaServer = "https://fusion-media.sfo2.digitaloceanspaces.com";
   String defaultAvatar = "https://$host/img/defaultuser.png";
   static const MethodChannel contactsChannel =
@@ -86,6 +88,7 @@ class FusionConnection {
   String _token = "";
   String _signature = "";
   bool loggingOut = false;
+  FusionStreamEvents streamEvents = FusionStreamEvents();
   // Switched fusion connection to Singleton so we don't have to pass it down each widget
   FusionConnection._internal() {
     crmContacts = CrmContactsStore(this);
@@ -164,7 +167,7 @@ class FusionConnection {
   logOut() async {
     loggingOut = true;
     _wsStream?.cancel();
-    websocketStream = StreamController.broadcast();
+    fusionStreamEvents = StreamController.broadcast();
     _softphone?.unregisterLinphone();
     String? FBtoken = await FirebaseMessaging.instance.getToken();
     if (_pushkitToken != null) {
@@ -392,6 +395,8 @@ class FusionConnection {
         jsonResponse =
             convert.jsonDecode(uriResponse.body) as Map<String, dynamic>?;
       } catch (e) {}
+      // print(
+      //     "MDBM nsapi status code=${uriResponse.statusCode} body=${uriResponse.body} authtoken=$_authToken");
       if (uriResponse.statusCode == 401 &&
           uriResponse.headers.containsKey("x-fusion-signature")) {
         if (uriResponse.headers["x-fusion-signature"] != null &&
@@ -410,10 +415,10 @@ class FusionConnection {
           }
         }
       } else {
-        developer.log(
-          "NS_API_Resp ${jsonResponse} $action $object",
-          name: _TAG,
-        );
+        // developer.log(
+        //   "NS_API_Resp ${jsonResponse} $action $object",
+        //   name: _TAG,
+        // );
         callback(jsonResponse);
       }
     } finally {
@@ -730,12 +735,13 @@ class FusionConnection {
       phoneContacts.syncPhoneContacts();
     }
     contactFields.getFields((List<ContactField> list, bool fromServer) {});
-    setupSocket();
+    // setupSocket();
     if (callback != null) {
       callback(true);
     }
     FirebaseMessaging.instance.getToken().then((token) {
       developer.log("got token $token $_pushkitToken", name: _TAG);
+      startStreamEvents(token);
       apiV1Call("post", "/clients/device_token",
           {"token": token, "pn_tok": _pushkitToken});
     });
@@ -820,7 +826,7 @@ class FusionConnection {
         authenticated = response["success"];
         if (authenticated) {
           _username = username;
-          _password = password;
+          // _password = password;
           _domain = _username.split('@')[1];
           _extension = _username.split('@')[0];
           _token = response["token"];
@@ -868,84 +874,124 @@ class FusionConnection {
     loadDomainOptions();
   }
 
-  _reconnectSocket() {
-    if (loggingOut) return;
-    socketChannel.sink.add(convert.jsonEncode({
-      "simplii_identification": [_extension, _domain],
-      "pwd": _password
-    }));
-  }
+  // _reconnectSocket() {
+  //   if (loggingOut) return;
+  //   socketChannel.sink.add(convert.jsonEncode({
+  //     "simplii_identification": [_extension, _domain],
+  //     "pwd": _password
+  //   }));
+  // }
 
-  _sendHeartbeat() {
-    String beat = randomString(30);
-    if (loggingOut) return;
-    _sendToSocket({'heartbeat': beat});
-    Future.delayed(const Duration(seconds: 15), () {
-      if (_heartbeats[beat] != null && !_heartbeats[beat]!) {
-        socketChannel.sink.close();
-        setupSocket();
-      }
-      _heartbeats.remove(beat);
-      _sendHeartbeat();
-    });
-  }
+  // _sendHeartbeat() {
+  //   String beat = randomString(30);
+  //   if (loggingOut) return;
+  //   _sendToSocket({'heartbeat': beat});
+  //   Future.delayed(const Duration(seconds: 15), () {
+  //     if (_heartbeats[beat] != null && !_heartbeats[beat]!) {
+  //       socketChannel.sink.close();
+  //       setupSocket();
+  //     }
+  //     _heartbeats.remove(beat);
+  //     _sendHeartbeat();
+  //   });
+  // }
 
-  _sendToSocket(Map<String, dynamic> payload) {
-    socketChannel.sink.add(convert.jsonEncode(payload));
-  }
+  // _sendToSocket(Map<String, dynamic> payload) {
+  //   socketChannel.sink.add(convert.jsonEncode(payload));
+  // }
 
-  setupSocket() async {
-    int messageNum = 0;
-    final wsUrl = Uri.parse('wss://$host:8443/');
-    socketChannel = WebSocketChannel.connect(wsUrl);
-    websocketStream.addStream(socketChannel.stream);
-    _wsStream = websocketStream.stream.listen((messageData) async {
-      developer.log("wsMessage $messageData", name: _TAG);
-      Map<String, dynamic> message = convert.jsonDecode(messageData);
-      if (message.containsKey('heartbeat')) {
-        _heartbeats[message['heartbeat']] = true;
-      } else if (message.containsKey('sms_received')) {
-        // Receive incoming message platform data
-        SMSMessage newMessage = SMSMessage.fromV2(message['message_object']);
-        if (!received_smses.containsKey(newMessage.id)) {
-          received_smses[newMessage.id] = true;
+  // setupSocket() async {
+  //   int messageNum = 0;
+  //   final wsUrl = Uri.parse('wss://$host:8443/');
+  //   socketChannel = WebSocketChannel.connect(wsUrl);
+  //   // websocketStream.addStream(socketChannel.stream);
+  //   _wsStream = socketChannel.stream.listen((messageData) async {
+  //     developer.log("wsMessage $messageData", name: _TAG);
+  //     Map<String, dynamic> message = convert.jsonDecode(messageData);
+  //     if (message.containsKey('heartbeat')) {
+  //       _heartbeats[message['heartbeat']] = true;
+  //     } else if (message.containsKey('sms_received')) {
+  //       // Receive incoming message platform data
+  //       SMSMessage newMessage = SMSMessage.fromV2(message['message_object']);
+  //       if (!received_smses.containsKey(newMessage.id)) {
+  //         received_smses[newMessage.id] = true;
 
-          List<SMSDepartment> departments = smsDepartments.allDepartments();
-          List<String> numbers = [];
-          departments.forEach((element) {
-            numbers.addAll(element.numbers);
-          });
-          if (!numbers.contains(newMessage.from)) {
-            refreshUnreads();
-            messages.notifyMessage(newMessage);
-            messages.storeRecord(newMessage);
-            unreadMessages.getRecords();
-          }
-        } else if (newMessage.messageStatus.isNotEmpty) {
-          List<SMSMessage> msgs = messages.getRecords();
-          for (SMSMessage message in msgs) {
-            if (message.id == newMessage.id) {
-              message.messageStatus = newMessage.messageStatus;
-              message.errorMessage = newMessage.errorMessage;
-              messages.storeRecord(message);
-            }
-          }
+  //         List<SMSDepartment> departments = smsDepartments.allDepartments();
+  //         List<String> numbers = [];
+  //         departments.forEach((element) {
+  //           numbers.addAll(element.numbers);
+  //         });
+  //         if (!numbers.contains(newMessage.from)) {
+  //           refreshUnreads();
+  //           messages.notifyMessage(newMessage);
+  //           messages.storeRecord(newMessage);
+  //           unreadMessages.getRecords();
+  //         }
+  //       } else if (newMessage.messageStatus.isNotEmpty) {
+  //         List<SMSMessage> msgs = messages.getRecords();
+  //         for (SMSMessage message in msgs) {
+  //           if (message.id == newMessage.id) {
+  //             message.messageStatus = newMessage.messageStatus;
+  //             message.errorMessage = newMessage.errorMessage;
+  //             messages.storeRecord(message);
+  //           }
+  //         }
+  //       }
+  //     } else if (message.containsKey('new_status')) {
+  //       coworkers.storePresence(
+  //           message['user'] + '@' + message['domain'].toString().toLowerCase(),
+  //           message['new_status'],
+  //           message['message']);
+  //     }
+
+  //     if (_softphone != null) _softphone!.checkCallIds(message);
+  //   }, onDone: () {
+  //     print("MDBM FUSIONCONNECTION ws done");
+  //   }, onError: (e) {
+  //     developer.log("WS ERROR", error: jsonEncode(e), name: _TAG);
+  //   });
+  //   _reconnectSocket();
+  //   _sendHeartbeat();
+  // }
+
+  void startStreamEvents(String? FBDeviceToken) {
+    Uri url = Uri.parse(
+        'https://$host/api/v2/client/streamEvents?username=$_username&deviceToken=$FBDeviceToken');
+
+    String _authToken = generateMd5(
+        "$_token:$_username:/api/v2/client/streamEvents?username=$_username&deviceToken=$FBDeviceToken::$_signature");
+    Map<String, String> header = {
+      "X-fusion-uid": _username,
+      "Authorization": "Bearer $_authToken"
+    };
+
+    streamEvents.connect(
+      "GET",
+      url,
+      header,
+      autoReconnect: true,
+      onSuccessCallback: (resp) {
+        print("$_TAG streamEvents resp= $resp");
+        if (resp != null &&
+            resp.stream != null &&
+            resp.status == FusionStreamEventConnectionStatus.connected) {
+          print("$_TAG adding new stream $resp");
+          fusionStreamEvents.addStream(resp.stream!);
+        } else {
+          print(
+              "$_TAG streamEvents StreamEventResp=$resp StreamEventRespStream=${resp?.stream} StreamEventRespConnectionStatus=${resp?.status}");
         }
-      } else if (message.containsKey('new_status')) {
-        coworkers.storePresence(
-            message['user'] + '@' + message['domain'].toString().toLowerCase(),
-            message['new_status'],
-            message['message']);
-      }
-
-      if (_softphone != null) _softphone!.checkCallIds(message);
-    }, onDone: () {
-      print("MDBM FUSIONCONNECTION ws done");
-    }, onError: (e) {
-      developer.log("WS ERROR", error: jsonEncode(e), name: _TAG);
-    });
-    _reconnectSocket();
-    _sendHeartbeat();
+      },
+      onReAuth: (newSignature) {
+        if (newSignature != null && newSignature != _signature) {
+          _signature = newSignature;
+          sharedPreferences.setString("signature", _signature);
+          Future.delayed(Duration(seconds: 5), () {
+            startStreamEvents(FBDeviceToken);
+          });
+        }
+      },
+    );
   }
 
   void setRefreshUi(Function() callback) {
