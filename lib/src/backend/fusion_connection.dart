@@ -4,8 +4,11 @@ import 'dart:convert';
 import 'dart:core';
 import 'dart:io';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_performance/firebase_performance.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:fusion_mobile_revamped/src/models/contact_fields.dart';
 import 'package:fusion_mobile_revamped/src/models/dids.dart';
@@ -87,6 +90,7 @@ class FusionConnection {
   String _token = "";
   String _signature = "";
   bool loggingOut = false;
+  FirebaseAnalytics analytics = FirebaseAnalytics.instance;
   // Switched fusion connection to Singleton so we don't have to pass it down each widget
   FusionConnection._internal() {
     crmContacts = CrmContactsStore(this);
@@ -508,7 +512,7 @@ class FusionConnection {
       } else {
         if (uriResponse?.statusCode != 200) {
           developer.log(
-              "apiv1 request failing $method $url ${uriResponse?.statusCode} retryCount=$retryCount",
+              "apiv1 request failing $method $url/$urlParams ${uriResponse?.statusCode} retryCount=$retryCount",
               name: _TAG);
         } else {
           var jsonResponse = convert.jsonDecode(uriResponse?.body ?? "");

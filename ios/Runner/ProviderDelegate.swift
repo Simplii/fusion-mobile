@@ -123,7 +123,7 @@ print("audiointerruption")
             print(call.remoteParams);
             print(call.remoteContact);
             print(call.remoteUserAgent);
-            print(call.remoteContact.description)
+//            print(call.remoteContact.description)
             print(call.remoteAddress!.displayName);
             var uuid: String? = self.findUuidByCall(call: call);
             if (state == .OutgoingInit) {
@@ -134,7 +134,7 @@ print("audiointerruption")
                 print(call.callLog!)
                 print(call.callLog?.toStr())
                 print(call.callLog!.callId)
-                uuid = self.uuidFromString(str: call.callLog!.callId).uuidString;
+                uuid = self.uuidFromString(str: call.callLog?.callId ?? "").uuidString;
                 print(uuid);
                 self.uuidCalls[uuid!] = call;
                self.callkitChannel.invokeMethod("lnOutgoingInit", arguments: [uuid, call.callLog?.callId, call.remoteAddressAsString])
@@ -223,7 +223,7 @@ print("audiointerruption")
                 }
             } else if (state == .IncomingReceived) { // When a call is received
                 do {
-                    try uuid = self.uuidFromString(str: call.callLog!.callId).uuidString
+                    try uuid = self.uuidFromString(str: call.callLog?.callId ?? "").uuidString
                     
                     print(uuid)
                     self.uuidCalls[uuid!] = call;
@@ -452,7 +452,7 @@ print("audiointerruption")
             // For IOS, the Speaker is an exception, Linphone cannot differentiate Input and Output.
             // This means that the default output device, the earpiece, is paired with the default phone microphone.
             // Setting the output audio device to the microphone will redirect the sound to the earpiece.
-            if (!speakerOn && !bluetoothOn && audioDevice.type == AudioDeviceType.Microphone) {
+            if (!speakerOn && !bluetoothOn && audioDevice.type == AudioDevice.Kind.Microphone) {
                 mCore!.currentCall?.outputAudioDevice = audioDevice
                 
                 //work around to switch current audio session
@@ -466,10 +466,10 @@ print("audiointerruption")
                 
                 isSpeakerEnabled = false
 
-            } else if (speakerOn && audioDevice.type == AudioDeviceType.Speaker) {
+            } else if (speakerOn && audioDevice.type == AudioDevice.Kind.Speaker) {
                 mCore?.currentCall?.outputAudioDevice = audioDevice
                 isSpeakerEnabled = true
-            } else if (bluetoothOn && audioDevice.type == AudioDeviceType.Bluetooth) {
+            } else if (bluetoothOn && audioDevice.type == AudioDevice.Kind.Bluetooth) {
                 mCore!.currentCall?.outputAudioDevice = audioDevice
             }
         }
@@ -477,7 +477,7 @@ print("audiointerruption")
 
     func toggleBluetooth() {
         for audioDevice in mCore!.audioDevices {
-             if (audioDevice.type == AudioDeviceType.Bluetooth) {
+            if (audioDevice.type == AudioDevice.Kind.Bluetooth) {
                  mCore!.currentCall?.outputAudioDevice = audioDevice
                  isBluetoothOn = true
              }

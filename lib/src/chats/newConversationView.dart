@@ -68,7 +68,8 @@ class _NewMessageViewState extends State<NewMessageView> {
         .allDepartments()
         .where((department) =>
             department.id != DepartmentIds.AllMessages &&
-            department.id != DepartmentIds.Unread)
+            department.id != DepartmentIds.Unread &&
+            department.numbers.isNotEmpty)
         .toList();
 
     groups.sort(((a, b) => int.parse(a.id) < int.parse(b.id) ? -1 : 1));
@@ -85,15 +86,26 @@ class _NewMessageViewState extends State<NewMessageView> {
             padding: EdgeInsets.only(top: 0, bottom: 0, right: 0, left: 8),
             height: 36,
             child: FusionDropdown(
-                selectedNumber: newConversationVM.getMyNumber(),
+                //FIXME:
+                // selectedNumber: newConversationVM.getMyNumber(),
+                selectedNumber: groups
+                    .where((element) => element.numbers.isNotEmpty)
+                    .first
+                    .numbers
+                    .first,
                 departments: groups,
                 onChange: newConversationVM.onDepartmentChange,
                 onNumberTap: newConversationVM.onNumberChange,
                 label: "Departments",
-                value: newConversationVM.selectedDepartmentId ==
-                        DepartmentIds.AllMessages
-                    ? DepartmentIds.Personal
-                    : newConversationVM.selectedDepartmentId,
+                //FIXME:
+                // value: newConversationVM.selectedDepartmentId ==
+                //         DepartmentIds.AllMessages
+                //     ? DepartmentIds.Personal
+                //     : newConversationVM.selectedDepartmentId,
+                value: groups
+                    .where((element) => element.numbers.isNotEmpty)
+                    .first
+                    .groupName,
                 style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
                 options: groups
                     .map((SMSDepartment d) {
