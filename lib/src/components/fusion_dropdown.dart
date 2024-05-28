@@ -202,11 +202,14 @@ class _FusionDropdownState extends State<FusionDropdown> {
                               "assets/icons/messages/department.png",
                               height: 24,
                             ),
-                          Text(option[0],
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w700))
+                          LimitedBox(
+                            maxWidth: MediaQuery.of(context).size.width - 230,
+                            child: Text(option[0],
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w700)),
+                          )
                         ],
                       ),
                       if (int.parse(option[2]) > 0)
