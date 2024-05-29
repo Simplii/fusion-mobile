@@ -22,13 +22,14 @@ class Voicemail extends FusionModel {
     this.path = obj['audioSrc'];
     this.phoneNumber = obj['callerNumber'];
     this.duration = obj['duration'];
-    this.time = DateTime.parse(obj['callTime']).toLocal();
-    this.contacts = obj['fusionContact'] == null ? [] : [Contact.fromV2(obj['fusionContact'])];
+    this.time = DateTime.parse(obj['callTime']);
+    this.contacts = obj['fusionContact'] == null
+        ? []
+        : [Contact.fromV2(obj['fusionContact'])];
   }
 
   contactName() {
-    if (coworker != null)
-      return coworker!.getName();
+    if (coworker != null) return coworker!.getName();
 
     for (Contact c in contacts!) {
       if (c.fullName() != "Unknown") {
@@ -50,8 +51,9 @@ class VoicemailStore extends FusionStore<Voicemail> {
   getVoicemails(Function(List<Voicemail>, bool) callback) async {
     final PermissionStatus status = await Permission.contacts.status;
     List<PhoneContact> phoneContacts = [];
-    if(status.isGranted){
-      phoneContacts = await fusionConnection.phoneContacts.getAddressBookContacts("");
+    if (status.isGranted) {
+      phoneContacts =
+          await fusionConnection.phoneContacts.getAddressBookContacts("");
     }
     fusionConnection
         .apiV2Call("get", "/user/voicemails", {"limit": 200, "start": 0},
@@ -63,13 +65,15 @@ class VoicemailStore extends FusionStore<Voicemail> {
 
         if (obj.phoneNumber!.length <= 6) {
           obj.coworker = fusionConnection.coworkers.lookupCoworker(
-          obj.phoneNumber! + '@' + fusionConnection.getDomain());
+              obj.phoneNumber! + '@' + fusionConnection.getDomain());
         }
-        if(phoneContacts.isNotEmpty && obj.contacts!.isEmpty){
+        if (phoneContacts.isNotEmpty && obj.contacts!.isEmpty) {
           for (PhoneContact phoneContact in phoneContacts) {
-            List<String> numbers = 
-              phoneContact.phoneNumbers.map((e) => e["number"]).toList().cast<String>();
-            if(numbers.contains(obj.phoneNumber)){
+            List<String> numbers = phoneContact.phoneNumbers
+                .map((e) => e["number"])
+                .toList()
+                .cast<String>();
+            if (numbers.contains(obj.phoneNumber)) {
               obj.contacts = [phoneContact.toContact()];
             }
           }
@@ -86,10 +90,10 @@ class VoicemailStore extends FusionStore<Voicemail> {
     bool deleteRes = false;
     try {
       await fusionConnection.apiV2Call("post", "/user/voicemails/delete", {
-        "index" : "${vm.id}.wav",
-        "owner" : fusionConnection.getUid(),
-        "type"  : "vmail/new"
-      }, callback: (res){
+        "index": "${vm.id}.wav",
+        "owner": fusionConnection.getUid(),
+        "type": "vmail/new"
+      }, callback: (res) {
         deleteRes = res;
       });
     } catch (e) {
