@@ -1,4 +1,5 @@
 import 'package:fusion_mobile_revamped/src/backend/fusion_connection.dart';
+import 'package:fusion_mobile_revamped/src/models/carbon_date.dart';
 import 'package:fusion_mobile_revamped/src/models/phone_contact.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'contact.dart';
@@ -22,7 +23,7 @@ class Voicemail extends FusionModel {
     this.path = obj['audioSrc'];
     this.phoneNumber = obj['callerNumber'];
     this.duration = obj['duration'];
-    this.time = DateTime.parse(obj['callTime']);
+    this.time = DateTime.parse(obj['callTime']).toLocal();
     this.contacts = obj['fusionContact'] == null
         ? []
         : [Contact.fromV2(obj['fusionContact'])];
