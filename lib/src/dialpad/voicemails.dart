@@ -207,6 +207,7 @@ class _VoicemailsState extends State<Voicemails> {
   }
 
   Widget _vmRow(Voicemail vm) {
+    DateTime localTime = vm.time.toLocal();
     return Container(
         margin: EdgeInsets.only(bottom: 18),
         child: Column(children: [
@@ -225,11 +226,11 @@ class _VoicemailsState extends State<Voicemails> {
                         height: 1.4)),
                 Spacer(),
                 Text(
-                    vm.time.month.toString() +
+                    localTime.month.toString() +
                         "/" +
-                        vm.time.day.toString() +
+                        localTime.day.toString() +
                         "/" +
-                        vm.time.year.toString().substring(2),
+                        localTime.year.toString().substring(2),
                     style: TextStyle(
                         color: char, fontSize: 13, fontWeight: FontWeight.w400))
               ]),
@@ -291,7 +292,7 @@ class _VoicemailsState extends State<Voicemails> {
                                     margin: EdgeInsets.only(bottom: 8),
                                     child: Text(
                                         DateFormat('EEE, MMMM d ')
-                                                .format(vm.time) +
+                                                .format(localTime) +
                                             mDash +
                                             DateFormat(' hh:mm ')
                                                 .format(vm.time),
