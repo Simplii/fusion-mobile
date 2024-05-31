@@ -73,8 +73,8 @@ class FusionStreamEvents {
     Request request = Request(method, url);
     request.headers.addAll(header);
     Future<StreamedResponse> response = _client!.send(request);
-    print('$_TAG Connection Initiated');
-    print('$_TAG Request headers=${request.headers}');
+    // print('$_TAG Connection Initiated');
+    // print('$_TAG Request headers=${request.headers}');
     response.then(
       (data) async {
         if (data.statusCode < 200 || data.statusCode >= 300) {
@@ -88,9 +88,9 @@ class FusionStreamEvents {
         }
 
         if (autoReconnect && data.statusCode != 200) {
-          log("Request failed code=${data.statusCode} body=${data.reasonPhrase}",
-              name: _TAG);
-          print("$_TAG autoReconnect is active");
+          // log("Request failed code=${data.statusCode} body=${data.reasonPhrase}",
+          //     name: _TAG);
+          // print("$_TAG autoReconnect is active");
           return;
         }
 
@@ -99,7 +99,7 @@ class FusionStreamEvents {
             .transform(const LineSplitter())
             .listen(
               (dataLine) {
-                print("$_TAG data line $dataLine");
+                // print("$_TAG data line $dataLine");
                 if (dataLine.isEmpty) {
                   /// When the data line is empty, it indicates that the complete event set has been read.
                   /// The event is then added to the stream.
@@ -128,7 +128,7 @@ class FusionStreamEvents {
                   case 'data':
                     currentFusionEventData.data =
                         '${currentFusionEventData.data}$value\n';
-                    print("$_TAG Data=${currentFusionEventData.data}");
+                    // print("$_TAG Data=${currentFusionEventData.data}");
                     break;
                   case 'id':
                     currentFusionEventData.id = value;
@@ -161,11 +161,11 @@ class FusionStreamEvents {
                 }
               },
               onError: (error, s) async {
-                log("$_TAG ${error.toString()}");
+                // log("$_TAG ${error.toString()}");
                 await _stop();
 
-                print(
-                    '$_TAG Data Stream Listen Error: ${data.statusCode} error: $error ');
+                // print(
+                //     '$_TAG Data Stream Listen Error: ${data.statusCode} error: $error ');
 
                 if (onError != null) {
                   onError("$_TAG error: ${error.toString()}");
@@ -198,22 +198,22 @@ class FusionStreamEvents {
       if (onError != null) {
         onError(e.toString());
       }
-      log("$_TAG catchError ${e.toString()} ${e}");
+      // log("$_TAG catchError ${e.toString()} ${e}");
       await _stop();
     });
   }
 
   Future<FusionStreamEventConnectionStatus> _stop() async {
-    print('$_TAG Disconnecting');
+    // print('$_TAG Disconnecting');
     try {
       _streamSubscription?.cancel();
       _streamController?.close();
       _client?.close();
       Future.delayed(const Duration(seconds: 1), () {});
-      print('$_TAG Disconnected');
+      // print('$_TAG Disconnected');
       return FusionStreamEventConnectionStatus.disconnected;
     } catch (error) {
-      print('$_TAG Disconnected error:$error');
+      // print('$_TAG Disconnected error:$error');
       return FusionStreamEventConnectionStatus.error;
     }
   }
@@ -230,12 +230,12 @@ class FusionStreamEvents {
     Function(String)? onError,
     Function()? onConnectionClose,
   }) async {
-    print(
-        "$_TAG autoReconnect=$autoReconnect isExplicitDisconnect=$isExplicitDisconnect");
+    // print(
+    //     "$_TAG autoReconnect=$autoReconnect isExplicitDisconnect=$isExplicitDisconnect");
     if (autoReconnect && !isExplicitDisconnect) {
-      print("$_TAG autoReconnecting in 2sec");
+      // print("$_TAG autoReconnecting in 2sec");
       await Future.delayed(const Duration(seconds: 2), () {
-        print("$_TAG autoReconnect starting");
+        // print("$_TAG autoReconnect starting");
         _start(
           method,
           url,

@@ -5,6 +5,7 @@ import android.app.*
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.telecom.CallAudioState
 import android.telephony.PhoneNumberUtils
 import android.util.Log
 import android.widget.RemoteViews
@@ -21,6 +22,7 @@ import net.fusioncomm.android.R
 import net.fusioncomm.android.notifications.Contact
 import net.fusioncomm.android.notifications.Notifiable
 import net.fusioncomm.android.notifications.NotificationsManager
+import net.fusioncomm.android.telecom.NativeCallWrapper
 import org.linphone.core.Call
 import java.io.IOException
 import java.net.URL
@@ -239,5 +241,28 @@ class Api26Compatibility {
             pic = null
             return  notificationBuilder.build()
         }
+
+        fun changeAudioRouteForTelecomManager(connection: NativeCallWrapper, route: Int): Boolean {
+            Log.d(
+                debugTag,
+                "Changing audio route [${CallAudioState.audioRouteToString(route)}] on connection [${connection.callId}] with state [${connection.stateAsString()}]"
+            )
+
+            val audioState = connection.callAudioState
+            if (audioState != null) {
+                Log.d(debugTag,"Current audio route is ${CallAudioState.audioRouteToString(audioState.route)}")
+                if (audioState.route == route) {
+                    Log.d(debugTag,"Connection is already using this route")
+                    return false
+                }
+            } else {
+                Log.d(debugTag,"Failed to retrieve connection's call audio state!")
+                return false
+            }
+
+            connection.setAudioRoute(route)
+            return true
+        }
+
     }
 }

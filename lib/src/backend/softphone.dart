@@ -692,7 +692,7 @@ class Softphone implements SipUaHelperListener {
           if (phoneContactName.containsKey(call?.id)) {
             phoneContactName.remove(call?.id);
           }
-          _getMethodChannel().invokeMethod("lpEndCall", [callUuid]);
+          _getMethodChannel()?.invokeMethod("lpEndCall", [callUuid]);
           print("MDBM endButtonPressed ${calls.length}");
         } else if (confCreated) {
           print("MDBM endButtonPressed elseif ");
@@ -766,7 +766,7 @@ class Softphone implements SipUaHelperListener {
     registerLinphone(login, password, aor);
   }
 
-  _getMethodChannel() {
+  MethodChannel? _getMethodChannel() {
     return (Platform.isIOS ? _callKit : _android);
   }
 
@@ -776,7 +776,7 @@ class Softphone implements SipUaHelperListener {
     _savedLogin = login;
     _savedPassword = password;
     _savedAor = aor;
-    _getMethodChannel().invokeMethod(
+    _getMethodChannel()?.invokeMethod(
         "lpRegister", [aor.split("@")[0], password, aor.split("@")[1]]);
   }
 
@@ -785,7 +785,7 @@ class Softphone implements SipUaHelperListener {
     _savedLogin = "";
     _savedPassword = "";
     _savedAor = "";
-    _getMethodChannel().invokeMethod("lpUnregister", []);
+    _getMethodChannel()?.invokeMethod("lpUnregister", []);
   }
 
   _cleanToAddress(toAddress) {
@@ -881,7 +881,7 @@ class Softphone implements SipUaHelperListener {
                 duration: Duration(seconds: 8));
             doClickToCall(destination);
           } else {
-            _getMethodChannel().invokeMethod("lpStartCall", [destination]);
+            _getMethodChannel()?.invokeMethod("lpStartCall", [destination]);
           }
         } else {
           toast("Sorry somthing went wrong with dynamic dailing");
@@ -895,7 +895,7 @@ class Softphone implements SipUaHelperListener {
             duration: Duration(seconds: 8));
         doClickToCall(destination);
       } else {
-        _getMethodChannel().invokeMethod("lpStartCall", [destination]);
+        _getMethodChannel()?.invokeMethod("lpStartCall", [destination]);
       }
     }
   }
@@ -932,7 +932,7 @@ class Softphone implements SipUaHelperListener {
       if (Platform.isIOS) {
         print("reportoing outging call callkit");
         _setCallDataValue(call.id, "isReported", true);
-        _getMethodChannel().invokeMethod("reportOutgoingCall",
+        _getMethodChannel()?.invokeMethod("reportOutgoingCall",
             [_uuidFor(call), getCallerNumber(call), getCallerName(call)]);
       }
     }
@@ -1010,14 +1010,13 @@ class Softphone implements SipUaHelperListener {
   }
 
   setSpeaker(bool useSpeaker) {
-    print("lpsetspeaker  $useSpeaker ");
-    _getMethodChannel().invokeMethod("lpSetSpeaker", [useSpeaker]);
+    _getMethodChannel()?.invokeMethod("toggleSpeaker", []);
     this.outputDevice = useSpeaker ? 'Speaker' : "Phone";
     this._updateListeners();
   }
 
   setBluetooth() {
-    _getMethodChannel().invokeMethod("lpSetBluetooth");
+    _getMethodChannel()?.invokeMethod("lpSetBluetooth");
     this.outputDevice = 'Bluetooth';
     this._updateListeners();
   }
@@ -1034,42 +1033,43 @@ class Softphone implements SipUaHelperListener {
       if (setOnHold) {
         if (Platform.isAndroid) {
           // _callKeep.setOnHold(_uuidFor(call), true);
-          _getMethodChannel().invokeMethod("lpSetHold", [_uuidFor(call), true]);
+          _getMethodChannel()
+              ?.invokeMethod("lpSetHold", [_uuidFor(call), true]);
         } else {
           print("setholdindart");
           // call.hold();
-          _getMethodChannel().invokeMethod("setHold", [_uuidFor(call)]);
+          _getMethodChannel()?.invokeMethod("setHold", [_uuidFor(call)]);
         }
       } else {
         if (Platform.isAndroid) {
           // _callKeep.setOnHold(_uuidFor(call), false);
           _getMethodChannel()
-              .invokeMethod("lpSetHold", [_uuidFor(call), false]);
+              ?.invokeMethod("lpSetHold", [_uuidFor(call), false]);
         } else {
           print("setholdinvoke");
           // call.unhold();
-          _getMethodChannel().invokeMethod("setUnhold", [_uuidFor(call)]);
+          _getMethodChannel()?.invokeMethod("setUnhold", [_uuidFor(call)]);
         }
       }
     } else if (setOnHold) {
       if (Platform.isAndroid) {
         // _callKeep.setOnHold(_uuidFor(call), true);
-        _getMethodChannel().invokeMethod("lpSetHold", [_uuidFor(call), true]);
+        _getMethodChannel()?.invokeMethod("lpSetHold", [_uuidFor(call), true]);
       } else {
         print("setholdindart");
         // call.hold();
-        _getMethodChannel().invokeMethod("setHold", [_uuidFor(call)]);
+        _getMethodChannel()?.invokeMethod("setHold", [_uuidFor(call)]);
       }
       // call.hold();
     } else {
       // call.unhold();
       if (Platform.isAndroid) {
         // _callKeep.setOnHold(_uuidFor(call), false);
-        _getMethodChannel().invokeMethod("lpSetHold", [_uuidFor(call), false]);
+        _getMethodChannel()?.invokeMethod("lpSetHold", [_uuidFor(call), false]);
       } else {
         print("setholdinvoke");
         // call.unhold();
-        _getMethodChannel().invokeMethod("setUnhold", [_uuidFor(call)]);
+        _getMethodChannel()?.invokeMethod("setUnhold", [_uuidFor(call)]);
       }
     }
   }
@@ -1082,7 +1082,7 @@ class Softphone implements SipUaHelperListener {
         // _callKeep.setMutedCall(_uuidFor(call), true);
       }
       if (fromUi) {
-        _getMethodChannel().invokeMethod('muteCall', [_uuidFor(call)]);
+        _getMethodChannel()?.invokeMethod('muteCall', [_uuidFor(call)]);
       }
     } else {
       _setCallDataValue(call!.id, "muted", false);
@@ -1091,7 +1091,7 @@ class Softphone implements SipUaHelperListener {
         // _callKeep.setMutedCall(_uuidFor(call), false);
       }
       if (fromUi) {
-        _getMethodChannel().invokeMethod('unMuteCall', [_uuidFor(call)]);
+        _getMethodChannel()?.invokeMethod('unMuteCall', [_uuidFor(call)]);
       }
     }
   }
@@ -1120,7 +1120,7 @@ class Softphone implements SipUaHelperListener {
 
   completeAssistedTransfer(Call? originalCall, Call toCall) {
     if (originalCall != null && toCall != null) {
-      _getMethodChannel().invokeMethod(
+      _getMethodChannel()?.invokeMethod(
           "lpAssistedTransfer", [_uuidFor(originalCall), _uuidFor(toCall)]);
       assistedTransferInit = false;
       _removeCall(originalCall, false);
@@ -1133,7 +1133,7 @@ class Softphone implements SipUaHelperListener {
     //   call.hangup();
     // } catch (e) {}
     if (confCreated) {
-      _getMethodChannel().invokeMethod("lpEndConference", []);
+      _getMethodChannel()?.invokeMethod("lpEndConference", []);
       for (var call in calls) {
         _removeCall(call, true);
       }
@@ -1151,7 +1151,7 @@ class Softphone implements SipUaHelperListener {
   void answerWhileOnCall(Call? call) async {
     if (call == null) return;
     if (confCreated) {
-      _getMethodChannel().invokeMethod("lpEndConference", []);
+      _getMethodChannel()?.invokeMethod("lpEndConference", []);
       await Future.delayed(Duration(seconds: 2), () {
         for (var c in calls) {
           if (c.id != call.id) {
@@ -1201,7 +1201,7 @@ class Softphone implements SipUaHelperListener {
       } else {
         // call.answer({});
         if (Platform.isAndroid) {
-          _getMethodChannel().invokeMethod("lpAnswer", [_uuidFor(call)]);
+          _getMethodChannel()?.invokeMethod("lpAnswer", [_uuidFor(call)]);
           // _callKeep.answerIncomingCall(_uuidFor(call));
           if (isCellPhoneCallActive!) {
             activeCall!.hold();
@@ -1339,10 +1339,10 @@ class Softphone implements SipUaHelperListener {
       phoneContactName.remove(call.id!);
     }
     if (Platform.isIOS) {
-      _getMethodChannel().invokeMethod("lpEndCall", [_uuidFor(call)]);
-      _getMethodChannel().invokeMethod("endCall", [_uuidFor(call)]);
+      _getMethodChannel()?.invokeMethod("lpEndCall", [_uuidFor(call)]);
+      _getMethodChannel()?.invokeMethod("endCall", [_uuidFor(call)]);
     } else if (Platform.isAndroid) {
-      _getMethodChannel().invokeMethod("lpEndCall", [_uuidFor(call)]);
+      _getMethodChannel()?.invokeMethod("lpEndCall", [_uuidFor(call)]);
       // _callKeep.endCall(_uuidFor(call));
       // calls.removeWhere((c) => call.id == c.id);
     }
@@ -1428,26 +1428,26 @@ class Softphone implements SipUaHelperListener {
   }
 
   testEcho() {
-    _getMethodChannel().invokeMethod("lpTestEcho", []);
+    _getMethodChannel()?.invokeMethod("lpTestEcho", []);
     isTestingEcho = true;
   }
 
   stopTestingEcho() {
-    _getMethodChannel().invokeMethod("lpStopTestEcho", []);
+    _getMethodChannel()?.invokeMethod("lpStopTestEcho", []);
     isTestingEcho = false;
   }
 
   calibrateEcho() {
-    _getMethodChannel().invokeMethod("lpCalibrateEcho", []);
+    _getMethodChannel()?.invokeMethod("lpCalibrateEcho", []);
   }
 
   toggleEchoLimiterEnabled() {
     _getMethodChannel()
-        .invokeMethod("lpSetEchoLimiterEnabled", [!echoLimiterEnabled!]);
+        ?.invokeMethod("lpSetEchoLimiterEnabled", [!echoLimiterEnabled!]);
   }
 
   toggleEchoCancellationEnabled() {
-    _getMethodChannel().invokeMethod(
+    _getMethodChannel()?.invokeMethod(
         "lpSetEchoCancellationEnabled", [!echoCancellationEnabled!]);
   }
 
@@ -1871,7 +1871,7 @@ class Softphone implements SipUaHelperListener {
 
   mergeCalls() {
     mergingCalls = true;
-    _getMethodChannel().invokeMethod("start3Way", []);
+    _getMethodChannel()?.invokeMethod("start3Way", []);
   }
 
   recordCall(Call call) {
@@ -1974,7 +1974,7 @@ class Softphone implements SipUaHelperListener {
             _blockingEvent = false;
           });
           if (Platform.isAndroid) {
-            setCallOutput(call, getCallOutput(call));
+            // setCallOutput(call, getCallOutput(call));
           }
           break;
         case CallStateEnum.CONFIRMED:
