@@ -179,16 +179,16 @@ class MainActivity : FlutterActivity() {
             // This listner will be triggered when switching audioDevice in call only
             val newDevice: Array<String> = arrayOf(audioDevice.id, audioDevice.type.name)
             Log.d(debugTag, "audio device changed ${newDevice}")
-//            if(newDevice.isNotEmpty()){
-//
-//                val gson = Gson()
-//               channel.invokeMethod(
-//                        "lnAudioDeviceChanged",
-//                       mapOf(Pair("audioDevice", gson.toJson(newDevice)),
-//                            Pair("activeCallOutput", core.currentCall?.outputAudioDevice?.id),
-//                            Pair("defaultMic", core.defaultOutputAudioDevice.id))
-//                    )
-//           }
+            if(newDevice.isNotEmpty()){
+
+                val gson = Gson()
+               channel.invokeMethod(
+                        "lnAudioDeviceChanged",
+                       mapOf(Pair("audioDevice", gson.toJson(newDevice)),
+                            Pair("activeCallOutput", core.currentCall?.outputAudioDevice?.id),
+                            Pair("defaultMic", core.defaultOutputAudioDevice.id))
+                    )
+           }
 
         }
 
