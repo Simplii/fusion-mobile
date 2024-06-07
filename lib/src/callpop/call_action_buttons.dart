@@ -67,11 +67,13 @@ class _CallActionButtonsState extends State<CallActionButtons> {
                   CallActionButton(
                       onPressed: widget.actions!['onHoldBtnPress'],
                       title: 'Hold',
+                      disabled: _softphone?.confCreated == true,
                       icon: Image.asset("assets/icons/call_view/hold.png",
                           width: 24, height: 24)),
                 CallActionButton(
                     onPressed: widget.actions!['onXferBtnPress'],
                     title: 'Xfer',
+                    disabled: _softphone?.confCreated == true,
                     icon: Image.asset("assets/icons/call_view/transfer.png",
                         width: 24, height: 24)),
                 CallActionButton(
@@ -84,6 +86,7 @@ class _CallActionButtonsState extends State<CallActionButtons> {
                 CallActionButton(
                     onPressed: widget.actions!['onParkBtnPress'],
                     title: 'Park',
+                    disabled: _softphone?.confCreated == true,
                     icon: Image.asset("assets/icons/call_view/park.png",
                         width: 24, height: 24)),
                 CallActionButton(
@@ -120,7 +123,8 @@ class _CallActionButtonsState extends State<CallActionButtons> {
                                     "assets/icons/call_view/merge.png",
                                     width: 24,
                                     height: 24),
-                    disabled: _softphone?.activeCall == null),
+                    disabled: _softphone?.activeCall == null ||
+                        _softphone?.confCreated == true),
               ],
             ),
             Row(
@@ -149,6 +153,7 @@ class _CallActionButtonsState extends State<CallActionButtons> {
                 CallActionButton(
                     onPressed: widget.actions!['onTextBtnPress'],
                     title: 'Text',
+                    disabled: _softphone?.confCreated == true,
                     icon: _loading!
                         ? SizedBox(
                             height: 24,
@@ -170,9 +175,6 @@ class _CallActionButtonsState extends State<CallActionButtons> {
 
   Widget _currentAudioOutput() {
     IconData icon = Icons.volume_down;
-    if (widget.callIsMuted != null && widget.callIsMuted!) {
-      icon = Icons.volume_off;
-    }
     if (_currentAudioSource == "Bluetooth") {
       icon = Icons.bluetooth;
     }

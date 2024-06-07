@@ -658,7 +658,7 @@ class Softphone implements SipUaHelperListener {
       case 'holdButtonPressed':
         String? callUuid = methodCall.arguments[0] as String?;
         bool? isHold = methodCall.arguments[1] as bool?;
-        //FIXME: setHold(_getCallByUuid(callUuid), isHold ?? false, false);
+        setHold(_getCallByUuid(callUuid), isHold ?? false, false);
         return;
 
       case 'muteButtonPressed':
