@@ -11,7 +11,7 @@ class AudioDevice {
     required this.deviceId,
   });
 
-  factory AudioDevice.fromDictionary(Map<dynamic, dynamic> data) {
+  factory AudioDevice.serialize(Map<dynamic, dynamic> data) {
     AudioDeviceType type = data["deviceType"] == "Speaker"
         ? AudioDeviceType.Speaker
         : data["deviceType"] == "Bluetooth"

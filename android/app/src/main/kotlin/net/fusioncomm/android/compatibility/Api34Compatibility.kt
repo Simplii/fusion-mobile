@@ -50,6 +50,12 @@ class Api34Compatibility {
                 return false
             }
             Log.e(DebugTag,"NewCallEndpoint = ${newEndpoint.endpointName} ${newEndpoint.endpointType}")
+            /*
+                setAudioRoute is deprecated and not used according to this
+                https://developer.android.com/reference/android/telecom/Connection#setAudioRoute(int)
+                but removing it from API34 will cause toggling BT from earpiece to stop working on Android 14
+            */
+            connection.setAudioRoute(newEndpoint.endpointType)
             connection.requestCallEndpointChange(
                 newEndpoint,
                 context.mainExecutor,
@@ -57,12 +63,6 @@ class Api34Compatibility {
                     Log.d(DebugTag, "requestCallEndpointChange ${connection.currentCallEndpoint}")
                 }
             )
-            /*
-                setAudioRoute is deprecated and not used according to this
-                https://developer.android.com/reference/android/telecom/Connection#setAudioRoute(int)
-                but removing it from API34 will cause toggling BT from earpiece to stop working on Android 14
-            */
-            connection.setAudioRoute(newEndpointType)
             return true
         }
     }

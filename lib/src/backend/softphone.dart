@@ -336,11 +336,7 @@ class Softphone implements SipUaHelperListener {
           RingtonePlayer.stop();
           break;
         case "lnAudioDeviceChanged":
-          args = [
-            args['audioDevice'] as String?,
-            args['defaultMic'] as String?,
-            args['activeCallOutput'] as String?
-          ];
+          args = args as Map<dynamic, dynamic>?;
           break;
 
         case "setAppVersion":
@@ -552,52 +548,21 @@ class Softphone implements SipUaHelperListener {
         break;
       case "lnAudioDeviceChanged":
         // this method triggers while in call only, Android/IOS
-        if (Platform.isIOS) {
-          AudioDevice audioDevice = AudioDevice.fromDictionary(args);
-          //FIXME: make ui uses only outputdevice on both platforms
-          activeCallOutput = audioDevice.deviceType == AudioDeviceType.Speaker
-              ? "Speaker"
-              : audioDevice.deviceType == AudioDeviceType.Bluetooth
-                  ? "Bluetooth"
-                  : "Phone";
-          outputDevice = audioDevice.deviceType == AudioDeviceType.Speaker
-              ? "Speaker"
-              : audioDevice.deviceType == AudioDeviceType.Bluetooth
-                  ? "Bluetooth"
-                  : "Phone";
-        } else {
-          var deviceChanged = json.decode(args[0] as String);
-          /* 
-          Speaker is weird on Android 13 Galaxy Devices, it must have a
-          default input and output as openSLES and we can not set default 
-          device on current call, so we had to make the app default outputDevice
-          and inputDevice as openSLES Mic/Speaker
-          */
-          if (deviceChanged[1] == 'Speaker') {
-            var device = devicesList.firstWhere(
-                (element) => element[1]!.contains('openSLES Speaker'));
-
-            var device2 = devicesList
-                .where((element) => element[2] == "Microphone")
-                .firstWhere((element) => element[1]!.contains('openSLES'));
-
-            setActiveCallOutputDevice(device[1]);
-            activeCallOutput = deviceChanged[1];
-            return;
-          }
-
-          activeCallOutput =
-              deviceChanged[1] == 'Earpiece' ? 'Phone' : deviceChanged[1];
-          setActiveCallOutputDevice(deviceChanged[0]);
-        }
+        AudioDevice audioDevice = AudioDevice.serialize(args);
+        outputDevice = audioDevice.deviceType == AudioDeviceType.Speaker
+            ? "Speaker"
+            : audioDevice.deviceType == AudioDeviceType.Bluetooth
+                ? "Bluetooth"
+                : "Phone";
         _updateListeners();
         break;
       case "lnAudioDeviceListUpdated":
+        //TODO: clean up android code for updating devices list, & make it user AudioDevice
         if (Platform.isIOS) {
           List devices = args as List;
           bool bluetoothDeviceAvailable = false;
           for (Map device in devices) {
-            AudioDevice audioDevice = AudioDevice.fromDictionary(device);
+            AudioDevice audioDevice = AudioDevice.serialize(device);
             if (audioDevice.deviceType == AudioDeviceType.Bluetooth) {
               bluetoothDeviceAvailable = true;
               break;
