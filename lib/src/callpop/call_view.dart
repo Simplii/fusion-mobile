@@ -143,7 +143,19 @@ class _CallViewState extends State<CallView> {
   }
 
   _onMergeBtnPress() {
-    _softphone.mergeCalls();
+    if (_softphone.mergingCalls) return;
+    if (_softphone.calls.length == 1) {
+      setState(() {
+        dialpadVisible = false;
+        showModalBottomSheet(
+            context: context,
+            backgroundColor: Colors.transparent,
+            isScrollControlled: true,
+            builder: (context) => DialPadModal(_fusionConnection, _softphone));
+      });
+    } else {
+      _softphone.mergeCalls();
+    }
   }
 
   _onRecBtnPress() {
@@ -741,9 +753,12 @@ class _CallViewState extends State<CallView> {
     if (_activeCall == null) {
       return Container();
     }
-    var companyName = _softphone.getCallerCompany(_activeCall);
-    var callerName = _softphone.getCallerName(_activeCall);
-    String _linePrefix = _softphone.linePrefix;
+    var companyName =
+        _softphone.confCreated ? "" : _softphone.getCallerCompany(_activeCall);
+    var callerName = _softphone.confCreated
+        ? "Conference"
+        : _softphone.getCallerName(_activeCall);
+    String _linePrefix = _softphone.confCreated ? "" : _softphone.linePrefix;
     var callerNumber =
         _softphone!.getCallerNumber(_activeCall!); // 'mobile' | 'work' ...etc
 
@@ -974,7 +989,9 @@ class _CallViewState extends State<CallView> {
                               ],
                             ),
                           )),
-                      if (connectedCalls.length > 0 && _activeCall != null)
+                      if (connectedCalls.length > 0 &&
+                          _activeCall != null &&
+                          !_softphone.confCreated)
                         AnsweredWhileOnCall(
                             calls: connectedCalls,
                             softphone: _softphone,

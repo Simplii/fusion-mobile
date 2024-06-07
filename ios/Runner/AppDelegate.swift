@@ -178,8 +178,10 @@ import Foundation
                 UNUserNotificationCenter.current().getNotificationSettings { settings in
                     UNUserNotificationCenter.current().delegate = self
                     guard settings.authorizationStatus == .authorized else { return }
+                    let backgroundTaskIdentifier = UIApplication.shared.beginBackgroundTask(expirationHandler: nil)
                     DispatchQueue.main.async {
                         UIApplication.shared.registerForRemoteNotifications()
+                        UIApplication.shared.endBackgroundTask(backgroundTaskIdentifier)
                     }
                 }
             } else {
