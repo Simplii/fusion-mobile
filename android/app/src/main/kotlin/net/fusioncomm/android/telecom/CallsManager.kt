@@ -7,11 +7,18 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.telecom.PhoneAccount
 import android.telecom.PhoneAccountHandle
 import android.telecom.TelecomManager
 import android.util.Log
 import androidx.core.app.ActivityCompat
+import io.flutter.plugin.common.EventChannel
+import io.flutter.plugin.common.MethodChannel
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import net.fusioncomm.android.FMCore
 import org.linphone.core.Call
 import org.linphone.core.CallParams
@@ -20,8 +27,10 @@ import org.linphone.core.Core
 import org.linphone.core.MediaEncryption
 import java.math.BigInteger
 import java.security.MessageDigest
+import java.util.Timer
+import kotlin.concurrent.timerTask
 
-class CallsManager(private val context: Context) {
+class CallsManager(private val context: Context, private val channel: MethodChannel) {
     private val debugTag = "MDBM CallsManager"
     val telecomManager: TelecomManager = context.getSystemService(Context.TELECOM_SERVICE) as TelecomManager
     private val core: Core = FMCore.core
@@ -44,9 +53,9 @@ class CallsManager(private val context: Context) {
     companion object {
         @SuppressLint("StaticFieldLeak")
         @Volatile private var instance: CallsManager? = null // Volatile modifier is necessary
-        fun getInstance(context: Context) = instance ?: synchronized(this) {
+        fun getInstance(context: Context,channel: MethodChannel ) = instance ?: synchronized(this) {
             // synchronized to avoid concurrency problem
-            instance ?: CallsManager(context).also { instance = it }
+            instance ?: CallsManager(context, channel).also { instance = it }
         }
 
         const val EXTRA_CALLER_NAME = "EXTRA_CALLER_NAME"
@@ -89,23 +98,31 @@ class CallsManager(private val context: Context) {
     fun startConference() {
         if (conferenceStarting) return
         conferenceStarting = true
-        if(core.conference == null){
+        var conference: Conference? = core.conference ?: core.currentCall?.conference
+        if(conference == null){
             val params = core.createConferenceParams()
             params.isVideoEnabled = true
-            val conference: Conference? = core.createConferenceWithParams(params)
-            conference?.addParticipants(core.calls)
-        } else {
-            for (call in core.calls) {
-                if (call.conference == null) {
-                    core.conference?.addParticipant(call)
-                }
-            }
-            if (!core.conference!!.isIn) {
-                Log.d(debugTag,"[Conference] Conference was paused, resuming it")
-                core.conference!!.enter()
+            conference = core.createConferenceWithParams(params)
+            Log.d(debugTag,"[Conference] created conf")
+        }
+        for (call in core.calls) {
+            if (call.conference == null) {
+                conference?.addParticipant(call)
             }
         }
-        conferenceStarting = false
+        conference?.enter()
+        Timer().schedule(timerTask {
+            Log.d(debugTag,"[Conference] Conference is in ${conference?.isIn}")
+            var confCreated = false
+            if(conference?.isIn == false) {
+                conference.enter()
+                conferenceStarting = false
+                confCreated = true
+            }
+            Handler(Looper.getMainLooper()).post {
+                channel.invokeMethod("3wayStarted", confCreated)
+            }
+        }, 2000)
     }
 
     fun resumeCall(call: Call) {

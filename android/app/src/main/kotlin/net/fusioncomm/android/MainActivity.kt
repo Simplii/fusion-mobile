@@ -32,7 +32,7 @@ class MainActivity : FlutterActivity() {
     private val channel: MethodChannel = FusionMobileApplication.callingChannel
     private val eventChannel: EventChannel = FusionMobileApplication.callEventChannel
     private var appOpenedFromBackground : Boolean = false
-    private val callsManager: CallsManager = CallsManager.getInstance(this)
+    private val callsManager: CallsManager = CallsManager.getInstance(this, channel)
 
     lateinit private var context:Context
     private lateinit var audioManager:AudioManager
@@ -230,11 +230,11 @@ class MainActivity : FlutterActivity() {
                 Call.State.IncomingReceived -> {
                     callsManager.incomingCall(
                         call.callLog.callId.orEmpty(),
-                        "8018976133",
+                        FMUtils.getPhoneNumber(call.remoteAddress),
                         FMUtils.getDisplayName(call.remoteAddress)
                     )
-                    audioManager.mode = AudioManager.MODE_NORMAL
-                    audioManager.isSpeakerphoneOn = true
+//                    audioManager.mode = AudioManager.MODE_NORMAL
+//                    audioManager.isSpeakerphoneOn = true
                     channel.invokeMethod(
                         "lnIncomingReceived",
                         mapOf(
