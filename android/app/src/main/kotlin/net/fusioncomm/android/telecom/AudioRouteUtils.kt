@@ -1,9 +1,11 @@
 package net.fusioncomm.android.telecom
 
 import android.content.Context
+import android.os.Build
 import android.telecom.CallAudioState
 import android.telecom.CallEndpoint
 import android.util.Log
+import androidx.annotation.RequiresApi
 import net.fusioncomm.android.FMCore
 import net.fusioncomm.android.compatibility.Compatibility
 import org.linphone.core.AudioDevice
@@ -116,6 +118,7 @@ class AudioRouteUtils {
                     currentCall.callLog?.callId ?: ""
                 )
                 if (connection != null) {
+                    Log.i(DebugTag,"route = ${types.first().name}")
                     val route = when (types.first()) {
                         AudioDevice.Type.Earpiece -> CallAudioState.ROUTE_EARPIECE
                         AudioDevice.Type.Speaker -> CallAudioState.ROUTE_SPEAKER
@@ -126,14 +129,14 @@ class AudioRouteUtils {
                     Log.i(DebugTag,
                         "[Audio Route Helper] Telecom Helper & matching connection found, dispatching audio route change through it"
                     )
-                    if (
-                        !Compatibility.changeAudioRouteForTelecomManager(
-                            connection,
-                            route,
-                            context,
-                            newEndpointType
-                        )
-                    ) {
+
+                    val changeRouteForTelecom = Compatibility.changeAudioRouteForTelecomManager(
+                        connection,
+                        route,
+                        context,
+                        newEndpointType
+                    )
+                    if (!changeRouteForTelecom) {
                         Log.d( DebugTag,
                             "[Audio Route Helper] Connection is already using this route internally, make the change!"
                         )
@@ -150,11 +153,25 @@ class AudioRouteUtils {
         }
 
         fun routeAudioToEarpiece(context: Context, call: Call? = null, skipTelecom: Boolean = false) {
-            routeAudioTo(call, arrayListOf(AudioDevice.Type.Earpiece), skipTelecom, context, CallEndpoint.TYPE_EARPIECE)
+            routeAudioTo(
+                call,
+                arrayListOf(AudioDevice.Type.Earpiece),
+                skipTelecom,
+                context,
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+                    CallEndpoint.TYPE_EARPIECE else 0
+            )
         }
 
         fun routeAudioToSpeaker(context: Context, call: Call? = null, skipTelecom: Boolean = false) {
-            routeAudioTo(call, arrayListOf(AudioDevice.Type.Speaker), skipTelecom, context, CallEndpoint.TYPE_SPEAKER)
+            routeAudioTo(
+                call,
+                arrayListOf(AudioDevice.Type.Speaker),
+                skipTelecom,
+                context,
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+                    CallEndpoint.TYPE_SPEAKER else 0
+            )
         }
 
         fun routeAudioToBluetooth(context: Context, call: Call? = null, skipTelecom: Boolean = false) {
@@ -163,7 +180,8 @@ class AudioRouteUtils {
                 arrayListOf(AudioDevice.Type.Bluetooth),
                 skipTelecom,
                 context,
-                CallEndpoint.TYPE_BLUETOOTH
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+                    CallEndpoint.TYPE_BLUETOOTH else 0
             )
         }
 
@@ -173,7 +191,8 @@ class AudioRouteUtils {
                 arrayListOf(AudioDevice.Type.Headphones, AudioDevice.Type.Headset),
                 skipTelecom,
                 context,
-                CallEndpoint.TYPE_WIRED_HEADSET
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+                    CallEndpoint.TYPE_WIRED_HEADSET else 0
             )
         }
 

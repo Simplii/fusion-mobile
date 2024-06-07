@@ -358,6 +358,9 @@ class _MyHomePageState extends State<MyHomePage> {
     if (!await Permission.phone.isGranted) {
       await Permission.phone.request();
     }
+    if (!await Permission.bluetoothConnect.isGranted) {
+      await Permission.bluetoothConnect.request();
+    }
   }
 
   checkForInitialMessage({String? username}) async {

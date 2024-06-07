@@ -9,9 +9,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:flutter_webrtc/flutter_webrtc.dart';
+// import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:fusion_mobile_revamped/src/backend/fusion_sip_ua_helper.dart';
 import 'package:fusion_mobile_revamped/src/backend/ln_call.dart';
+import 'package:fusion_mobile_revamped/src/classes/linphone_audioDevice.dart';
 import 'package:fusion_mobile_revamped/src/models/callpop_info.dart';
 import 'package:fusion_mobile_revamped/src/models/disposition.dart';
 import 'package:fusion_mobile_revamped/src/models/phone_contact.dart';
@@ -31,8 +32,8 @@ class Softphone implements SipUaHelperListener {
   final String _TAG = "Softphone";
   static final callInfoChannel = EventChannel('channel/callInfo');
   String outputDevice = "Phone";
-  MediaStream? _localStream;
-  MediaStream? _remoteStream;
+  // MediaStream? _localStream;
+  // MediaStream? _remoteStream;
   final FusionSIPUAHelper helper = FusionSIPUAHelper();
   List<Function> _listeners = [];
   bool interrupted = false;
@@ -552,31 +553,18 @@ class Softphone implements SipUaHelperListener {
       case "lnAudioDeviceChanged":
         // this method triggers while in call only, Android/IOS
         if (Platform.isIOS) {
-          print(["currentRoute lnAudioDeviceChanged", args]);
-
-          var bluetoothTypes = [
-            "BluetoothHFP",
-            "BluetoothA2DP",
-            "bluetoothLE",
-            "CarAudio"
-          ];
-          bool isBluetooth = bluetoothTypes.contains(args[0]);
-          bool isSpeaker = args[0] == "Speaker";
-          if (isBluetooth) {
-            this.bluetoothAvailable = true;
-          }
-
-          activeCallOutput = isBluetooth
-              ? "Bluetooth"
-              : isSpeaker
-                  ? "Speaker"
+          AudioDevice audioDevice = AudioDevice.fromDictionary(args);
+          //FIXME: make ui uses only outputdevice on both platforms
+          activeCallOutput = audioDevice.deviceType == AudioDeviceType.Speaker
+              ? "Speaker"
+              : audioDevice.deviceType == AudioDeviceType.Bluetooth
+                  ? "Bluetooth"
                   : "Phone";
-
-          activeCallOutputDevice = args[1] == "Receiver"
-              ? "iPhone Earpiece"
-              : args[1] == "Speaker"
-                  ? "iPhone Speaker"
-                  : args[1];
+          outputDevice = audioDevice.deviceType == AudioDeviceType.Speaker
+              ? "Speaker"
+              : audioDevice.deviceType == AudioDeviceType.Bluetooth
+                  ? "Bluetooth"
+                  : "Phone";
         } else {
           var deviceChanged = json.decode(args[0] as String);
           /* 
@@ -606,17 +594,16 @@ class Softphone implements SipUaHelperListener {
         break;
       case "lnAudioDeviceListUpdated":
         if (Platform.isIOS) {
-          List device = args as List;
-          print(["lnAduioDeviceListUpdated", device]);
-          if (device.length > 0) {
-            this.bluetoothAvailable = true;
-            // this.activeCallOutput = "Bluetooth";
-            // this.activeCallOutputDevice = args[1];
-          } else {
-            this.bluetoothAvailable = false;
-            this.activeCallOutput = "Phone";
-            this.activeCallOutputDevice = "iPhone Earpiece";
+          List devices = args as List;
+          bool bluetoothDeviceAvailable = false;
+          for (Map device in devices) {
+            AudioDevice audioDevice = AudioDevice.fromDictionary(device);
+            if (audioDevice.deviceType == AudioDeviceType.Bluetooth) {
+              bluetoothDeviceAvailable = true;
+              break;
+            }
           }
+          bluetoothAvailable = bluetoothDeviceAvailable;
         } else {
           devicesList = [];
           var decoded = json.decode(args[0] as String);
@@ -993,9 +980,9 @@ class Softphone implements SipUaHelperListener {
     call.sendDTMF(tone);
   }
 
-  isStreamConnected() {
-    return _localStream != null;
-  }
+  // isStreamConnected() {
+  //   return _localStream != null;
+  // }
 
   registrationState() {
     return helper.registerState.state;
@@ -1010,7 +997,7 @@ class Softphone implements SipUaHelperListener {
   }
 
   setSpeaker(bool useSpeaker) {
-    _getMethodChannel()?.invokeMethod("toggleSpeaker", []);
+    _getMethodChannel()?.invokeMethod("toggleSpeaker", [useSpeaker]);
     this.outputDevice = useSpeaker ? 'Speaker' : "Phone";
     this._updateListeners();
   }
@@ -1308,28 +1295,28 @@ class Softphone implements SipUaHelperListener {
     return null;
   }
 
-  _handleStreams(CallState event, Call call) async {
-    MediaStream? stream = event.stream;
-    if (event.originator == 'local') {
-      List<MediaStream?> localCallStreams = _getCallDataValue(
-              call.id, "localStreams",
-              def: [].cast<MediaStream>())
-          .cast<MediaStream>();
-      localCallStreams.add(stream);
-      _setCallDataValue(call.id, "localStreams", localCallStreams);
-      print("setlocalstream");
-      _localStream = stream;
-    }
-    if (event.originator == 'remote') {
-      List<MediaStream?> remoteCallStreams = _getCallDataValue(
-              call.id, "remoteStreams",
-              def: [].cast<MediaStream>())
-          .cast<MediaStream>();
-      remoteCallStreams.add(stream);
-      _setCallDataValue(call.id, "remoteStreams", remoteCallStreams);
-      _remoteStream = stream;
-    }
-  }
+  // _handleStreams(CallState event, Call call) async {
+  //   MediaStream? stream = event.stream;
+  //   if (event.originator == 'local') {
+  //     List<MediaStream?> localCallStreams = _getCallDataValue(
+  //             call.id, "localStreams",
+  //             def: [].cast<MediaStream>())
+  //         .cast<MediaStream>();
+  //     localCallStreams.add(stream);
+  //     _setCallDataValue(call.id, "localStreams", localCallStreams);
+  //     print("setlocalstream");
+  //     _localStream = stream;
+  //   }
+  //   if (event.originator == 'remote') {
+  //     List<MediaStream?> remoteCallStreams = _getCallDataValue(
+  //             call.id, "remoteStreams",
+  //             def: [].cast<MediaStream>())
+  //         .cast<MediaStream>();
+  //     remoteCallStreams.add(stream);
+  //     _setCallDataValue(call.id, "remoteStreams", remoteCallStreams);
+  //     _remoteStream = stream;
+  //   }
+  // }
 
   _didDisplayCall() {}
 
@@ -1909,7 +1896,7 @@ class Softphone implements SipUaHelperListener {
               new Future.delayed(const Duration(milliseconds: 2000), () {
             _blockingEvent = false;
           });
-          _handleStreams(callState, call);
+          // _handleStreams(callState, call);
           if (Platform.isIOS) {
             if (!isIncoming(call)) {
               _callKit!.invokeMethod(

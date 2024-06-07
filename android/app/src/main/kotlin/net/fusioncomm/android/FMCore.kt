@@ -237,32 +237,38 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
                 }
 //                 sendDevices()
             } else if(call.method == "lpSetActiveCallOutput") {
-                val args = call.arguments as List<*>
-
-                for (audioDevice in core.audioDevices) {
-                    if (audioDevice.id == args[0]) {
-                        Log.d("lpSetActiveCallOutput", "args" +args[0])
-                        Log.d("lpSetActiveCallOutput", "audio device" +audioDevice.id)
-
-                        core.currentCall?.outputAudioDevice = audioDevice
-                    }
-                }
+//                val args = call.arguments as List<*>
+//                Log.d(debugTag, "lpSetActiveCallOutput ${args[0]}")
+//                for (audioDevice in core.audioDevices) {
+//                    if (audioDevice.id == args[0]) {
+//                        Log.d("lpSetActiveCallOutput", "args" +args[0])
+//                        Log.d("lpSetActiveCallOutput", "audio device" +audioDevice.id)
+//
+//                        core.currentCall?.outputAudioDevice = audioDevice
+//                    }
+//                }
             }
             else if (call.method == "toggleSpeaker") {
-                if (AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()) {
-                    AudioRouteUtils.routeAudioToEarpiece(context)
-                } else {
+                val args = call.arguments as List<*>
+                var useSpeaker: Any? = args.first()
+                val isBluetoothUsed = AudioRouteUtils.isBluetoothAudioRouteCurrentlyUsed()
+                val isSpeakerUsed = AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()
+
+                if (useSpeaker == true) {
+                    //force speaker route
                     AudioRouteUtils.routeAudioToSpeaker(context)
                 }
-            } else if (call.method == "lpSetBluetooth"){
-                for (audioDevice in core.audioDevices) {
-                    if (audioDevice.type == AudioDevice.Type.Bluetooth) {
-                        for  (coreCall in core.calls) {
-                            coreCall.outputAudioDevice = audioDevice
-                        }
+
+                if (useSpeaker == false) {
+                    if (isBluetoothUsed || isSpeakerUsed) {
+                        // route to earpiece
+                        AudioRouteUtils.routeAudioToEarpiece(context)
                     }
                 }
-//                sendDevices()
+
+            } else if (call.method == "lpSetBluetooth"){
+                Log.d(debugTag, "lpSetBluetooth triggered")
+                AudioRouteUtils.routeAudioToBluetooth(context)
             } else if (call.method == "lpMuteCall") {
                 val args = call.arguments as List<*>
                 val lpCall = callsManager.findCallByUuid(args[0] as String)
