@@ -978,7 +978,7 @@ class _MenuState extends State<Menu> {
             builder: (context) => AlertDialog(
               title: Text("Attention"),
               content: Text(
-                  "This action require closing and reopening the app to take effect"),
+                  "This action requires closing and reopening the app to take effect"),
               actions: [
                 TextButton(
                     onPressed: () {
@@ -1078,7 +1078,7 @@ class _MenuState extends State<Menu> {
       if (Platform.isIOS)
         _row(
             "",
-            "Disable sync calls to iPhone",
+            "Disable syncing calls to iPhone",
             usingCarrierCalls! ? myPhoneNumber!.formatPhone() : "",
             null,
             Icon(
