@@ -234,115 +234,6 @@ class _CallViewState extends State<CallView> {
             isNewConversation: convo.conversationId == null));
   }
 
-  _changeDefaultInputDevice() {
-    List<List<String>> options = _softphone!.devicesList
-        .where((element) => element[2] == "Microphone")
-        .toList()
-        .cast<List<String>>();
-    showModalBottomSheet(
-        context: context,
-        backgroundColor: Colors.transparent,
-        isScrollControlled: true,
-        builder: (contact) => PopupMenu(
-            label: "Default Input Device",
-            bottomChild: Container(
-                constraints: BoxConstraints(
-                    minHeight: 24,
-                    maxHeight: 200,
-                    minWidth: 90,
-                    maxWidth: MediaQuery.of(context).size.width - 66),
-                child: ListView(
-                    padding: EdgeInsets.all(8),
-                    children: options.map((List<String> option) {
-                      return GestureDetector(
-                          onTap: () {
-                            _softphone!.setDefaultInput(option[1]);
-                            Navigator.pop(context);
-                          },
-                          child: Container(
-                              padding: EdgeInsets.only(
-                                  top: 12, bottom: 12, left: 8, right: 8),
-                              decoration: BoxDecoration(
-                                  color: option[1] == _softphone!.defaultInput
-                                      ? lightHighlight
-                                      : Colors.transparent,
-                                  border: Border(
-                                      bottom: BorderSide(
-                                          color: lightDivider, width: 1.0))),
-                              child: Row(children: [
-                                Text(option[0],
-                                    style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w700)),
-                                Spacer(),
-                                if (_softphone!.defaultInput == option[1])
-                                  Image.asset(
-                                      "assets/icons/call_view/check.png",
-                                      width: 16,
-                                      height: 11)
-                              ])));
-                    }).toList()))));
-  }
-
-  _changeDefaultOutputDevice() {
-    List<List<String?>> options = Platform.isAndroid
-        ? _softphone!.devicesList
-            .where((element) => element[2] != "Microphone")
-            .toList()
-            .cast<List<String>>()
-        : _softphone!.devicesList;
-    String? callDefaultOutputDeviceId = _softphone!.activeCallOutputDevice != ''
-        ? _softphone!.activeCallOutputDevice
-        : _softphone!.defaultOutput;
-    showModalBottomSheet(
-        context: context,
-        backgroundColor: Colors.transparent,
-        isScrollControlled: true,
-        builder: (contact) => PopupMenu(
-            label: "Default Output Device",
-            bottomChild: Container(
-                constraints: BoxConstraints(
-                    minHeight: 24,
-                    maxHeight: 200,
-                    minWidth: 90,
-                    maxWidth: MediaQuery.of(context).size.width - 66),
-                child: ListView(
-                    padding: EdgeInsets.all(8),
-                    children: options.map((List<String?> option) {
-                      return GestureDetector(
-                          onTap: () {
-                            _softphone!.setActiveCallOutputDevice(option[1]);
-                            Navigator.pop(context);
-                          },
-                          child: Container(
-                              padding: EdgeInsets.only(
-                                  top: 12, bottom: 12, left: 8, right: 8),
-                              decoration: BoxDecoration(
-                                  color: option[1] == callDefaultOutputDeviceId
-                                      ? lightHighlight
-                                      : Colors.transparent,
-                                  border: Border(
-                                      bottom: BorderSide(
-                                          color: lightDivider, width: 1.0))),
-                              child: Row(children: [
-                                Text(
-                                    option[0]!
-                                        .replaceAll('Microphone', 'Earpiece'),
-                                    style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w700)),
-                                Spacer(),
-                                if (callDefaultOutputDeviceId == option[1])
-                                  Image.asset(
-                                      "assets/icons/call_view/check.png",
-                                      width: 16,
-                                      height: 11)
-                              ])));
-                    }).toList()))));
-  }
-
   _onAudioBtnPress() {
     print("audiopress");
     print(_softphone!.devicesList);
@@ -352,12 +243,7 @@ class _CallViewState extends State<CallView> {
       ["assets/icons/call_view/audio_speaker.png", "Speaker", "speaker"],
       ["assets/icons/call_view/bluetooth.png", "Bluetooth", "bluetooth"],
     ];
-    String? callAudioOutput = _softphone!.activeCallOutput != ''
-        ? _softphone!.activeCallOutput
-        : _softphone!.outputDevice;
-    String? callDefaultOutputDeviceId = _softphone!.activeCallOutputDevice != ''
-        ? _softphone!.activeCallOutputDevice
-        : _softphone!.defaultOutput;
+    String? callAudioOutput = _softphone.outputDevice;
     bool? muted = _softphone!.getMuted(_activeCall!);
 
     showModalBottomSheet(
