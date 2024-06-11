@@ -21,6 +21,7 @@ import 'package:fusion_mobile_revamped/src/chats/chats.dart';
 import 'package:fusion_mobile_revamped/src/chats/conversationView.dart';
 import 'package:fusion_mobile_revamped/src/chats/newConversationView.dart';
 import 'package:fusion_mobile_revamped/src/chats/viewModels/chatsVM.dart';
+import 'package:fusion_mobile_revamped/src/components/permission_request.dart';
 import 'package:fusion_mobile_revamped/src/dialpad/dialpad_modal.dart';
 import 'package:fusion_mobile_revamped/src/models/contact.dart';
 import 'package:fusion_mobile_revamped/src/models/conversations.dart';
@@ -244,6 +245,7 @@ class _MyHomePageState extends State<MyHomePage> {
   late StreamSubscription<ConnectivityResult> connectivitySubscription;
   ConnectivityResult connectionStatus = ConnectivityResult.none;
   bool relogin = false;
+  bool requestPermission = false;
 
   _logOut() {
     sharedPreferences.remove('username');
@@ -358,8 +360,14 @@ class _MyHomePageState extends State<MyHomePage> {
     if (!await Permission.phone.isGranted) {
       await Permission.phone.request();
     }
-    if (!await Permission.bluetoothConnect.isGranted) {
-      await Permission.bluetoothConnect.request();
+
+    if (Platform.isAndroid) {
+      if (!await Permission.bluetoothConnect.isGranted &&
+          await Permission.bluetoothConnect.isDenied &&
+          !await Permission.bluetoothConnect.isPermanentlyDenied)
+        setState(() {
+          requestPermission = true;
+        });
     }
   }
 
@@ -717,7 +725,17 @@ class _MyHomePageState extends State<MyHomePage> {
               body:
                   SafeArea(child: LoginView(_loginSuccess, fusionConnection))));
     }
-
+    if (requestPermission) {
+      return PermissionRequestScreen(
+        permissionRequest: PermissionRequest(
+          "Enable Bluetooth",
+          Image.asset("assets/icons/BTDevices.png"),
+          "Fusion needs access to discover connected Bluetooth devices",
+          Permission.bluetoothConnect,
+          () => setState(() => requestPermission = false),
+        ),
+      );
+    }
     if (softphone.activeCall != null) {
       return CallView(fusionConnection, softphone, closeView: _openCallView);
     }
