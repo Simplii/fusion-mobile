@@ -317,6 +317,12 @@ print("audiointerruption")
             mCore?.defaultProxyConfig = proxyConfig
             sendDevices()
             getAppVersion()
+            
+            self.callkitChannel.invokeMethod(
+                "userPrefs",
+                arguments: UserDefaults.standard.bool(forKey: "includesCallsInRecents")
+            )
+            
         } catch {print("error registering");
             NSLog(error.localizedDescription) }
     }
@@ -1084,6 +1090,11 @@ print("audiointerruption")
             } else if(call.method == "clearCache") {
                 clearCache()
             }
+            else if (call.method == "setUserPrefs") {
+                let args = call.arguments as! [Any]
+                let pref = args[0] as! Bool
+                UserDefaults.standard.set(pref, forKey: "includesCallsInRecents")
+            }
         })
         print("providerpush set delegate callkit")
         provider.setDelegate(self, queue: nil)
@@ -1113,10 +1124,12 @@ print("audiointerruption")
     
     static var providerConfiguration: CXProviderConfiguration = {
         let providerConfiguration = CXProviderConfiguration(localizedName: "Fusion")
+        let callsShowInPhoneApp = UserDefaults.standard.bool(forKey: "includesCallsInRecents")
     
         providerConfiguration.supportsVideo = false
         providerConfiguration.maximumCallsPerCallGroup = 2
         providerConfiguration.supportedHandleTypes = [.phoneNumber]
+        providerConfiguration.includesCallsInRecents = !callsShowInPhoneApp
     
         return providerConfiguration
     }()
