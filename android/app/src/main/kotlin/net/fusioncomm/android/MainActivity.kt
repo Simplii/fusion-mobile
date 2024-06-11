@@ -22,6 +22,7 @@ import kotlinx.coroutines.runBlocking
 import net.fusioncomm.android.FusionMobileApplication.Companion.engine
 import net.fusioncomm.android.compatibility.Compatibility
 import net.fusioncomm.android.notifications.NotificationsManager
+import net.fusioncomm.android.telecom.AudioRouteUtils
 import net.fusioncomm.android.telecom.CallQualityStream
 import net.fusioncomm.android.telecom.CallsManager
 import org.linphone.core.*
@@ -177,11 +178,10 @@ class MainActivity : FlutterActivity() {
         override fun onAudioDeviceChanged(core: Core, audioDevice: AudioDevice) {
             // This listner will be triggered when switching audioDevice in call only
             val newDevice: Array<String> = arrayOf(audioDevice.id, audioDevice.type.name)
-
+            Log.d(debugTag, "audio device changed ${newDevice}")
             if(newDevice.isNotEmpty()){
 
                 val gson = Gson()
-
                channel.invokeMethod(
                         "lnAudioDeviceChanged",
                        mapOf(Pair("audioDevice", gson.toJson(newDevice)),

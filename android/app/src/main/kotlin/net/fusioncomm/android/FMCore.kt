@@ -27,6 +27,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import net.fusioncomm.android.notifications.NotificationsManager
+import net.fusioncomm.android.telecom.AudioRouteUtils
 import net.fusioncomm.android.telecom.CallsManager
 import org.linphone.core.AVPFMode
 import org.linphone.core.AudioDevice
@@ -247,27 +248,12 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
                     }
                 }
             }
-            else if (call.method == "lpSetSpeaker") {
-                val args = call.arguments as List<*>
-                val enableSpeaker = args[0] as Boolean
-//                audioManager.mode = AudioManager.MODE_IN_COMMUNICATION this line causing older
-//                android version to get audio stuck in ear
-                Log.d("lpSetActiveCallOutput" , "set speaker")
-                for (audioDevice in core.extendedAudioDevices) {
-                    if (!enableSpeaker && audioDevice.type == AudioDevice.Type.Earpiece
-                        && audioDevice.id.contains("openSLES")) {
-                        for  (coreCall in core.calls) {
-                            coreCall.outputAudioDevice = audioDevice
-                        }
-                        audioManager.isSpeakerphoneOn = false
-                    } else if (enableSpeaker && audioDevice.type == AudioDevice.Type.Speaker) {
-                        for  (coreCall in core.calls) {
-                            coreCall.outputAudioDevice = audioDevice
-                        }
-                        audioManager.isSpeakerphoneOn = true
-                    }
+            else if (call.method == "toggleSpeaker") {
+                if (AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()) {
+                    AudioRouteUtils.routeAudioToEarpiece(context)
+                } else {
+                    AudioRouteUtils.routeAudioToSpeaker(context)
                 }
-//                sendDevices()
             } else if (call.method == "lpSetBluetooth"){
                 for (audioDevice in core.audioDevices) {
                     if (audioDevice.type == AudioDevice.Type.Bluetooth) {

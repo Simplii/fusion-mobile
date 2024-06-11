@@ -111,7 +111,7 @@ class TelecomConnectionService : ConnectionService() {
             return Connection.createFailedConnection(DisconnectCause(DisconnectCause.OTHER))
         }
 
-        val connection = NativeCallWrapper(callId)
+        val connection = NativeCallWrapper(callId, this)
         val call = FMCore.core.calls.find { it.callLog.callId == callId }
         if (call != null) {
             val callState = call.state
@@ -150,9 +150,9 @@ class TelecomConnectionService : ConnectionService() {
         val displayName: String = extras.getString(CallsManager.EXTRA_CALLER_NAME) ?: number
         var callId = extras.getString(CallsManager.EXTRA_CALL_UUID)
 
-        Log.d(debugTag, "makeOutgoingCall:$callId, number: $number, displayName:$displayName")
+        Log.d(debugTag, "Creating incoming connection callid:$callId, number: $number, displayName:$displayName")
 
-        Log.d(debugTag, "Creating incoming connection")
+
 //        val incomingExtras = extras.getBundle(TelecomManager.EXTRA_INCOMING_CALL_EXTRAS)
 
         if (callId == null) {
@@ -163,7 +163,7 @@ class TelecomConnectionService : ConnectionService() {
             "Incoming connection is for call [$callId] with display name [$displayName]"
         )
 
-        val connection = NativeCallWrapper(callId)
+        val connection = NativeCallWrapper(callId, this)
         val call = FMCore.core.calls.find { it.callLog.callId == callId }
         if (call != null) {
             val callState = call.state

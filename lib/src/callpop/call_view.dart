@@ -63,7 +63,6 @@ class _CallViewState extends State<CallView> {
     _timer = new Timer.periodic(
       Duration(seconds: 1),
       (Timer timer) {
-        print("timerefired: " + DateTime.now().toString());
         setState(() {});
       },
     );
@@ -367,104 +366,6 @@ class _CallViewState extends State<CallView> {
         isScrollControlled: true,
         builder: (contact) => PopupMenu(
             label: "AUDIO SOURCE",
-            topChild: Column(children: [
-              // if (Platform.isAndroid)
-              Row(children: [
-                Expanded(
-                    child: GestureDetector(
-                        onTap: () {
-                          Navigator.pop(context);
-                          _changeDefaultOutputDevice();
-                        },
-                        child: Container(
-                            alignment: Alignment.center,
-                            margin: EdgeInsets.only(
-                                bottom: 4, left: 20, right: 20, top: 6),
-                            padding: EdgeInsets.only(top: 12, bottom: 12),
-                            decoration: BoxDecoration(
-                                color: coal,
-                                borderRadius:
-                                    BorderRadius.all(Radius.circular(8)),
-                                boxShadow: [
-                                  BoxShadow(
-                                      color: translucentBlack(0.28),
-                                      offset: Offset.zero,
-                                      blurRadius: 36)
-                                ]),
-                            child: Text(
-                                callDefaultOutputDeviceId!
-                                    .replaceAll('Microphone', 'Earpiece'),
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 16,
-                                  height: 1.4,
-                                )))))
-              ]),
-              if (Platform.isAndroid) Container(height: 4),
-              // if (Platform.isAndroid)
-              Row(children: [
-                Expanded(
-                    child: GestureDetector(
-                        onTap: () {
-                          Navigator.pop(context);
-                          _changeDefaultInputDevice();
-                        },
-                        child: Container(
-                            alignment: Alignment.center,
-                            margin: EdgeInsets.only(
-                                bottom: 16, left: 20, right: 20, top: 6),
-                            padding: EdgeInsets.only(top: 12, bottom: 12),
-                            decoration: BoxDecoration(
-                                color: coal,
-                                borderRadius:
-                                    BorderRadius.all(Radius.circular(8)),
-                                boxShadow: [
-                                  BoxShadow(
-                                      color: translucentBlack(0.28),
-                                      offset: Offset.zero,
-                                      blurRadius: 36)
-                                ]),
-                            child: Text(_softphone!.defaultInput!,
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 16,
-                                  height: 1.4,
-                                )))))
-              ]),
-              if (Platform.isAndroid) Container(height: 4),
-              Row(children: [
-                Expanded(
-                    child: GestureDetector(
-                        onTap: () {
-                          _softphone!.setMute(_activeCall, !muted!, true);
-                          Navigator.pop(context);
-                        },
-                        child: Container(
-                            alignment: Alignment.center,
-                            margin: EdgeInsets.only(
-                                bottom: 24, left: 20, right: 20, top: 6),
-                            padding: EdgeInsets.only(top: 12, bottom: 12),
-                            decoration: BoxDecoration(
-                                color: muted! ? crimsonDarker : coal,
-                                borderRadius:
-                                    BorderRadius.all(Radius.circular(8)),
-                                boxShadow: [
-                                  BoxShadow(
-                                      color: translucentBlack(0.28),
-                                      offset: Offset.zero,
-                                      blurRadius: 36)
-                                ]),
-                            child: Text(muted ? "Muted" : "Mute",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 16,
-                                  height: 1.4,
-                                )))))
-              ])
-            ]),
             bottomChild: Container(
                 constraints: BoxConstraints(
                     minHeight: 24,

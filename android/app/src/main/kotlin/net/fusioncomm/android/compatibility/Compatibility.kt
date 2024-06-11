@@ -12,6 +12,7 @@ import androidx.core.app.NotificationManagerCompat
 import net.fusioncomm.android.notifications.Contact
 import net.fusioncomm.android.notifications.Notifiable
 import net.fusioncomm.android.notifications.NotificationsManager
+import net.fusioncomm.android.telecom.NativeCallWrapper
 import org.linphone.core.Call
 import org.linphone.mediastream.Version
 
@@ -110,6 +111,15 @@ class Compatibility {
             } else {
                 Api27Compatibility.requestDismissKeyguard(activity)
             }
+        }
+
+        fun changeAudioRouteForTelecomManager(connection: NativeCallWrapper, route: Int, context: Context, endpointType: Int): Boolean {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                return Api26Compatibility.changeAudioRouteForTelecomManager(connection, route)
+            } else {
+                return  Api34Compatibility.changeAudioRouteForTelecomManager(connection, route,  context, endpointType)
+            }
+            return false
         }
 
 
