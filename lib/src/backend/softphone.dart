@@ -16,6 +16,7 @@ import 'package:fusion_mobile_revamped/src/classes/linphone_audioDevice.dart';
 import 'package:fusion_mobile_revamped/src/models/callpop_info.dart';
 import 'package:fusion_mobile_revamped/src/models/disposition.dart';
 import 'package:fusion_mobile_revamped/src/models/phone_contact.dart';
+import 'package:fusion_mobile_revamped/src/models/user_settings.dart';
 import 'package:overlay_support/overlay_support.dart';
 import 'package:ringtone_player/ringtone_player.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -709,6 +710,9 @@ class Softphone implements SipUaHelperListener {
         confCreated = args;
         print("$_TAG 3way $args");
         break;
+      case "userPrefs":
+        UserSettings.disableSyncCallsToIPhone = args;
+        break;
       default:
         throw MissingPluginException('notImplemented');
     }
@@ -885,7 +889,7 @@ class Softphone implements SipUaHelperListener {
         print("reportoing outging call callkit");
         _setCallDataValue(call.id, "isReported", true);
         _getMethodChannel()?.invokeMethod("reportOutgoingCall",
-            [_uuidFor(call), getCallerNumber(call), getCallerName(call)]);
+            [_uuidFor(call), call.remote_identity, getCallerName(call)]);
       }
     }
     if (Platform.isIOS) {
@@ -2143,5 +2147,10 @@ class Softphone implements SipUaHelperListener {
 
   String getCallUUID(Call call) {
     return _uuidFor(call);
+  }
+
+  void setIOSCallsPrefs(bool value) {
+    _callKit?.invokeMethod("setUserPrefs", [value]);
+    UserSettings.disableSyncCallsToIPhone = value;
   }
 }

@@ -16,6 +16,7 @@ class UserSettings {
   bool dnd = false;
   bool forceDispositionEnabled = false;
   bool usesV2 = false;
+  static bool disableSyncCallsToIPhone = false;
   UserSettings(this._fusionConnection);
 
   void clearRecord() {
