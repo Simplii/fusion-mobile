@@ -698,7 +698,8 @@ class _CallViewState extends State<CallView> {
                                       child: StreamBuilder(
                                           stream: callVM.eventStream,
                                           builder: (context, snapshot) {
-                                            if (!snapshot.hasData)
+                                            if (!snapshot.hasData ||
+                                                _softphone.confCreated)
                                               return Container();
                                             double rating = snapshot.data;
 

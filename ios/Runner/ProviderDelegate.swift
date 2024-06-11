@@ -1254,6 +1254,8 @@ extension ProviderDelegate: CXProviderDelegate {
       if (!action.isOnHold) {
           print("holdbuttonpressed configure audio")
       }
+      var call: Call? = self.findCallByUuid(uuid: action.callUUID.uuidString)
+    
       if(mCore?.isInConference ?? false && action.isOnHold){
           print("MDBM sss leaving conference \(action.isOnHold)")
           do {
@@ -1268,8 +1270,21 @@ extension ProviderDelegate: CXProviderDelegate {
           }
       } else {
           print("MDBM sss set hold")
+          if(action.isOnHold) {
+              do {
+                  try call?.pause()
+              } catch {
+                  print("MDBM Error holding a call")
+              }
+          } else {
+              do {
+                  try call?.resume()
+              } catch {
+                  print("MDBM Error resuming a call")
+              }
+          }
           action.fulfill()
-          callkitChannel.invokeMethod("holdButtonPressed", arguments: [action.callUUID.uuidString, action.isOnHold])
+//          callkitChannel.invokeMethod("holdButtonPressed", arguments: [action.callUUID.uuidString, action.isOnHold])
       }
 
   }
