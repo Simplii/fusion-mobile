@@ -8,6 +8,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/services.dart';
 import 'package:fusion_mobile_revamped/src/backend/fusion_stream_events.dart';
 import 'package:fusion_mobile_revamped/src/models/contact_fields.dart';
+import 'package:fusion_mobile_revamped/src/models/custom_fields.dart';
 import 'package:fusion_mobile_revamped/src/models/dids.dart';
 import 'package:fusion_mobile_revamped/src/models/park_lines.dart';
 import 'package:fusion_mobile_revamped/src/models/phone_contact.dart';
@@ -65,6 +66,7 @@ class FusionConnection {
   late DidStore dids;
   late UnreadsStore unreadMessages;
   late QuickResponsesStore quickResponses;
+  late CustomFieldStore customFields;
   late Database db;
   String? _pushkitToken;
   Softphone? _softphone;
@@ -103,6 +105,7 @@ class FusionConnection {
     coworkers = CoworkerStore(this);
     timelineItems = TimelineItemStore(this);
     contactFields = ContactFieldStore(this);
+    customFields = CustomFieldStore(this);
     voicemails = VoicemailStore(this);
     parkLines = ParkLineStore(this);
     dids = DidStore(this);
@@ -154,6 +157,7 @@ class FusionConnection {
     coworkers.clearRecords();
     integratedContacts.clearRecords();
     contactFields.clearRecords();
+    customFields.clearRecords();
     timelineItems.clearRecords();
     parkLines.clearRecords();
     voicemails.clearRecords();
@@ -719,6 +723,7 @@ class FusionConnection {
     settings.lookupSubscriber();
     coworkers.getCoworkers((data) {});
     await smsDepartments.getDepartments((List<SMSDepartment> lis) {});
+    customFields.fetchFields();
     dids.getDids((p0, p1) => {});
     if (settings.usesV2) {
       contacts.searchV2("", 100, 0, false, (p0, p1, fromPhoneBook) => null);

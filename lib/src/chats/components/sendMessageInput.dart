@@ -10,6 +10,7 @@ import 'package:fusion_mobile_revamped/src/chats/viewModels/conversation.dart';
 import 'package:fusion_mobile_revamped/src/components/date_time_picker.dart';
 import 'package:fusion_mobile_revamped/src/components/fusion_dropdown.dart';
 import 'package:fusion_mobile_revamped/src/components/popup_menu.dart';
+import 'package:fusion_mobile_revamped/src/models/contact.dart';
 import 'package:fusion_mobile_revamped/src/models/conversations.dart';
 import 'package:fusion_mobile_revamped/src/models/coworkers.dart';
 import 'package:fusion_mobile_revamped/src/styles.dart';
@@ -227,7 +228,38 @@ class _SendMessageInputState extends State<SendMessageInput> {
                           return GestureDetector(
                             onTap: () {
                               setState(() {
-                                _messageInputController.text = messages[index]!;
+                                //TODO: needs clean up
+                                RegExp reg = RegExp(
+                                    r'(\{([a-z])+(\.)+([a-z])+(\_)+([a-z])+\})|(\{[a-z]+\})|(\{[a-z]+\_+[a-z]+\})');
+                                if (!_conversation.isGroup &&
+                                    _conversation.contacts.isNotEmpty) {
+                                  Contact toUser = _conversation.contacts[0];
+                                  Map<String, dynamic> toUserMap =
+                                      toUser.toJson();
+                                  Contact? myUser = fusionConnection.coworkers
+                                      .getCowworker(fusionConnection.getUid())
+                                      ?.toContact();
+                                  Map<String, dynamic> myUserMap =
+                                      myUser?.toJson() ?? {};
+                                  _messageInputController.text = messages[index]
+                                          ?.replaceAllMapped(reg, (match) {
+                                        String i = match[0]!
+                                            .replaceAll("{", "")
+                                            .replaceAll("}", "");
+                                        if (match[0]!.startsWith("{user.")) {
+                                          return myUserMap[match[0]!
+                                                  .replaceAll("{user.", "")
+                                                  .replaceAll("}", "")] ??
+                                              match[0];
+                                        } else {
+                                          return toUserMap[i] ?? match[0];
+                                        }
+                                      }) ??
+                                      "";
+                                } else {
+                                  _messageInputController.text =
+                                      messages[index] ?? "";
+                                }
                               });
                               Navigator.pop(context);
                             },

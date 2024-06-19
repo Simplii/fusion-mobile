@@ -54,6 +54,7 @@ class ConversationVM with ChangeNotifier {
     notificationStream =
         FirebaseMessaging.onMessage.listen(_onNotificationReceived);
     lookupMessages();
+    _updateQuickMessages();
   }
 
   Timer _assignTypingStatusTimer(SMSMessage? message, String user) {

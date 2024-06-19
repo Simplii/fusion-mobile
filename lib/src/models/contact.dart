@@ -450,6 +450,43 @@ class Contact extends FusionModel {
   }
 
   Contact.build({required this.name, required this.pictures});
+
+  Map<String, dynamic> toJson() {
+    return {
+      "addresses": addresses,
+      "company": company,
+      "contacts": contacts,
+      "createdAt": createdAt,
+      "deleted": deleted,
+      "domain": domain,
+      "emails": emails,
+      "firstContactDate": firstContactDate,
+      "coworker": coworker,
+      "first_name": firstName,
+      "groups": groups,
+      "id": id,
+      "jobTitle": jobTitle,
+      "last_name": lastName,
+      "leadCreationDate": leadCreationDate,
+      "name": name,
+      "owner": owner,
+      "parentId": parentId,
+      "phoneNumbers": phoneNumbers,
+      "pictures": pictures,
+      "socials": socials,
+      "externalReferences": externalReferences,
+      "lastCommunication": lastCommunication,
+      "type": type,
+      "uid": uid,
+      "updatedAt": updatedAt,
+      "crmUrl": crmUrl,
+      "crmName": crmName,
+      "crmId": crmId,
+      "unread": unread,
+      "fieldValues": fieldValues,
+      "profileImage": profileImage
+    };
+  }
 }
 
 class ContactsStore extends FusionStore<Contact> {

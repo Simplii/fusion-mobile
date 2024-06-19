@@ -22,7 +22,8 @@ class ContactField extends FusionModel {
     type = type!.toLowerCase();
     fieldLabel = obj['field_label'];
     fieldName = obj['field_name'];
-    crmFields = (obj['crm_fields'] as List<dynamic>).cast<Map<String, dynamic>>();
+    crmFields =
+        (obj['crm_fields'] as List<dynamic>).cast<Map<String, dynamic>>();
   }
 
   @override
@@ -31,28 +32,25 @@ class ContactField extends FusionModel {
 
 class ContactFieldStore extends FusionStore<ContactField> {
   String id_field = "id";
-  ContactFieldStore(FusionConnection fusionConnection) : super(fusionConnection);
+  ContactFieldStore(FusionConnection fusionConnection)
+      : super(fusionConnection);
 
   getFields(Function(List<ContactField>, bool) callback) {
     if (getRecords().length > 0) {
       callback(getRecords(), false);
-    }
-    else {
-      fusionConnection.apiV1Call(
-          "get",
-          "/staging/fields",
-          {},
+    } else {
+      fusionConnection.apiV1Call("get", "/staging/fields", {},
           callback: (List<dynamic> datas) {
-            List<ContactField> response = [];
+        List<ContactField> response = [];
 
-            for (Map<String, dynamic> item in datas) {
-              ContactField obj = ContactField(item);
-              storeRecord(obj);
-              response.add(obj);
-            }
+        for (Map<String, dynamic> item in datas) {
+          ContactField obj = ContactField(item);
+          storeRecord(obj);
+          response.add(obj);
+        }
 
-            callback(response, true);
-          });
+        callback(response, true);
+      });
     }
   }
 }
