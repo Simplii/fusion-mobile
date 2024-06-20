@@ -10,7 +10,6 @@ import 'package:fusion_mobile_revamped/src/chats/viewModels/conversation.dart';
 import 'package:fusion_mobile_revamped/src/components/date_time_picker.dart';
 import 'package:fusion_mobile_revamped/src/components/fusion_dropdown.dart';
 import 'package:fusion_mobile_revamped/src/components/popup_menu.dart';
-import 'package:fusion_mobile_revamped/src/models/contact.dart';
 import 'package:fusion_mobile_revamped/src/models/conversations.dart';
 import 'package:fusion_mobile_revamped/src/models/coworkers.dart';
 import 'package:fusion_mobile_revamped/src/styles.dart';
@@ -225,37 +224,14 @@ class _SendMessageInputState extends State<SendMessageInput> {
                     height: MediaQuery.of(context).size.height * 0.3,
                     child: ListView.separated(
                         itemBuilder: (BuildContext context, int index) {
+                          String renderedQR = _conversationVM
+                              .renderQuickResponse(messages[index]);
                           return GestureDetector(
                             onTap: () {
                               setState(() {
-                                //TODO: needs clean up
-                                RegExp reg = RegExp(
-                                    r'(\{([a-z])+(\.)+([a-z])+(\_)+([a-z])+\})|(\{[a-z]+\})|(\{[a-z]+\_+[a-z]+\})');
                                 if (!_conversation.isGroup &&
                                     _conversation.contacts.isNotEmpty) {
-                                  Contact toUser = _conversation.contacts[0];
-                                  Map<String, dynamic> toUserMap =
-                                      toUser.toJson();
-                                  Contact? myUser = fusionConnection.coworkers
-                                      .getCowworker(fusionConnection.getUid())
-                                      ?.toContact();
-                                  Map<String, dynamic> myUserMap =
-                                      myUser?.toJson() ?? {};
-                                  _messageInputController.text = messages[index]
-                                          ?.replaceAllMapped(reg, (match) {
-                                        String i = match[0]!
-                                            .replaceAll("{", "")
-                                            .replaceAll("}", "");
-                                        if (match[0]!.startsWith("{user.")) {
-                                          return myUserMap[match[0]!
-                                                  .replaceAll("{user.", "")
-                                                  .replaceAll("}", "")] ??
-                                              match[0];
-                                        } else {
-                                          return toUserMap[i] ?? match[0];
-                                        }
-                                      }) ??
-                                      "";
+                                  _messageInputController.text = renderedQR;
                                 } else {
                                   _messageInputController.text =
                                       messages[index] ?? "";
@@ -269,7 +245,7 @@ class _SendMessageInputState extends State<SendMessageInput> {
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 8),
                                 child: Text(
-                                  messages[index]!,
+                                  renderedQR,
                                   style: TextStyle(
                                       fontSize: 16, color: Colors.white),
                                   textAlign: TextAlign.center,
@@ -300,7 +276,7 @@ class _SendMessageInputState extends State<SendMessageInput> {
   @override
   Widget build(BuildContext context) {
     Coworker? _assignedTo = _conversation.assigneeUid != null
-        ? fusionConnection.coworkers.getCowworker(
+        ? fusionConnection.coworkers.getCoworker(
             _conversation.assigneeUid!.toLowerCase(),
           )
         : null;

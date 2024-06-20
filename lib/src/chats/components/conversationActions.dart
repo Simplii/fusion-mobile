@@ -229,7 +229,7 @@ class ConversationActions extends StatelessWidget {
           );
           for (DepartmentUser departmentUser in department.users) {
             Coworker? coworker =
-                _fusionConnection.coworkers.getCowworker(departmentUser.uid);
+                _fusionConnection.coworkers.getCoworker(departmentUser.uid);
             if (coworker != null) {
               coworkers.add(coworker);
             }

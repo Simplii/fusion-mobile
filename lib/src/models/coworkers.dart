@@ -282,7 +282,7 @@ class CoworkerStore extends FusionStore<Coworker> {
     }
   }
 
-  Coworker? getCowworker(String id) {
+  Coworker? getCoworker(String id) {
     return lookupRecord(id.toLowerCase());
   }
 }

@@ -35,6 +35,12 @@ class ContactCrmReference {
       this.icon});
 }
 
+class FieldValue {
+  final String fieldName;
+  final String value;
+  FieldValue(this.fieldName, this.value);
+}
+
 class Contact extends FusionModel {
   List<dynamic>? addresses;
   String? company;
@@ -66,7 +72,7 @@ class Contact extends FusionModel {
   String? crmName;
   String? crmId;
   int? unread = 0;
-  List<dynamic>? fieldValues = [];
+  List<FieldValue> fieldValues = [];
   Uint8List? profileImage;
   @override
   String? getId() => this.id;
@@ -212,6 +218,7 @@ class Contact extends FusionModel {
 
   Contact.fromV2(Map<String, dynamic> contactObject) {
     addresses = [];
+    List fieldValues = contactObject['fieldValues'] ?? [];
     var address;
     if (contactObject['addresses'] != null) {
       for (address in contactObject['addresses']) {
@@ -254,9 +261,8 @@ class Contact extends FusionModel {
       this.crmName = externalReferences[0]['network'];
       this.crmId = externalReferences[0]['externalId'];
     }
-    this.fieldValues = contactObject['fieldValues'] != null
-        ? contactObject['fieldValues']
-        : [];
+    this.fieldValues =
+        fieldValues.map((e) => FieldValue(e['fieldName'], e['value'])).toList();
   }
 
   Map<String, dynamic> serverPayload() {
@@ -286,7 +292,7 @@ class Contact extends FusionModel {
       "company": company,
       "emails": emails,
       "externalReferences": [],
-      "fieldValues": fieldValues!.isNotEmpty
+      "fieldValues": fieldValues.isNotEmpty
           ? fieldValues
           : [
               {"fieldName": "first_name", "value": firstName},
