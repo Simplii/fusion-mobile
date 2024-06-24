@@ -9,6 +9,7 @@ import 'package:fusion_mobile_revamped/src/chats/viewModels/chatsVM.dart';
 import 'package:fusion_mobile_revamped/src/classes/websocket_message.dart';
 import 'package:fusion_mobile_revamped/src/classes/ws_message_obj.dart';
 import 'package:fusion_mobile_revamped/src/classes/ws_typing_status.dart';
+import 'package:fusion_mobile_revamped/src/models/contact.dart';
 import 'package:fusion_mobile_revamped/src/models/conversations.dart';
 import 'package:fusion_mobile_revamped/src/models/coworkers.dart';
 import 'package:fusion_mobile_revamped/src/models/messages.dart';
@@ -54,6 +55,7 @@ class ConversationVM with ChangeNotifier {
     notificationStream =
         FirebaseMessaging.onMessage.listen(_onNotificationReceived);
     lookupMessages();
+    _updateQuickMessages();
   }
 
   Timer _assignTypingStatusTimer(SMSMessage? message, String user) {
@@ -371,5 +373,29 @@ class ConversationVM with ChangeNotifier {
   void sendTypingStatus() {
     fusionConnection.conversations
         .sendTypingEvent(conversation, conversationDepartmentId);
+  }
+
+  String renderQuickResponse(String? message) {
+    RegExp reg = RegExp(r'(\{([a-z]+[-_.]*)+[a-z]\})');
+    Contact toUser = conversation.contacts[0];
+    Map<String, dynamic> toUserMap = {};
+    Contact? myUser = fusionConnection.coworkers
+        .getCoworker(fusionConnection.getUid())
+        ?.toContact();
+    Map<String, dynamic> myUserMap = myUser?.toJson() ?? {};
+    for (FieldValue fieldValue in toUser.fieldValues) {
+      toUserMap[fieldValue.fieldName] = fieldValue.value;
+    }
+    return message?.replaceAllMapped(reg, (match) {
+          String i = match[0]!.replaceAll("{", "").replaceAll("}", "");
+          if (match[0]!.startsWith("{user.")) {
+            return myUserMap[
+                    match[0]!.replaceAll("{user.", "").replaceAll("}", "")] ??
+                match[0];
+          } else {
+            return toUserMap[i] ?? match[0];
+          }
+        }) ??
+        "";
   }
 }
