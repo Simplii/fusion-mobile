@@ -376,8 +376,7 @@ class ConversationVM with ChangeNotifier {
   }
 
   String renderQuickResponse(String? message) {
-    RegExp reg = RegExp(
-        r'(\{([a-z])+(\.)+([a-z])+(\_)+([a-z])+\})|(\{[a-z]+\})|(\{[a-z]+\_+[a-z]+\})');
+    RegExp reg = RegExp(r'(\{([a-z]+[-_.]*)+[a-z]\})');
     Contact toUser = conversation.contacts[0];
     Map<String, dynamic> toUserMap = {};
     Contact? myUser = fusionConnection.coworkers
