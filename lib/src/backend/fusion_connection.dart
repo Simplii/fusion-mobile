@@ -86,6 +86,8 @@ class FusionConnection {
   String defaultAvatar = "https://$host/img/defaultuser.png";
   static const MethodChannel contactsChannel =
       MethodChannel('net.fusioncomm.ios/contacts');
+  static const MethodChannel conversationsChannel =
+      MethodChannel('channel/conversations');
   static bool isInternetActive = false;
   String _token = "";
   String _signature = "";
