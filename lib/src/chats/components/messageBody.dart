@@ -39,8 +39,7 @@ class MessageBody extends StatelessWidget {
       }
       TapGestureRecognizer recognizer = TapGestureRecognizer()
         ..onTap = () {
-          String url =
-              messageText.substring(urlMatch.start, urlMatch.input.length);
+          String url = messageText.substring(urlMatch.start, urlMatch.end);
           Uri uri =
               Uri.parse(url.startsWith("https://") ? url : "https://$url");
           launchUrl(uri);
