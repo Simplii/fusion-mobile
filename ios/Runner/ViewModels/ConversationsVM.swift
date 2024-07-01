@@ -12,12 +12,9 @@ class ConversationsVM:NSObject {
     public init(conversationsMethodChannel: FlutterMethodChannel? = nil) {
         self.conversationsMethodChannel = conversationsMethodChannel
         super.init()
-        print("MDBM ConversationsVM Created")
         self.conversationsMethodChannel?.setMethodCallHandler({
           (call: FlutterMethodCall, result: @escaping FlutterResult) -> Void in
-            // This method is invoked on the UI thread.
             if(call.method == "detectAddress"){
-                print("MDBM detectAddress")
                 let args = call.arguments as? [String]
                 return result(self.detectAddress(text: args?[0] ?? ""))
             }
@@ -42,7 +39,7 @@ class ConversationsVM:NSObject {
                         let city = match.addressComponents?[.city]?.replacingOccurrences(of: " ", with: "+")
                         let state = match.addressComponents?[.state]
                         let zip = match.addressComponents?[.zip]
-                        print("MDBM \(match.addressComponents)")
+//                        print("MDBM \(match.addressComponents)")
                         newtext.replaceSubrange(
                             range,
                             with:

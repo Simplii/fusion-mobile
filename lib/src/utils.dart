@@ -281,10 +281,3 @@ Size textSize(String text, TextStyle style) {
     ..layout(minWidth: 0, maxWidth: double.infinity);
   return textPainter.size;
 }
-
-RegExp addressRegEx = RegExp(
-    r'(\d+\s+[a-zA-Z]+[- ]*(?:[A-Za-z0-9]+\s?)+\b(St|Street|Rd|Road|Ave|Avenue|Blvd|Boulevard|Ln|Lane|Dr|Drive|Ct|Court|Pl|Plaza|Cir|Circle|S|W|E|N|st|rd|ave|blvd|ln|dr|ct|pl|cir|s|n|w|e)\b(,?\s+([a-zA-Z+]\s*)*,?\s*(LA|OK|CA|AR|California)?\b\s*([0-9]{5}(-\d{4})?)?)|\d+\s+[a-zA-Z]+[- ]*(?:[A-Za-z0-9]+\s?)+\b(,?\s+([a-zA-Z+]\s*)*,?\s*(LA|OK|CA|AR|California)?\b\s*([0-9]{5}(-\d{4})?)?))');
-
-RegExp streetName = RegExp(
-    r'\d+[ ](?:[A-Za-z0-9.-]+[ ]?)+(?:Avenue|Lane|Road|Boulevard|Drive|Street|Ave|Dr|Rd|Blvd|Ln|St)\.?',
-    caseSensitive: false);

@@ -38,7 +38,7 @@ class ConversationVM(context: Context) {
         conversationVMMethodConversationVM?.setMethodCallHandler { call, result ->
             when (call.method) {
                 "detectAddress" -> {
-                    Log.d(DEBUG_TAG, "${call.arguments}")
+//                    Log.d(DEBUG_TAG, "${call.arguments}")
                     val args = call.arguments as ArrayList<String>
                     var ret = ""
                     runBlocking {
@@ -57,7 +57,6 @@ class ConversationVM(context: Context) {
         var t = text
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q){
             CoroutineScope(Dispatchers.IO).async {
-                Log.d(DEBUG_TAG, "links start")
                 var links =  textClassifier.generateLinks(
                     TextLinks.Request.Builder(t)
                         .setEntityConfig(
