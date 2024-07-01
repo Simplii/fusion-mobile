@@ -29,7 +29,6 @@ class MessageBody extends StatelessWidget {
     final urlRegExp = new RegExp(
         r"((https?:www\.)|(https?:\/\/)|(www\.))[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9]{1,6}(\/[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)?");
     final urlMatches = urlRegExp.allMatches(messageText).toList();
-    final addressMatches = addressRegEx.allMatches(messageText).toList();
     int start = 0;
     List<TextSpan> texts = [];
 
@@ -47,12 +46,12 @@ class MessageBody extends StatelessWidget {
           launchUrl(uri);
         };
       texts.add(TextSpan(
-          text: urlMatch.input.contains("https://maps.apple.com/?address=")
+          text: urlMatch.input.contains("https://maps.apple.com/?address=") ||
+                  urlMatch.input.contains("https://maps.google.com/?q=")
               ? messageText
-                  .substring(
-                      urlMatch.input.indexOf("=") + 1, urlMatch.input.length)
+                  .substring(urlMatch.input.indexOf("=") + 1, urlMatch.end)
                   .replaceAll(RegExp(r"(\+|,)"), " ")
-              : messageText.substring(urlMatch.start, urlMatch.input.length),
+              : messageText.substring(urlMatch.start, urlMatch.end),
           style: TextStyle(
             decoration: TextDecoration.underline,
             fontSize: 14,
@@ -61,35 +60,7 @@ class MessageBody extends StatelessWidget {
             color: isMe ? coal : Colors.white,
           ),
           recognizer: recognizer));
-      start = urlMatch.input.length;
-    }
-    //TODO: Clean up
-    for (var address in addressMatches) {
-      bool isStreetName = streetName.hasMatch(address.input);
-      if (isStreetName) {
-        if (address.start > start) {
-          texts.add(TextSpan(
-              text: messageText.substring(start, address.start), style: style));
-        }
-        print("MDBM ADD ${address.input}");
-        TapGestureRecognizer recognizer = TapGestureRecognizer()
-          ..onTap = () {
-            String url =
-                "https://maps.google.com/?q=${Uri.encodeComponent(address.input)}";
-            launchUrl(Uri.parse(url));
-          };
-        texts.add(TextSpan(
-            text: address.input,
-            style: TextStyle(
-              decoration: TextDecoration.underline,
-              fontSize: 14,
-              height: 1.4,
-              fontWeight: FontWeight.w400,
-              color: isMe ? coal : Colors.white,
-            ),
-            recognizer: recognizer));
-        start = address.input.length;
-      }
+      start = urlMatch.end;
     }
 
     texts.add(TextSpan(text: messageText.substring(start), style: style));

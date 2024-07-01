@@ -136,10 +136,6 @@ class FusionConnection {
     _softphone = softphone;
   }
 
-  final channel = WebSocketChannel.connect(
-    Uri.parse('wss://$host:8443'),
-  );
-
   onLogOut(Function callback) {
     _onLogOut = callback;
   }

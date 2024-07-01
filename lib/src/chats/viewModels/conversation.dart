@@ -177,12 +177,10 @@ class ConversationVM with ChangeNotifier {
       limit ?? messagesLimit,
       _offset,
       (List<SMSMessage> messages, fromServer) async {
-        if (Platform.isIOS) {
-          for (var msg in messages) {
-            msg.message = await conversationsChannel
-                    .invokeMethod<String>("detectAddress", [msg.message]) ??
-                msg.message;
-          }
+        for (var msg in messages) {
+          msg.message = await conversationsChannel
+                  .invokeMethod<String>("detectAddress", [msg.message]) ??
+              msg.message;
         }
         if (_offset == 0) {
           conversationMessages = messages;
