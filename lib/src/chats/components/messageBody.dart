@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -45,8 +47,9 @@ class MessageBody extends StatelessWidget {
           launchUrl(uri);
         };
       texts.add(TextSpan(
-          text: urlMatch.input.contains("https://maps.apple.com/?address=") ||
-                  urlMatch.input.contains("https://maps.google.com/?q=")
+          text: urlMatch.input.contains(Platform.isIOS
+                  ? "https://maps.apple.com/?q="
+                  : "https://maps.google.com/?q=")
               ? messageText
                   .substring(urlMatch.input.indexOf("=") + 1, urlMatch.end)
                   .replaceAll(RegExp(r"(\+|,)"), " ")

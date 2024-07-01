@@ -74,7 +74,7 @@ class ConversationVM(context: Context) {
                     t = t.replaceRange(
                         link.start,
                         link.end,
-                        "https://maps.google.com/?q=${address.replace(" ", "+").replace(",","")}"
+                        "https://maps.google.com/?q=${address.lines().joinToString(" ").replace(" ", "+").replace(",","")}"
                     )
                 }
             }.await()

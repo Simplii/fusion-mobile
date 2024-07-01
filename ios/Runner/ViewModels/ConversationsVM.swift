@@ -43,7 +43,7 @@ class ConversationsVM:NSObject {
                         newtext.replaceSubrange(
                             range,
                             with:
-                                "https://maps.apple.com/?address=\(street)\(city != nil ? ",\(city!)" : "")\(state != nil ? ",\(state!)": "")\(zip != nil ? ",\(zip!)":"")"
+                                "https://maps.apple.com/?q=\(street)\(city != nil ? "+\(city!)" : "")\(state != nil ? "+\(state!)": "")\(zip != nil ? "+\(zip!)":"")"
                         )
                     }
                 }
