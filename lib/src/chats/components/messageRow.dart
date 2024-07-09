@@ -183,7 +183,7 @@ class MessageRow extends StatelessWidget {
           Contact contact = message.typingUsers[index] == "test@SimpliiDev"
               ? Contact.fake("801897133")
               : fusionConnection.coworkers
-                  .getCowworker(message.typingUsers[index])
+                  .getCoworker(message.typingUsers[index])
                   ?.toContact();
           return Align(
             widthFactor: 0.4,
@@ -209,7 +209,7 @@ class MessageRow extends StatelessWidget {
       return title = "Several people are typing...";
     }
     for (var element in message.typingUsers) {
-      Coworker? co = fusionConnection.coworkers.getCowworker(element);
+      Coworker? co = fusionConnection.coworkers.getCoworker(element);
       if (title.isNotEmpty) {
         title += " & ${co?.firstName}";
       } else {

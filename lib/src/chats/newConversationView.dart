@@ -97,15 +97,7 @@ class _NewMessageViewState extends State<NewMessageView> {
                 onChange: newConversationVM.onDepartmentChange,
                 onNumberTap: newConversationVM.onNumberChange,
                 label: "Departments",
-                //FIXME:
-                // value: newConversationVM.selectedDepartmentId ==
-                //         DepartmentIds.AllMessages
-                //     ? DepartmentIds.Personal
-                //     : newConversationVM.selectedDepartmentId,
-                value: groups
-                    .where((element) => element.numbers.isNotEmpty)
-                    .first
-                    .groupName,
+                value: newConversationVM.getSelectedDepartment(),
                 style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
                 options: groups
                     .map((SMSDepartment d) {

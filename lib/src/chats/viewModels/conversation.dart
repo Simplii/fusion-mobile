@@ -1,13 +1,17 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:fusion_mobile_revamped/src/backend/fusion_connection.dart';
+import 'package:fusion_mobile_revamped/src/backend/fusion_stream_events.dart';
 import 'package:fusion_mobile_revamped/src/chats/viewModels/chatsVM.dart';
 import 'package:fusion_mobile_revamped/src/classes/websocket_message.dart';
 import 'package:fusion_mobile_revamped/src/classes/ws_message_obj.dart';
 import 'package:fusion_mobile_revamped/src/classes/ws_typing_status.dart';
+import 'package:fusion_mobile_revamped/src/models/contact.dart';
 import 'package:fusion_mobile_revamped/src/models/conversations.dart';
 import 'package:fusion_mobile_revamped/src/models/coworkers.dart';
 import 'package:fusion_mobile_revamped/src/models/messages.dart';
@@ -22,6 +26,8 @@ class ConversationVM with ChangeNotifier {
   late StreamSubscription<RemoteMessage> notificationStream;
   final FusionConnection fusionConnection = FusionConnection.instance;
   final String? departmentId;
+  final MethodChannel conversationsChannel =
+      FusionConnection.conversationsChannel;
   ChatsVM? _chatsVM;
   SMSConversation conversation;
 
@@ -48,10 +54,12 @@ class ConversationVM with ChangeNotifier {
         conversation.getDepartmentId(
           fusionConnection: fusionConnection,
         );
-    wsStream = fusionConnection.websocketStream.stream.listen(_updateFromWS);
+    wsStream =
+        fusionConnection.fusionStreamEvents.stream.listen(_updateFromStream);
     notificationStream =
         FirebaseMessaging.onMessage.listen(_onNotificationReceived);
     lookupMessages();
+    _updateQuickMessages();
   }
 
   Timer _assignTypingStatusTimer(SMSMessage? message, String user) {
@@ -69,79 +77,85 @@ class ConversationVM with ChangeNotifier {
     });
   }
 
-  void _updateFromWS(event) {
-    Map<String, dynamic> wsMessage = jsonDecode(event);
-    if (wsMessage.containsKey("sms_received") && wsMessage["sms_received"]) {
-      WsMessageObject message =
-          WebsocketMessage.getMessageObj(wsMessage["message_object"]);
-      SMSMessage? messageToUpdate = conversationMessages
-          .where((m) => int.parse(m.id) == message.id)
-          .firstOrNull;
-      if (messageToUpdate != null) {
-        messageToUpdate.messageStatus = message.messageStatus;
-        messageToUpdate.errorMessage = message.errorMessage;
-        notifyListeners();
-      } else {
-        SMSMessage newMessage = SMSMessage.fromWsMessageObj(message);
-        print(
-            "$DebugTag ${message.to} ${message.from} ${conversation.number} ${conversation.myNumber}");
-        if (message.to == conversation.number &&
-            message.from == conversation.myNumber) {
-          conversationMessages.insert(0, newMessage);
-        }
-        //TODO:Test receving a message while typingstatus is active
-        // SMSMessage? isTypingMessage =
-        //     conversationMessages.where((e) => e.id == "-3").firstOrNull;
-        // if (isTypingMessage != null) {
-        //   conversationMessages
-        //       .removeAt(conversationMessages.indexOf(isTypingMessage));
-        //   conversationMessages.insert(0, isTypingMessage);
-        // }
-        notifyListeners();
-      }
-    }
-    if (wsMessage.containsKey("push_typing_status_v2") &&
-        wsMessage["push_typing_status_v2"]) {
-      WsTypingStatus typingStatus = WebsocketMessage.getTypingStatus(wsMessage);
-      if (typingStatus.conversationId != conversation.conversationId) return;
-      SMSMessage? typingMessage = conversationMessages
-          .where((element) => element.id == "-3")
-          .firstOrNull;
-
-      print("MDBM  typing user ${typingMessage}");
-      if (typingMessage != null) {
-        if (!typingMessage.typingUsers.contains(typingStatus.username)) {
-          if (typingMessage.typingUsers.length < 3) {
-            typingMessage.typingUsers.add(typingStatus.username);
+  void _updateFromStream(FusionStreamEventData event) {
+    print("$DebugTag streamEvent ${event.data}");
+    if (event.data.isEmpty) return;
+    var decodedEvent = jsonDecode(event.data);
+    for (var element in decodedEvent) {
+      Map<String, dynamic> wsMessage = element;
+      if (wsMessage.containsKey("sms_received") && wsMessage["sms_received"]) {
+        WsMessageObject message =
+            WebsocketMessage.getMessageObj(wsMessage["message_object"]);
+        SMSMessage? messageToUpdate = conversationMessages
+            .where((m) => int.parse(m.id) == message.id)
+            .firstOrNull;
+        if (messageToUpdate != null) {
+          messageToUpdate.messageStatus = message.messageStatus;
+          messageToUpdate.errorMessage = message.errorMessage;
+          notifyListeners();
+        } else {
+          SMSMessage newMessage = SMSMessage.fromWsMessageObj(message);
+          if ((message.to == conversation.number &&
+                  message.from == conversation.myNumber) ||
+              (message.to == conversation.myNumber &&
+                  message.from == conversation.number)) {
+            conversationMessages.insert(0, newMessage);
           }
+          //TODO:Test receving a message while typingstatus is active
+          // SMSMessage? isTypingMessage =
+          //     conversationMessages.where((e) => e.id == "-3").firstOrNull;
+          // if (isTypingMessage != null) {
+          //   conversationMessages
+          //       .removeAt(conversationMessages.indexOf(isTypingMessage));
+          //   conversationMessages.insert(0, isTypingMessage);
+          // }
+          notifyListeners();
         }
-      } else {
-        SMSMessage typingMessage = SMSMessage.typing(
-          from: typingStatus.uid.toLowerCase(),
-          isGroup: false,
-          text: "",
-          to: typingStatus.to,
-          user: typingStatus.username,
-          messageId: "-3",
-          domain: fusionConnection.getDomain(),
-        );
-        conversationMessages.insert(0, typingMessage);
       }
-      notifyListeners();
+      if (wsMessage.containsKey("push_typing_status_v2") &&
+          wsMessage["push_typing_status_v2"]) {
+        WsTypingStatus typingStatus =
+            WebsocketMessage.getTypingStatus(wsMessage);
+        if (typingStatus.conversationId != conversation.conversationId) return;
+        SMSMessage? typingMessage = conversationMessages
+            .where((element) => element.id == "-3")
+            .firstOrNull;
 
-      SMSMessage? message = conversationMessages
-          .where((element) => element.id == "-3")
-          .firstOrNull;
+        print("MDBM  typing user ${typingMessage}");
+        if (typingMessage != null) {
+          if (!typingMessage.typingUsers.contains(typingStatus.username)) {
+            if (typingMessage.typingUsers.length < 3) {
+              typingMessage.typingUsers.add(typingStatus.username);
+            }
+          }
+        } else {
+          SMSMessage typingMessage = SMSMessage.typing(
+            from: typingStatus.uid.toLowerCase(),
+            isGroup: false,
+            text: "",
+            to: typingStatus.to,
+            user: typingStatus.username,
+            messageId: "-3",
+            domain: fusionConnection.getDomain(),
+          );
+          conversationMessages.insert(0, typingMessage);
+        }
+        notifyListeners();
 
-      if (!usersTimers.containsKey(typingStatus.username)) {
-        usersTimers.addAll({
-          typingStatus.username:
-              _assignTypingStatusTimer(message, typingStatus.username)
-        });
-      } else if (usersTimers.containsKey(typingStatus.username)) {
-        usersTimers[typingStatus.username]?.cancel();
-        usersTimers[typingStatus.username] =
-            _assignTypingStatusTimer(message, typingStatus.username);
+        SMSMessage? message = conversationMessages
+            .where((element) => element.id == "-3")
+            .firstOrNull;
+
+        if (!usersTimers.containsKey(typingStatus.username)) {
+          usersTimers.addAll({
+            typingStatus.username:
+                _assignTypingStatusTimer(message, typingStatus.username)
+          });
+        } else if (usersTimers.containsKey(typingStatus.username)) {
+          usersTimers[typingStatus.username]?.cancel();
+          usersTimers[typingStatus.username] =
+              _assignTypingStatusTimer(message, typingStatus.username);
+        }
       }
     }
   }
@@ -162,7 +176,12 @@ class ConversationVM with ChangeNotifier {
       conversation,
       limit ?? messagesLimit,
       _offset,
-      (List<SMSMessage> messages, fromServer) {
+      (List<SMSMessage> messages, fromServer) async {
+        for (var msg in messages) {
+          msg.message = await conversationsChannel
+                  .invokeMethod<String>("detectAddress", [msg.message]) ??
+              msg.message;
+        }
         if (_offset == 0) {
           conversationMessages = messages;
         } else {
@@ -270,7 +289,7 @@ class ConversationVM with ChangeNotifier {
     }
   }
 
-  void _sendMessageCallback(SMSMessage message) {
+  void _sendMessageCallback(SMSMessage message) async {
     //success callback
     print("MDBM send message callback");
     SMSMessage? lastMessageVisiable = conversationMessages
@@ -278,6 +297,9 @@ class ConversationVM with ChangeNotifier {
         .firstOrNull;
     if (lastMessageVisiable == null) {
       //incase wsMessage wasn't received right after sending new message
+      message.message = await conversationsChannel
+              .invokeMethod<String>("detectAddress", [message.message]) ??
+          message.message;
       conversationMessages.insert(
         0,
         message,
@@ -363,5 +385,29 @@ class ConversationVM with ChangeNotifier {
   void sendTypingStatus() {
     fusionConnection.conversations
         .sendTypingEvent(conversation, conversationDepartmentId);
+  }
+
+  String renderQuickResponse(String? message) {
+    RegExp reg = RegExp(r'(\{([a-z]+[-_.]*)+[a-z]\})');
+    Contact toUser = conversation.contacts[0];
+    Map<String, dynamic> toUserMap = {};
+    Contact? myUser = fusionConnection.coworkers
+        .getCoworker(fusionConnection.getUid())
+        ?.toContact();
+    Map<String, dynamic> myUserMap = myUser?.toJson() ?? {};
+    for (FieldValue fieldValue in toUser.fieldValues) {
+      toUserMap[fieldValue.fieldName] = fieldValue.value;
+    }
+    return message?.replaceAllMapped(reg, (match) {
+          String i = match[0]!.replaceAll("{", "").replaceAll("}", "");
+          if (match[0]!.startsWith("{user.")) {
+            return myUserMap[
+                    match[0]!.replaceAll("{user.", "").replaceAll("}", "")] ??
+                match[0];
+          } else {
+            return toUserMap[i] ?? match[0];
+          }
+        }) ??
+        "";
   }
 }

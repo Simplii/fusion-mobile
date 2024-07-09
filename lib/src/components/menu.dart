@@ -17,8 +17,8 @@ import '../styles.dart';
 import '../utils.dart';
 
 class Menu extends StatefulWidget {
-  final FusionConnection? _fusionConnection;
-  final Softphone? _softphone;
+  final FusionConnection _fusionConnection;
+  final Softphone _softphone;
 
   Menu(this._fusionConnection, this._softphone, {Key? key}) : super(key: key);
 
@@ -27,21 +27,21 @@ class Menu extends StatefulWidget {
 }
 
 class _MenuState extends State<Menu> {
-  FusionConnection? get _fusionConnection => widget._fusionConnection;
-  Softphone? get _softphone => widget._softphone;
+  FusionConnection get _fusionConnection => widget._fusionConnection;
+  Softphone get _softphone => widget._softphone;
   bool loggingOut = false;
 
   String? selectedOutboundDid = "";
   List<Did> dynamicDailingDids = [];
   bool? usingCarrierCalls = false;
   String? myPhoneNumber = "";
-  UserSettings? userSettings;
+  late UserSettings userSettings;
   bool? DND = false;
-
+  bool disableSyncCallsToIPhone = UserSettings.disableSyncCallsToIPhone;
   @override
   initState() {
     super.initState();
-    userSettings = _fusionConnection!.settings;
+    userSettings = _fusionConnection.settings;
     DND = userSettings!.dnd;
     myPhoneNumber = userSettings!.myCellPhoneNumber!.isNotEmpty
         ? userSettings!.myCellPhoneNumber!.formatPhone()
@@ -408,7 +408,7 @@ class _MenuState extends State<Menu> {
   }
 
   _row(String icon, String label, String smallText, Function? onTap, Icon? ico,
-      {Widget? trailingWidget}) {
+      {Widget? trailingWidget, double? labelMaxWidth}) {
     return GestureDetector(
         onTap: onTap as void Function()?,
         child: Container(
@@ -436,12 +436,15 @@ class _MenuState extends State<Menu> {
                   Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(label,
-                            textAlign: TextAlign.left,
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700)),
+                        LimitedBox(
+                          maxWidth: labelMaxWidth ?? double.infinity,
+                          child: Text(label,
+                              textAlign: TextAlign.left,
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700)),
+                        ),
                         if (smallText.length > 0) Container(height: 4),
                         if (smallText.length > 0)
                           Text(smallText,
@@ -965,6 +968,40 @@ class _MenuState extends State<Menu> {
         }));
   }
 
+  Widget _toggleDisableCallsSync() {
+    return Switch(
+        value: disableSyncCallsToIPhone,
+        activeColor: crimsonLight,
+        inactiveTrackColor: smoke,
+        onChanged: ((value) {
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: Text("Attention"),
+              content: Text(
+                  "This action requires closing and reopening the app to take effect"),
+              actions: [
+                TextButton(
+                    onPressed: () {
+                      _softphone.setIOSCallsPrefs(value);
+                      setState(() {
+                        disableSyncCallsToIPhone = value;
+                      });
+                      Navigator.of(context).pop();
+                    },
+                    child: Text(
+                      "Okay",
+                      style: TextStyle(color: crimsonLight),
+                    )),
+                TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text("Cancel")),
+              ],
+            ),
+          );
+        }));
+  }
+
   Widget _toggleDND() {
     return Switch(
         value: DND!,
@@ -1056,6 +1093,20 @@ class _MenuState extends State<Menu> {
           size: 26,
         ),
       ),
+      if (Platform.isIOS)
+        _row(
+            "",
+            "Disable syncing calls to iPhone",
+            usingCarrierCalls! ? myPhoneNumber!.formatPhone() : "",
+            null,
+            Icon(
+              Icons.update_disabled,
+              color: smoke.withOpacity(0.45),
+              size: 26,
+            ),
+            trailingWidget: _toggleDisableCallsSync(),
+            labelMaxWidth: 150),
+
       _line(),
 
       _row("", "Log Out", "", _performLogout,

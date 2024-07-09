@@ -30,6 +30,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import net.fusioncomm.android.notifications.NotificationsManager
+import net.fusioncomm.android.telecom.AudioRouteUtils
 import net.fusioncomm.android.telecom.CallsManager
 import org.linphone.core.AVPFMode
 import org.linphone.core.AudioDevice
@@ -91,7 +92,7 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
         if(!username.isNullOrEmpty() && !password.isNullOrEmpty() && !domain.isNullOrEmpty() ){
             register(username, password, domain)
         }
-        callsManager = CallsManager.getInstance(context)
+        callsManager = CallsManager.getInstance(context, channel)
         notificationsManager = NotificationsManager(context, callsManager)
         notificationsManager.onCoreReady()
         Log.d(debugTag, "started ${this.lifecycle.currentState}")
@@ -242,47 +243,38 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
                 }
 //                 sendDevices()
             } else if(call.method == "lpSetActiveCallOutput") {
-                val args = call.arguments as List<*>
-
-                for (audioDevice in core.audioDevices) {
-                    if (audioDevice.id == args[0]) {
-                        Log.d("lpSetActiveCallOutput", "args" +args[0])
-                        Log.d("lpSetActiveCallOutput", "audio device" +audioDevice.id)
-
-                        core.currentCall?.outputAudioDevice = audioDevice
-                    }
-                }
+//                val args = call.arguments as List<*>
+//                Log.d(debugTag, "lpSetActiveCallOutput ${args[0]}")
+//                for (audioDevice in core.audioDevices) {
+//                    if (audioDevice.id == args[0]) {
+//                        Log.d("lpSetActiveCallOutput", "args" +args[0])
+//                        Log.d("lpSetActiveCallOutput", "audio device" +audioDevice.id)
+//
+//                        core.currentCall?.outputAudioDevice = audioDevice
+//                    }
+//                }
             }
-            else if (call.method == "lpSetSpeaker") {
+            else if (call.method == "toggleSpeaker") {
                 val args = call.arguments as List<*>
-                val enableSpeaker = args[0] as Boolean
-//                audioManager.mode = AudioManager.MODE_IN_COMMUNICATION this line causing older
-//                android version to get audio stuck in ear
-                Log.d("lpSetActiveCallOutput" , "set speaker")
-                for (audioDevice in core.extendedAudioDevices) {
-                    if (!enableSpeaker && audioDevice.type == AudioDevice.Type.Earpiece
-                        && audioDevice.id.contains("openSLES")) {
-                        for  (coreCall in core.calls) {
-                            coreCall.outputAudioDevice = audioDevice
-                        }
-                        audioManager.isSpeakerphoneOn = false
-                    } else if (enableSpeaker && audioDevice.type == AudioDevice.Type.Speaker) {
-                        for  (coreCall in core.calls) {
-                            coreCall.outputAudioDevice = audioDevice
-                        }
-                        audioManager.isSpeakerphoneOn = true
+                var useSpeaker: Any? = args.first()
+                val isBluetoothUsed = AudioRouteUtils.isBluetoothAudioRouteCurrentlyUsed()
+                val isSpeakerUsed = AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()
+
+                if (useSpeaker == true) {
+                    //force speaker route
+                    AudioRouteUtils.routeAudioToSpeaker(context)
+                }
+
+                if (useSpeaker == false) {
+                    if (isBluetoothUsed || isSpeakerUsed) {
+                        // route to earpiece
+                        AudioRouteUtils.routeAudioToEarpiece(context)
                     }
                 }
-//                sendDevices()
+
             } else if (call.method == "lpSetBluetooth"){
-                for (audioDevice in core.audioDevices) {
-                    if (audioDevice.type == AudioDevice.Type.Bluetooth) {
-                        for  (coreCall in core.calls) {
-                            coreCall.outputAudioDevice = audioDevice
-                        }
-                    }
-                }
-//                sendDevices()
+                Log.d(debugTag, "lpSetBluetooth triggered")
+                AudioRouteUtils.routeAudioToBluetooth(context)
             } else if (call.method == "lpMuteCall") {
                 val args = call.arguments as List<*>
                 val lpCall = callsManager.findCallByUuid(args[0] as String)
@@ -307,6 +299,10 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
                 val args = call.arguments as List<*>
                 val lpCall = callsManager.findCallByUuid(args[0] as String)
                 lpCall?.terminate()
+            } else if (call.method == "lpEndConference") {
+                if(core.conference?.isIn == true){
+                    core.terminateConference()
+                }
             } else if (call.method == "lpAssistedTransfer") {
                 val args = call.arguments as List<*>
                 val lpCallToTransfer = callsManager.findCallByUuid(args[0] as String)
@@ -505,7 +501,10 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
                 core.defaultInputAudioDevice = device
             }
 
-            if(device.type == AudioDevice.Type.Speaker && device.id.contains("openSLES")){
+            if(
+                device.type == AudioDevice.Type.Earpiece &&
+                device.id.contains("openSLES")
+            ) {
                 core.defaultOutputAudioDevice = device
             }
         }

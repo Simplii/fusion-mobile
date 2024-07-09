@@ -407,7 +407,7 @@ class _SMSConversationViewState extends State<SMSConversationView> {
                     .getDepartment(_selectedGroupId);
                 for (DepartmentUser departmentUser in department.users) {
                   Coworker? coworker = _fusionConnection.coworkers
-                      .getCowworker(departmentUser.uid);
+                      .getCoworker(departmentUser.uid);
                   if (coworker != null) {
                     coworkers.add(coworker);
                   }
@@ -902,7 +902,7 @@ class _SMSConversationViewState extends State<SMSConversationView> {
     DateFormat dateFormatter = DateFormat('MMM d,');
     Coworker? assignedTo = _conversation.assigneeUid != null
         ? _fusionConnection.coworkers
-            .getCowworker(_conversation.assigneeUid!.toLowerCase())
+            .getCoworker(_conversation.assigneeUid!.toLowerCase())
         : null;
     return Container(
         decoration: BoxDecoration(color: particle),

@@ -15,7 +15,14 @@ import Foundation
     var callkitChannel: FlutterMethodChannel!
     var contactsChannel: FlutterMethodChannel!
     var callInfoEventChannel: FlutterEventChannel?
+    var contactsProvider: ContactsProvider?
+    var conversationsChannel: FlutterMethodChannel?
     var timer = Timer()
+    
+    static func shared() -> AppDelegate {
+        return UIApplication.shared.delegate as! AppDelegate
+    }
+    
     override func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
         print("opened from url")
         print(url)
@@ -105,7 +112,8 @@ import Foundation
         
         setupCallkitFlutterLink()
         providerDelegate = ProviderDelegate(channel: callkitChannel)
-        ContactsProvider(channel: contactsChannel)
+        contactsProvider = ContactsProvider(channel: contactsChannel)
+        ConversationsVM(conversationsMethodChannel: conversationsChannel)
         let callQualityStream = CallInfoStream(providerDelegate: providerDelegate)
         callInfoEventChannel?.setStreamHandler(callQualityStream)
         FirebaseApp.configure() //add this before the code below
@@ -169,6 +177,10 @@ import Foundation
             name: "channel/callInfo",
             binaryMessenger: controller.binaryMessenger
         )
+        conversationsChannel = FlutterMethodChannel(
+            name: "channel/conversations",
+            binaryMessenger: controller.binaryMessenger
+        )
     }
 
     
@@ -178,8 +190,10 @@ import Foundation
                 UNUserNotificationCenter.current().getNotificationSettings { settings in
                     UNUserNotificationCenter.current().delegate = self
                     guard settings.authorizationStatus == .authorized else { return }
+                    let backgroundTaskIdentifier = UIApplication.shared.beginBackgroundTask(expirationHandler: nil)
                     DispatchQueue.main.async {
                         UIApplication.shared.registerForRemoteNotifications()
+                        UIApplication.shared.endBackgroundTask(backgroundTaskIdentifier)
                     }
                 }
             } else {

@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:fusion_mobile_revamped/src/styles.dart';
+import 'package:fusion_mobile_revamped/src/utils.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class MessageBody extends StatelessWidget {
@@ -28,7 +31,6 @@ class MessageBody extends StatelessWidget {
     final urlRegExp = new RegExp(
         r"((https?:www\.)|(https?:\/\/)|(www\.))[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9]{1,6}(\/[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)?");
     final urlMatches = urlRegExp.allMatches(messageText).toList();
-
     int start = 0;
     List<TextSpan> texts = [];
 
@@ -40,15 +42,25 @@ class MessageBody extends StatelessWidget {
       TapGestureRecognizer recognizer = TapGestureRecognizer()
         ..onTap = () {
           String url = messageText.substring(urlMatch.start, urlMatch.end);
-          Uri uri = Uri(
-              scheme: 'https',
-              host: "fusioncomm.net",
-              path: url.replaceAll("https://fusioncomm.net", ""));
+          Uri uri =
+              Uri.parse(url.startsWith("https://") ? url : "https://$url");
           launchUrl(uri);
         };
       texts.add(TextSpan(
-          text: messageText.substring(urlMatch.start, urlMatch.end),
-          style: TextStyle(color: crimsonDark),
+          text: urlMatch.input.contains(Platform.isIOS
+                  ? "https://maps.apple.com/?q="
+                  : "https://maps.google.com/?q=")
+              ? messageText
+                  .substring(urlMatch.input.indexOf("=") + 1, urlMatch.end)
+                  .replaceAll(RegExp(r"(\+|,)"), " ")
+              : messageText.substring(urlMatch.start, urlMatch.end),
+          style: TextStyle(
+            decoration: TextDecoration.underline,
+            fontSize: 14,
+            height: 1.4,
+            fontWeight: FontWeight.w400,
+            color: isMe ? coal : Colors.white,
+          ),
           recognizer: recognizer));
       start = urlMatch.end;
     }
@@ -75,7 +87,9 @@ class MessageBody extends StatelessWidget {
                 size: 12,
               ),
             )
-          : RichText(text: TextSpan(children: texts)),
+          : SelectableText.rich(
+              TextSpan(children: texts),
+            ),
     );
   }
 }

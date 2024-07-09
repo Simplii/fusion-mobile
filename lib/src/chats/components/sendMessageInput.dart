@@ -224,10 +224,18 @@ class _SendMessageInputState extends State<SendMessageInput> {
                     height: MediaQuery.of(context).size.height * 0.3,
                     child: ListView.separated(
                         itemBuilder: (BuildContext context, int index) {
+                          String renderedQR = _conversationVM
+                              .renderQuickResponse(messages[index]);
                           return GestureDetector(
                             onTap: () {
                               setState(() {
-                                _messageInputController.text = messages[index]!;
+                                if (!_conversation.isGroup &&
+                                    _conversation.contacts.isNotEmpty) {
+                                  _messageInputController.text = renderedQR;
+                                } else {
+                                  _messageInputController.text =
+                                      messages[index] ?? "";
+                                }
                               });
                               Navigator.pop(context);
                             },
@@ -237,7 +245,7 @@ class _SendMessageInputState extends State<SendMessageInput> {
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 8),
                                 child: Text(
-                                  messages[index]!,
+                                  renderedQR,
                                   style: TextStyle(
                                       fontSize: 16, color: Colors.white),
                                   textAlign: TextAlign.center,
@@ -268,7 +276,7 @@ class _SendMessageInputState extends State<SendMessageInput> {
   @override
   Widget build(BuildContext context) {
     Coworker? _assignedTo = _conversation.assigneeUid != null
-        ? fusionConnection.coworkers.getCowworker(
+        ? fusionConnection.coworkers.getCoworker(
             _conversation.assigneeUid!.toLowerCase(),
           )
         : null;
@@ -439,7 +447,7 @@ class _SendMessageInputState extends State<SendMessageInput> {
                             textAlignVertical: TextAlignVertical.center,
                             textCapitalization: TextCapitalization.sentences,
                             controller: _messageInputController,
-                            maxLines: 10,
+                            maxLines: 4,
                             minLines: 1,
                             onChanged: (String changedTo) {
                               if (_messageInputController.text.length -

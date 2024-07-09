@@ -22,7 +22,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import net.fusioncomm.android.FusionMobileApplication.Companion.engine
 import net.fusioncomm.android.compatibility.Compatibility
+import net.fusioncomm.android.flutterViewModels.ConversationVM
 import net.fusioncomm.android.notifications.NotificationsManager
+import net.fusioncomm.android.telecom.AudioRouteUtils
 import net.fusioncomm.android.telecom.CallQualityStream
 import net.fusioncomm.android.telecom.CallsManager
 import org.linphone.core.*
@@ -33,7 +35,7 @@ class MainActivity : FlutterActivity() {
     private val channel: MethodChannel = FusionMobileApplication.callingChannel
     private val eventChannel: EventChannel = FusionMobileApplication.callEventChannel
     private var appOpenedFromBackground : Boolean = false
-    private val callsManager: CallsManager = CallsManager.getInstance(this)
+    private val callsManager: CallsManager = CallsManager.getInstance(this, channel)
 
     lateinit private var context:Context
     private lateinit var audioManager:AudioManager
@@ -57,6 +59,7 @@ class MainActivity : FlutterActivity() {
         telephonyManager = getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
         // Create Contacts Provider Channel
         ContactsProvider(this)
+        ConversationVM(this)
         Log.d(debugTag, "core started ${FMCore.coreStarted}")
         core.addListener(coreListener)
 
@@ -182,20 +185,14 @@ class MainActivity : FlutterActivity() {
 
         override fun onAudioDeviceChanged(core: Core, audioDevice: AudioDevice) {
             // This listner will be triggered when switching audioDevice in call only
-            val newDevice: Array<String> = arrayOf(audioDevice.id, audioDevice.type.name)
-
-            if(newDevice.isNotEmpty()){
-
-                val gson = Gson()
-
-               channel.invokeMethod(
-                        "lnAudioDeviceChanged",
-                       mapOf(Pair("audioDevice", gson.toJson(newDevice)),
-                            Pair("activeCallOutput", core.currentCall?.outputAudioDevice?.id),
-                            Pair("defaultMic", core.defaultOutputAudioDevice.id))
-                    )
-           }
-
+            Log.d(debugTag, "onAudioDeviceChanged ${audioDevice.deviceName} ${audioDevice.type.name}")
+            val device = hashMapOf(
+                Pair("deviceDriverName", audioDevice.driverName),
+                Pair("deviceId", audioDevice.id),
+                Pair("deviceName", audioDevice.deviceName),
+                Pair("deviceType", audioDevice.type.name),
+            )
+            channel.invokeMethod("lnAudioDeviceChanged", device)
         }
 
         override fun onAudioDevicesListUpdated(core: Core) {
@@ -236,11 +233,11 @@ class MainActivity : FlutterActivity() {
                 Call.State.IncomingReceived -> {
                     callsManager.incomingCall(
                         call.callLog.callId.orEmpty(),
-                        "8018976133",
+                        FMUtils.getPhoneNumber(call.remoteAddress),
                         FMUtils.getDisplayName(call.remoteAddress)
                     )
-                    audioManager.mode = AudioManager.MODE_NORMAL
-                    audioManager.isSpeakerphoneOn = true
+//                    audioManager.mode = AudioManager.MODE_NORMAL
+//                    audioManager.isSpeakerphoneOn = true
                     channel.invokeMethod(
                         "lnIncomingReceived",
                         mapOf(

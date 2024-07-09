@@ -10,7 +10,7 @@ class NewConversationVM with ChangeNotifier {
   final SharedPreferences sharedPreferences;
 
   late String selectedDepartmentId;
-
+  late List<SMSDepartment>? allDepartments;
   NewConversationVM({
     required this.fusionConnection,
     required this.softphone,
@@ -18,6 +18,34 @@ class NewConversationVM with ChangeNotifier {
   }) {
     selectedDepartmentId = sharedPreferences.getString("selectedGroupId") ??
         DepartmentIds.Personal;
+    allDepartments = fusionConnection.smsDepartments.getRecords();
+  }
+
+  String _getDepartmentWithNumbers({bool getMyPhoneNumber = false}) {
+    String ret = "";
+
+    SMSDepartment? departmentWithNumbers = allDepartments
+        ?.where((element) =>
+            element.numbers.isNotEmpty &&
+            element.id != DepartmentIds.Unread &&
+            element.id != DepartmentIds.AllMessages &&
+            element.id != DepartmentIds.FusionChats)
+        .firstOrNull;
+
+    SMSDepartment fusionChats = fusionConnection.smsDepartments
+        .getDepartment(DepartmentIds.FusionChats);
+
+    if (getMyPhoneNumber) {
+      ret = departmentWithNumbers != null
+          ? departmentWithNumbers.numbers.first
+          : fusionChats.numbers.first;
+    } else {
+      ret = departmentWithNumbers != null
+          ? departmentWithNumbers.id
+          : fusionChats.id;
+    }
+
+    return ret;
   }
 
   String getMyNumber() {
@@ -28,12 +56,27 @@ class NewConversationVM with ChangeNotifier {
           ? DepartmentIds.Personal
           : selectedDepartmentId,
     );
-    if (department.numbers.length > 0 &&
+    if (department.numbers.isEmpty && department.id == DepartmentIds.Personal) {
+      myPhoneNumber = _getDepartmentWithNumbers(getMyPhoneNumber: true);
+    } else if (department.numbers.isNotEmpty &&
         department.id != DepartmentIds.AllMessages &&
         department.id != DepartmentIds.Unread) {
       myPhoneNumber = department.numbers[0];
     }
     return myPhoneNumber;
+  }
+
+  String getSelectedDepartment() {
+    String departmentId = selectedDepartmentId == DepartmentIds.AllMessages
+        ? DepartmentIds.Personal
+        : selectedDepartmentId;
+    SMSDepartment selectedDepartment =
+        fusionConnection.smsDepartments.getDepartment(departmentId);
+
+    if (selectedDepartment.numbers.isEmpty) {
+      departmentId = _getDepartmentWithNumbers();
+    }
+    return departmentId;
   }
 
   void onDepartmentChange(String departmentId) {

@@ -12,7 +12,7 @@ import linphonesw
 class CallInfoStream: NSObject, FlutterStreamHandler {
     private var timer: Timer?
     private let pd: ProviderDelegate
-    
+    let backgroundTaskIdentifier = UIApplication.shared.beginBackgroundTask(expirationHandler: nil)
     public init(providerDelegate:ProviderDelegate) {
         pd = providerDelegate
         super.init()
@@ -41,6 +41,7 @@ class CallInfoStream: NSObject, FlutterStreamHandler {
     }
     
     func onCancel(withArguments arguments: Any?) -> FlutterError? {
+        UIApplication.shared.endBackgroundTask(backgroundTaskIdentifier)
         timer?.invalidate()
         return nil
     }
