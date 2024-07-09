@@ -16,6 +16,7 @@ import Foundation
     var contactsChannel: FlutterMethodChannel!
     var callInfoEventChannel: FlutterEventChannel?
     var contactsProvider: ContactsProvider?
+    var conversationsChannel: FlutterMethodChannel?
     var timer = Timer()
     
     static func shared() -> AppDelegate {
@@ -112,6 +113,7 @@ import Foundation
         setupCallkitFlutterLink()
         providerDelegate = ProviderDelegate(channel: callkitChannel)
         contactsProvider = ContactsProvider(channel: contactsChannel)
+        ConversationsVM(conversationsMethodChannel: conversationsChannel)
         let callQualityStream = CallInfoStream(providerDelegate: providerDelegate)
         callInfoEventChannel?.setStreamHandler(callQualityStream)
         FirebaseApp.configure() //add this before the code below
@@ -173,6 +175,10 @@ import Foundation
             binaryMessenger: controller.binaryMessenger)
         callInfoEventChannel = FlutterEventChannel(
             name: "channel/callInfo",
+            binaryMessenger: controller.binaryMessenger
+        )
+        conversationsChannel = FlutterMethodChannel(
+            name: "channel/conversations",
             binaryMessenger: controller.binaryMessenger
         )
     }

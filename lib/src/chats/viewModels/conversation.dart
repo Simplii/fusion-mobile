@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:fusion_mobile_revamped/src/backend/fusion_connection.dart';
 import 'package:fusion_mobile_revamped/src/backend/fusion_stream_events.dart';
 import 'package:fusion_mobile_revamped/src/chats/viewModels/chatsVM.dart';
@@ -24,6 +26,8 @@ class ConversationVM with ChangeNotifier {
   late StreamSubscription<RemoteMessage> notificationStream;
   final FusionConnection fusionConnection = FusionConnection.instance;
   final String? departmentId;
+  final MethodChannel conversationsChannel =
+      FusionConnection.conversationsChannel;
   ChatsVM? _chatsVM;
   SMSConversation conversation;
 
@@ -91,10 +95,10 @@ class ConversationVM with ChangeNotifier {
           notifyListeners();
         } else {
           SMSMessage newMessage = SMSMessage.fromWsMessageObj(message);
-          print(
-              "$DebugTag ${message.to} ${message.from} ${conversation.number} ${conversation.myNumber}");
-          if (message.to == conversation.number &&
-              message.from == conversation.myNumber) {
+          if ((message.to == conversation.number &&
+                  message.from == conversation.myNumber) ||
+              (message.to == conversation.myNumber &&
+                  message.from == conversation.number)) {
             conversationMessages.insert(0, newMessage);
           }
           //TODO:Test receving a message while typingstatus is active
@@ -172,7 +176,12 @@ class ConversationVM with ChangeNotifier {
       conversation,
       limit ?? messagesLimit,
       _offset,
-      (List<SMSMessage> messages, fromServer) {
+      (List<SMSMessage> messages, fromServer) async {
+        for (var msg in messages) {
+          msg.message = await conversationsChannel
+                  .invokeMethod<String>("detectAddress", [msg.message]) ??
+              msg.message;
+        }
         if (_offset == 0) {
           conversationMessages = messages;
         } else {
@@ -280,7 +289,7 @@ class ConversationVM with ChangeNotifier {
     }
   }
 
-  void _sendMessageCallback(SMSMessage message) {
+  void _sendMessageCallback(SMSMessage message) async {
     //success callback
     print("MDBM send message callback");
     SMSMessage? lastMessageVisiable = conversationMessages
@@ -288,6 +297,9 @@ class ConversationVM with ChangeNotifier {
         .firstOrNull;
     if (lastMessageVisiable == null) {
       //incase wsMessage wasn't received right after sending new message
+      message.message = await conversationsChannel
+              .invokeMethod<String>("detectAddress", [message.message]) ??
+          message.message;
       conversationMessages.insert(
         0,
         message,

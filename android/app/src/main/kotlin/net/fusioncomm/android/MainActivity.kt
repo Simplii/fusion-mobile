@@ -21,6 +21,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import net.fusioncomm.android.FusionMobileApplication.Companion.engine
 import net.fusioncomm.android.compatibility.Compatibility
+import net.fusioncomm.android.flutterViewModels.ConversationVM
 import net.fusioncomm.android.notifications.NotificationsManager
 import net.fusioncomm.android.telecom.AudioRouteUtils
 import net.fusioncomm.android.telecom.CallQualityStream
@@ -52,6 +53,7 @@ class MainActivity : FlutterActivity() {
         telephonyManager = getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
         // Create Contacts Provider Channel
         ContactsProvider(this)
+        ConversationVM(this)
         Log.d(debugTag, "core started ${FMCore.coreStarted}")
         core.addListener(coreListener)
 

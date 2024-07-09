@@ -26,6 +26,7 @@
 		B875D6E52AEB133B00E376F4 /* ContactsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B875D6E42AEB133B00E376F4 /* ContactsProvider.swift */; };
 		B884B694292D5CCF00205021 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = B884B693292D5CCF00205021 /* GoogleService-Info.plist */; };
 		B889E5D12C12475800C25C35 /* AudioRouteUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = B889E5D02C12475800C25C35 /* AudioRouteUtils.swift */; };
+		B88D87B32C29D4D8009867D0 /* ConversationsVM.swift in Sources */ = {isa = PBXBuildFile; fileRef = B88D87B22C29D4D8009867D0 /* ConversationsVM.swift */; };
 		B8ED2FD7293A9BDE00AA03DA /* ProviderDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8ED2FD6293A9BDE00AA03DA /* ProviderDelegate.swift */; };
 		F2ADB5A528DCB0FE00BBA250 /* outgoing.wav in Resources */ = {isa = PBXBuildFile; fileRef = F2ADB5A428DCB0FD00BBA250 /* outgoing.wav */; };
 /* End PBXBuildFile section */
@@ -93,6 +94,7 @@
 		B875D6E42AEB133B00E376F4 /* ContactsProvider.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ContactsProvider.swift; sourceTree = "<group>"; };
 		B884B693292D5CCF00205021 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		B889E5D02C12475800C25C35 /* AudioRouteUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRouteUtils.swift; sourceTree = "<group>"; };
+		B88D87B22C29D4D8009867D0 /* ConversationsVM.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationsVM.swift; sourceTree = "<group>"; };
 		B8C0ABEE2AD9C1F600B8666F /* ContactsProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactsProvider.swift; sourceTree = "<group>"; };
 		B8ED2FD6293A9BDE00AA03DA /* ProviderDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ProviderDelegate.swift; sourceTree = "<group>"; };
 		E6169645DF84598A28F55370 /* Pods-Runner.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"; sourceTree = "<group>"; };
@@ -165,6 +167,7 @@
 		97C146F01CF9000F007C117D /* Runner */ = {
 			isa = PBXGroup;
 			children = (
+				B88D87B12C29D4BA009867D0 /* ViewModels */,
 				B889E5CF2C12473300C25C35 /* utils */,
 				B86F1DA32B1A4AF1009B6B8C /* callIntents */,
 				F2B68B8228DDE31900EFD383 /* Runner.entitlements */,
@@ -212,6 +215,14 @@
 				B889E5D02C12475800C25C35 /* AudioRouteUtils.swift */,
 			);
 			path = utils;
+			sourceTree = "<group>";
+		};
+		B88D87B12C29D4BA009867D0 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				B88D87B22C29D4D8009867D0 /* ConversationsVM.swift */,
+			);
+			path = ViewModels;
 			sourceTree = "<group>";
 		};
 		BF45764D9AD32AF1E49E9407 /* Frameworks */ = {
@@ -417,6 +428,7 @@
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 				B86F1DA52B1A4B48009B6B8C /* StartCallConvertible.swift in Sources */,
 				B875D6E52AEB133B00E376F4 /* ContactsProvider.swift in Sources */,
+				B88D87B32C29D4D8009867D0 /* ConversationsVM.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

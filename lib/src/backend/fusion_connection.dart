@@ -86,6 +86,8 @@ class FusionConnection {
   String defaultAvatar = "https://$host/img/defaultuser.png";
   static const MethodChannel contactsChannel =
       MethodChannel('net.fusioncomm.ios/contacts');
+  static const MethodChannel conversationsChannel =
+      MethodChannel('channel/conversations');
   static bool isInternetActive = false;
   String _token = "";
   String _signature = "";
@@ -133,10 +135,6 @@ class FusionConnection {
   setSoftphone(Softphone? softphone) {
     _softphone = softphone;
   }
-
-  final channel = WebSocketChannel.connect(
-    Uri.parse('wss://$host:8443'),
-  );
 
   onLogOut(Function callback) {
     _onLogOut = callback;
