@@ -447,7 +447,7 @@ class _SendMessageInputState extends State<SendMessageInput> {
                             textAlignVertical: TextAlignVertical.center,
                             textCapitalization: TextCapitalization.sentences,
                             controller: _messageInputController,
-                            maxLines: 10,
+                            maxLines: 4,
                             minLines: 1,
                             onChanged: (String changedTo) {
                               if (_messageInputController.text.length -
