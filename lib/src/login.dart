@@ -185,42 +185,46 @@ class _LoginViewState extends State<LoginView> {
               _isPending ? SpinKitWave(color: smoke, size: 25) : _loginButton())
     ]));
 
-    return Container(
-        decoration: BoxDecoration(color: Colors.transparent),
-        child: Column(
-          children: [
-            Row(children: [
-              Expanded(
-                  child: Center(
-                      child: Container(
-                          margin: EdgeInsets.only(
-                              top: 48, bottom: 8, left: 56, right: 56),
-                          child: Image.asset("assets/simplii_logo.png")))),
-            ]),
-            Row(children: [
-              Expanded(
-                  child: Center(
-                      child: Container(
-                          margin: EdgeInsets.only(
-                              top: 8, bottom: 8, left: 96, right: 96),
-                          child: Image.asset("assets/fusion.png")))),
-            ]),
-            Row(children: [
-              Expanded(
-                  child: Container(
-                      padding: EdgeInsets.only(
-                          top: 24, left: 32, right: 32, bottom: 36),
-                      decoration: BoxDecoration(
-                          borderRadius: BorderRadius.all(Radius.circular(8)),
-                          boxShadow: tripleShadow(),
-                          border: Border.all(
-                              color: translucentBlack(0.16), width: 1.0),
-                          color: coal), //Color.fromARGB(255, 255, 255, 255)),
-                      margin:
-                          EdgeInsets.only(left: 32.0, right: 32.0, top: 24.0),
-                      child: Column(children: children)))
-            ])
-          ],
-        ));
+    return SingleChildScrollView(
+      padding:
+          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Container(
+          decoration: BoxDecoration(color: Colors.transparent),
+          child: Column(
+            children: [
+              Row(children: [
+                Expanded(
+                    child: Center(
+                        child: Container(
+                            margin: EdgeInsets.only(
+                                top: 48, bottom: 8, left: 56, right: 56),
+                            child: Image.asset("assets/simplii_logo.png")))),
+              ]),
+              Row(children: [
+                Expanded(
+                    child: Center(
+                        child: Container(
+                            margin: EdgeInsets.only(
+                                top: 8, bottom: 8, left: 96, right: 96),
+                            child: Image.asset("assets/fusion.png")))),
+              ]),
+              Row(children: [
+                Expanded(
+                    child: Container(
+                        padding: EdgeInsets.only(
+                            top: 24, left: 32, right: 32, bottom: 36),
+                        decoration: BoxDecoration(
+                            borderRadius: BorderRadius.all(Radius.circular(8)),
+                            boxShadow: tripleShadow(),
+                            border: Border.all(
+                                color: translucentBlack(0.16), width: 1.0),
+                            color: coal), //Color.fromARGB(255, 255, 255, 255)),
+                        margin:
+                            EdgeInsets.only(left: 32.0, right: 32.0, top: 24.0),
+                        child: Column(children: children)))
+              ])
+            ],
+          )),
+    );
   }
 }
