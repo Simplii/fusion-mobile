@@ -24,19 +24,20 @@ dependencies:
   flutter:
     sdk: flutter
   crypto: ^3.0.3
-  firebase_core: ^2.17.0
-  firebase_messaging: ^14.6.9
-  firebase_core_platform_interface: ^4.8.0
-  flutter_dtmf: ^2.0.2
+  firebase_core: ^2.31.0
+  firebase_messaging: ^14.9.2
+  firebase_core_platform_interface: ^5.0.0
+  # flutter_dtmf: ^2.0.2
   flutter_gravatar: ^2.0.2
   ringtone_player: ^0.1.1
-  awesome_notifications: ^0.7.4+1
+  awesome_notifications_core: ^0.9.0
+  awesome_notifications: ^0.8.3
   sip_ua:
     path: "./dart-sip-ua"
   http: ^1.2.1
   keyboard_attachable: ^2.1.0
   web_socket_channel: ^2.4.4
-  flutter_local_notifications: ^16.1.0
+  flutter_local_notifications: ^17.1.0
   cupertino_icons: ^1.0.6
   url_launcher: ^6.2.6
   modal_bottom_sheet: ^2.1.2
@@ -52,13 +53,19 @@ dependencies:
   dotted_border: ^2.1.0
   audioplayers: ^5.2.0
   shared_preferences: ^2.2.1
-  all_sensors: ^0.4.2
-  flutter_background: ^1.2.0
+  # all_sensors: ^0.4.2
+  # flutter_background: ^1.2.0
   overlay_support: ^2.1.0
   path_provider: ^2.1.1
   connectivity_plus: ^5.0.0
   internet_connection_checker: ^1.0.0+1
   flutter_exif_rotation: ^0.5.1
+  feedback: ^3.1.0
+  firebase_crashlytics: ^3.5.5
+  firebase_performance: ^0.9.4+5
+  firebase_analytics: ^10.10.6
+dependency_overrides:
+  intl: ^0.19.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

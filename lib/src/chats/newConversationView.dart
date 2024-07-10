@@ -86,7 +86,13 @@ class _NewMessageViewState extends State<NewMessageView> {
             padding: EdgeInsets.only(top: 0, bottom: 0, right: 0, left: 8),
             height: 36,
             child: FusionDropdown(
-                selectedNumber: newConversationVM.getMyNumber(),
+                //FIXME:
+                // selectedNumber: newConversationVM.getMyNumber(),
+                selectedNumber: groups
+                    .where((element) => element.numbers.isNotEmpty)
+                    .first
+                    .numbers
+                    .first,
                 departments: groups,
                 onChange: newConversationVM.onDepartmentChange,
                 onNumberTap: newConversationVM.onNumberChange,

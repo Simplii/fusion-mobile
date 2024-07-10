@@ -1,3 +1,4 @@
+import 'package:feedback/feedback.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -1016,6 +1017,12 @@ class _MenuState extends State<Menu> {
             }));
   }
 
+  void _reportBug() {
+    BetterFeedback.of(context).show((userFeedback) {
+      print("MDBM ${userFeedback.text} ${userFeedback.screenshot}");
+    });
+  }
+
   void _performLogout() {
     setState(() {
       loggingOut = true;
@@ -1075,6 +1082,17 @@ class _MenuState extends State<Menu> {
             size: 26,
           ),
           trailingWidget: _toggleDND()),
+      _row(
+        "",
+        "Report a bug",
+        "",
+        _reportBug,
+        Icon(
+          Icons.bug_report,
+          color: smoke.withOpacity(0.45),
+          size: 26,
+        ),
+      ),
       if (Platform.isIOS)
         _row(
             "",

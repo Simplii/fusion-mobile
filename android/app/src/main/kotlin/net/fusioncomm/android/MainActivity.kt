@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.telephony.TelephonyManager
 import android.util.Log
 import android.view.KeyEvent
+import com.google.firebase.perf.FirebasePerformance
 import com.google.gson.Gson
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -48,6 +49,11 @@ class MainActivity : FlutterActivity() {
             Compatibility.requestDismissKeyguard(this)
         }
         super.onCreate(savedInstanceState)
+        // Create a custom trace for app startup
+        val startupTrace = FirebasePerformance.getInstance().newTrace("app_startup")
+        startupTrace.start()
+        // Your app initialisation code goes here
+        startupTrace.stop()
         context = this
         audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
         telephonyManager = getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager

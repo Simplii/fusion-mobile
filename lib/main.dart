@@ -4,11 +4,13 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:ui';
 
-import 'package:all_sensors/all_sensors.dart';
+// import 'package:all_sensors/all_sensors.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:firebase_performance/firebase_performance.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -21,6 +23,7 @@ import 'package:fusion_mobile_revamped/src/chats/chats.dart';
 import 'package:fusion_mobile_revamped/src/chats/conversationView.dart';
 import 'package:fusion_mobile_revamped/src/chats/newConversationView.dart';
 import 'package:fusion_mobile_revamped/src/chats/viewModels/chatsVM.dart';
+import 'package:fusion_mobile_revamped/src/components/fusion_bottom_sheet.dart';
 import 'package:fusion_mobile_revamped/src/components/permission_request.dart';
 import 'package:fusion_mobile_revamped/src/dialpad/dialpad_modal.dart';
 import 'package:fusion_mobile_revamped/src/models/contact.dart';
@@ -47,6 +50,7 @@ import 'src/messages/new_message_popup.dart';
 import 'src/messages/sms_conversation_view.dart';
 import 'src/styles.dart';
 import 'src/utils.dart';
+import 'package:feedback/feedback.dart';
 
 final navigatorKey = GlobalKey<NavigatorState>();
 Map<String, dynamic> messageData = {};
@@ -129,7 +133,17 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   FirebaseMessaging.onBackgroundMessage(backgroundMessageHandler); // }
-
+  // Pass all uncaught "fatal" errors from the framework to Crashlytics
+  FlutterError.onError = (errorDetails) {
+    FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
+  };
+  // Pass all uncaught asynchronous errors that aren't handled by the Flutter framework to Crashlytics
+  PlatformDispatcher.instance.onError = (error, stack) {
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    return true;
+  };
+  await FirebasePerformance.instance.setPerformanceCollectionEnabled(true);
+  HttpClient.enableTimelineLogging = true;
   registerNotifications();
   SharedPreferences sharedPrefs = await SharedPreferences.getInstance();
   SystemChrome.setPreferredOrientations(
@@ -147,8 +161,23 @@ Future<void> main() async {
   runApp(OverlaySupport.global(
       child: MaterialApp(
     debugShowCheckedModeBanner: false,
-    home: MyApp(
-      sharedPreferences: sharedPrefs,
+    home: BetterFeedback(
+      feedbackBuilder: (context, onSubmit, scrollController) =>
+          FusionFeedbackSheet(
+        onSubmit: onSubmit,
+        scrollController: scrollController,
+      ),
+      theme: FeedbackThemeData(
+        drawColors: [fusionChats, personalChat, telegramChat, facebookChat],
+        background: char,
+        feedbackSheetColor: coal,
+        bottomSheetTextInputStyle: TextStyle(color: Colors.white),
+        bottomSheetDescriptionStyle: TextStyle(color: Colors.white),
+        dragHandleColor: Colors.white,
+      ),
+      child: MyApp(
+        sharedPreferences: sharedPrefs,
+      ),
     ),
   )));
   // runApp(MaterialApp(home: MyApp()));
@@ -239,7 +268,7 @@ class _MyHomePageState extends State<MyHomePage> {
   bool _logged_in = false;
   bool _callInProgress = false;
   bool _isProximityListening = false;
-  late StreamSubscription<ProximityEvent> _proximitySub;
+  // late StreamSubscription<ProximityEvent> _proximitySub;
   bool flutterBackgroundInitialized = false;
   Function? onMessagePosted;
   late StreamSubscription<ConnectivityResult> connectivitySubscription;
@@ -704,15 +733,15 @@ class _MyHomePageState extends State<MyHomePage> {
         !softphone.isSpeakerEnabled() &&
         !_isProximityListening) {
       _isProximityListening = true;
-      _proximitySub = proximityEvents!.listen((ProximityEvent event) {
-        setState(() {});
-      });
+      // _proximitySub = proximityEvents!.listen((ProximityEvent event) {
+      //   setState(() {});
+      // });
     } else if (_isProximityListening &&
         (softphone.activeCall == null ||
             softphone.getHoldState(softphone.activeCall) ||
             softphone.isSpeakerEnabled())) {
       _isProximityListening = false;
-      _proximitySub.cancel();
+      // _proximitySub.cancel();
     }
 
     if (!_logged_in) {
