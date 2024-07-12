@@ -47,6 +47,7 @@ class ProviderDelegate: NSObject, CXCallObserverDelegate {
     var isBluetoothOn: Bool = false
     var regState: RegistrationState = RegistrationState.None
     var conferenceStarting: Bool = false
+    var loggingServiceManager: LoggingServiceManager
     
     @objc func handleInterruption(notification: Notification) {
         guard let userInfo = notification.userInfo,
@@ -109,7 +110,6 @@ print("audiointerruption")
     
     
     public func setupLinphone() {
-        LoggingService.Instance.logLevel = LogLevel.Debug
         let factory = Factory.Instance
         try! mCore = factory.createCore(configPath: "", factoryConfigPath: "", systemContext: nil)
         try! mCore?.start()
@@ -631,6 +631,7 @@ print("audiointerruption")
     }
     
     public init(channel: FlutterMethodChannel) {
+        loggingServiceManager = LoggingServiceManager()
         provider = CXProvider(configuration: ProviderDelegate.providerConfiguration)
 
         callkitChannel = channel

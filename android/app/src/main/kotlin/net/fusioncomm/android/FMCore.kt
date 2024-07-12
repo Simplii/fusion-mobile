@@ -17,7 +17,6 @@ import android.telephony.SubscriptionManager
 import android.telephony.TelephonyManager
 import android.util.Log
 import androidx.core.app.ActivityCompat
-import androidx.core.content.getSystemService
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
@@ -29,16 +28,29 @@ import io.flutter.plugin.common.MethodChannel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
+import net.fusioncomm.android.http.FMUploadDataProvider
+import net.fusioncomm.android.http.FMUrlRequestCallback
 import net.fusioncomm.android.notifications.NotificationsManager
 import net.fusioncomm.android.telecom.AudioRouteUtils
 import net.fusioncomm.android.telecom.CallsManager
+import org.chromium.net.CronetEngine
+import org.chromium.net.UploadDataProviders
+import org.chromium.net.UrlRequest
 import org.linphone.core.AVPFMode
 import org.linphone.core.AudioDevice
 import org.linphone.core.AuthInfo
 import org.linphone.core.Core
 import org.linphone.core.Factory
+import org.linphone.core.LogLevel
+import org.linphone.core.LoggingService
+import org.linphone.core.LoggingServiceListenerStub
 import org.linphone.core.ProxyConfig
 import org.linphone.core.TransportType
+import java.io.File
+import java.util.concurrent.Executor
+import java.util.concurrent.Executors
 
 
 class FMCore(private val context: Context, private val channel:MethodChannel): LifecycleOwner {
@@ -48,7 +60,7 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
         get() = _lifecycleRegistry
 
     private val factory: Factory = Factory.instance()
-    private val server: String = "services.fusioncom.co"
+    private val server: String = "services.fusioncom.com"
     private val audioManager:AudioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     private val telephonyManager = context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
     private val telephonySubscriptionManager: SubscriptionManager = context.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE) as SubscriptionManager
@@ -56,7 +68,16 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
         "net.fusioncomm.android.fusionValues",
         Context.MODE_PRIVATE
     )
+    private val flutterSharedPref:SharedPreferences = context.getSharedPreferences(
+        "FlutterSharedPreferences",
+        Context.MODE_PRIVATE
+    )
+    val username = flutterSharedPref.getString("flutter.username", "")
     private var crashlytics: FirebaseCrashlytics
+    private val coroutineCallLogger = CoroutineScope(Dispatchers.Main)
+    private lateinit var logFile:File
+    private val executor: Executor = Executors.newSingleThreadExecutor()
+    @SuppressLint("StaticFieldLeak")
     companion object{
         private const val debugTag = "MDBM FMCore"
         lateinit var core:Core
@@ -68,7 +89,7 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
             val applicationInfo = appContext.applicationInfo
             val stringId = applicationInfo.labelRes
             return if (stringId == 0) applicationInfo.nonLocalizedLabel.toString()
-                else "Fusion Mobile"
+            else "Fusion Mobile"
         }
     }
 
@@ -77,8 +98,72 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
         _lifecycleRegistry.currentState = Lifecycle.State.INITIALIZED
         Log.d(debugTag, "Init ${this.lifecycle.currentState}")
         crashlytics = Firebase.crashlytics
-        crashlytics.setUserId("123456789")
+        crashlytics.setUserId("123456789") //FIXME: change this to uid or remove
+        factory.loggingService.setLogLevel(LogLevel.Message)
 
+        val loggingServiceListener = object : LoggingServiceListenerStub() {
+            override fun onLogMessageWritten(
+                logService: LoggingService,
+                domain: String,
+                level: LogLevel,
+                message: String
+            ) {
+                when (level) {
+                    LogLevel.Error ->
+                        writeLogToFile("level:${level.name},package:$domain,message:$message,uid:${username}")
+                    LogLevel.Warning ->
+                        writeLogToFile("level:${level.name},package:$domain,message:$message,uid:${username}")
+                    LogLevel.Message ->
+                        writeLogToFile("level:${level.name},package:$domain,message:$message,uid:${username}")
+                    LogLevel.Fatal ->
+                        writeLogToFile("level:${level.name},package:$domain,message:$message,uid:${username}")
+                    else ->
+                        writeLogToFile("level:${level.name},package:$domain,message:$message,uid:${username}")
+                }
+
+            }
+        }
+        coroutineCallLogger.launch {
+            async {
+                Log.d(debugTag, "log file lookup")
+                val fileDir = context.filesDir
+                val filePath = File(fileDir, "TEXT_LOGGER.txt")
+                if (filePath.exists()) {
+                    // send the file here then delete it
+                    Log.d(debugTag, "File exist, size=${filePath.length()} bytes")
+
+                    for (line in  filePath.readLines()) {
+                        Log.d(debugTag, "$line")
+                    }
+                    val cronetEngine: CronetEngine = CronetEngine.Builder(context).build()
+                    // Enable caching of HTTP data and
+                    // other information like QUIC server information, HTTP/2 protocol and QUIC protocol.
+                    val requestBuilder = cronetEngine.newUrlRequestBuilder(
+                        "https://zaid-fusion-dev.fusioncomm.net/api/v2/logging/log",
+                        FMUrlRequestCallback(),
+                        executor
+                    )
+                    // Content-Type is required, removing it will cause Exception
+                    requestBuilder.addHeader("Content-Type","text/plain; charset=UTF-8")
+                    requestBuilder.setHttpMethod("POST")
+//                    val myUploadDataProvider = UploadDataProviders.create(filePath)
+                    requestBuilder.setUploadDataProvider(FMUploadDataProvider(filePath),executor)
+                    val request: UrlRequest = requestBuilder.build()
+                    request.start()
+                    if(request.isDone) {
+                        filePath.delete()
+                    }
+                }
+                runCatching {
+                    //Creating new txt file.
+                    filePath.createNewFile()
+                    logFile = filePath
+                    factory.loggingService.addListener(loggingServiceListener)
+                }.onFailure {
+                    Log.e(debugTag, "Error creating logFile ${it.message}")
+                }
+            }
+        }
         setupCore()
         setFlutterActionsHandler()
         val started: Int = core.start()
@@ -96,6 +181,12 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
         notificationsManager = NotificationsManager(context, callsManager)
         notificationsManager.onCoreReady()
         Log.d(debugTag, "started ${this.lifecycle.currentState}")
+    }
+
+    fun writeLogToFile(log: String) {
+        val stringBuilderLog = StringBuilder()
+        stringBuilderLog.append(log).append("\n")
+        logFile.appendText(stringBuilderLog.toString())
     }
 
     private fun setupCore() {
