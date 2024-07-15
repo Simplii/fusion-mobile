@@ -27,17 +27,12 @@ import com.google.gson.Gson
 import io.flutter.plugin.common.MethodChannel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
-import net.fusioncomm.android.http.FMUploadDataProvider
-import net.fusioncomm.android.http.FMUrlRequestCallback
+import net.fusioncomm.android.http.Multipart
 import net.fusioncomm.android.notifications.NotificationsManager
 import net.fusioncomm.android.telecom.AudioRouteUtils
 import net.fusioncomm.android.telecom.CallsManager
-import org.chromium.net.CronetEngine
-import org.chromium.net.UploadDataProviders
-import org.chromium.net.UrlRequest
 import org.linphone.core.AVPFMode
 import org.linphone.core.AudioDevice
 import org.linphone.core.AuthInfo
@@ -49,6 +44,7 @@ import org.linphone.core.LoggingServiceListenerStub
 import org.linphone.core.ProxyConfig
 import org.linphone.core.TransportType
 import java.io.File
+import java.net.URL
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 
@@ -74,7 +70,7 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
     )
     val username = flutterSharedPref.getString("flutter.username", "")
     private var crashlytics: FirebaseCrashlytics
-    private val coroutineCallLogger = CoroutineScope(Dispatchers.Main)
+    private val coroutineScope = CoroutineScope(Dispatchers.IO)
     private lateinit var logFile:File
     private val executor: Executor = Executors.newSingleThreadExecutor()
     @SuppressLint("StaticFieldLeak")
@@ -123,7 +119,7 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
 
             }
         }
-        coroutineCallLogger.launch {
+        coroutineScope.launch {
             async {
                 Log.d(debugTag, "log file lookup")
                 val fileDir = context.filesDir
@@ -135,24 +131,23 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
                     for (line in  filePath.readLines()) {
                         Log.d(debugTag, "$line")
                     }
-                    val cronetEngine: CronetEngine = CronetEngine.Builder(context).build()
-                    // Enable caching of HTTP data and
-                    // other information like QUIC server information, HTTP/2 protocol and QUIC protocol.
-                    val requestBuilder = cronetEngine.newUrlRequestBuilder(
-                        "https://zaid-fusion-dev.fusioncomm.net/api/v2/logging/log",
-                        FMUrlRequestCallback(),
-                        executor
+                    val req = Multipart(
+                        URL("https://zaid-fusion-dev.fusioncomm.net/api/v2/logging/log")
                     )
-                    // Content-Type is required, removing it will cause Exception
-                    requestBuilder.addHeader("Content-Type","text/plain; charset=UTF-8")
-                    requestBuilder.setHttpMethod("POST")
-//                    val myUploadDataProvider = UploadDataProviders.create(filePath)
-                    requestBuilder.setUploadDataProvider(FMUploadDataProvider(filePath),executor)
-                    val request: UrlRequest = requestBuilder.build()
-                    request.start()
-                    if(request.isDone) {
-                        filePath.delete()
+                    req.addFilePart("fm_logs6695503dca9ca",filePath,"logs","txt")
+                    req.addHeaderField("Content-Type","multipart/form-data")
+                    val fileUploadListener = object: Multipart.OnFileUploadedListener {
+                        override fun onFileUploadingSuccess(response: String) {
+                            Log.d(debugTag, "upload resp = $response")
+                            filePath.delete()
+                        }
+
+                        override fun onFileUploadingFailed(responseCode: Int) {
+                            Log.e(debugTag, "upload fail statuscode = $responseCode")
+                        }
+
                     }
+                    req.upload(fileUploadListener)
                 }
                 runCatching {
                     //Creating new txt file.
