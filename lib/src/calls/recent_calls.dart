@@ -888,12 +888,12 @@ class _SearchCallsBarState extends State<SearchCallsBar> {
                               // suffixIcon: IconButton(
                               //     onPressed: _testTrace1,
                               //     icon: Icon(Icons.error)),
-                              suffixIcon: IconButton(
-                                  onPressed: () {
-                                    print("MDBM Crash");
-                                    throw Exception("test flutter exception");
-                                  },
-                                  icon: Icon(Icons.error)),
+                              // suffixIcon: IconButton(
+                              //     onPressed: () {
+                              //       print("MDBM Crash");
+                              //       throw Exception("test flutter exception");
+                              //     },
+                              //     icon: Icon(Icons.error)),
                               // suffixIcon: IconButton(
                               //     onPressed: () {
                               //       print("MDBM ANR");

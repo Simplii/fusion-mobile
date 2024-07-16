@@ -48,7 +48,7 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
         get() = _lifecycleRegistry
 
     private val factory: Factory = Factory.instance()
-    private val server: String = "services.fusioncom.co"
+    private val server: String = "services.fusioncomm.net"
     private val audioManager:AudioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     private val telephonyManager = context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
     private val telephonySubscriptionManager: SubscriptionManager = context.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE) as SubscriptionManager
@@ -101,6 +101,7 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
     private fun setupCore() {
         Log.d(debugTag, "setup core")
         core = factory.createCore(null, null, context)
+        factory.setDebugMode(true, "FM")
         core.enableIpv6(false)
         core.stunServer = "turn:$server"
         core.natPolicy?.stunServerUsername = "fuser"
@@ -405,7 +406,7 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
         domain:String,
     ) {
         Log.d(debugTag, "LPRegister FMCOre $username $password $domain ")
-        val transportType = TransportType.Tcp
+        val transportType = TransportType.Tls
         val authInfo =
             factory.createAuthInfo(
                 username,
@@ -420,7 +421,7 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
         val identity = Factory.instance().createAddress("sip:$username@$domain")
         accountParams.identityAddress = identity
 
-        val address = Factory.instance().createAddress("sip:${server}:5060")
+        val address = Factory.instance().createAddress("sip:${server}:5061")
         address?.transport = transportType
         accountParams.serverAddress = address
         accountParams.registerEnabled = true
@@ -464,8 +465,8 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
         val address = core.createAddress(aor)
         proxyConfig.identityAddress = address
 
-        proxyConfig.serverAddr = "<sip:${server}:5060;transport=tcp>"
-        proxyConfig.setRoute("<sip:${server}:5060;transport=tcp>")
+        proxyConfig.serverAddr = "<sip:${server}:5061;transport=tls>"
+        proxyConfig.setRoute("<sip:${server}:5061;transport=tls>")
 
         proxyConfig.realm = authInfo.realm
         proxyConfig.enableRegister(true)
