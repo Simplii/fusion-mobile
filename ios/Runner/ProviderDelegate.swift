@@ -115,7 +115,6 @@ print("audiointerruption")
         try! mCore?.start()
         mCore?.ipv6Enabled = false
         mCore?.nortpTimeout = 0
-
         var mCoreDelegate = CoreDelegateStub( onCallStateChanged: { (core: Core, call: Call, state: Call.State, message: String) in
             // This function will be called each time a call state changes,
             // which includes new incoming/outgoing calls
@@ -196,6 +195,12 @@ print("audiointerruption")
                 self.remoteAddress = call.remoteAddress!.asStringUriOnly()
             } else if (state == .Error) {
                 self.callkitChannel.invokeMethod("lnCallError", arguments: [uuid])
+            }
+        },
+        onLastCallEnded: { (core :Core) in
+            let logsFile = self.loggingServiceManager.fileUrl
+            if(logsFile != nil) {
+                sendLogsToServer(file: logsFile!)
             }
         },
         onAudioDeviceChanged: { (core: Core, device: AudioDevice) in

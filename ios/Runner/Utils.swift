@@ -22,36 +22,51 @@ extension String {
     }
 }
 
+func sendLogsToServer(file:URL){
+    let url = "https://zaid-fusion-dev.fusioncomm.net/api/v2/logging/log"
+    
+    let request = MultipartFormDataRequest(url: URL(string: url)!)
+    do {
+        try request.addDataField(
+            fieldName:  "fm_logs6695503dca9ca",
+            fileName: "logs",
+            data: Data(contentsOf: file),
+            mimeType: "txt"
+        )
+        URLSession.shared.dataTask(
+            with: request,
+            completionHandler: {data, urlResponse, error in
+                if(data != nil) {
+                    do {
+                        let resp:Resp = try JSONDecoder().decode(Resp.self, from: data!)
+                        if (resp.success) {
+                            NSLog("MDBM resp=\(resp.success)")
+                        }
+                    } catch {
+                        NSLog("MDBM Error decoding server resp")
+                    }
+                }
+                NSLog("MDBM File completionHandler error=\(String(describing: error))")
+            }).resume()
+    } catch {
+       NSLog("MDBM Error sending logs to server \(error)")
+    }
+}
+
 
 class LoggingServiceManager: LoggingServiceDelegate {
-
+    let fileManager: FileManager = FileManager.default
+    let userDomain: String = UserDefaults.standard.string(forKey: "domain") ?? ""
     var fileUrl: URL?
     init() {
         LoggingService.Instance.logLevel = LogLevel.Debug
         let loggingService = LoggingService.Instance
         do {
-            let dirUrl = try FileManager.default.url(for: .applicationDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
+            let dirUrl = try fileManager.url(for: .applicationDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
             fileUrl = dirUrl.appendingPathComponent("TEXT_LOGGER").appendingPathExtension("txt")
         } catch {
             NSLog("MDBM ERROR Getting fileUrl")
         }
-        
-//        if(fileUrl != nil && FileManager.default.fileExists(atPath: fileUrl!.path)) {
-//            NSLog("MDBM File exist")
-//            let contents = try! String(contentsOfFile: fileUrl!.path)
-//            let lines = contents.split(separator:"\n")
-//            for line in lines {
-//                print("MDBM line= \(line)")
-//            }
-//            let url = "https://zaid-fusion-dev.fusioncomm.net/api/v2/logging/log"
-//
-//            let request = MultipartFormDataRequest(url: URL(string: url)!)
-//            request.addDataField(fieldName:  "fm_logs6695503dca9ca", fileName: "logs", data: fil, mimeType: mimeType)
-//            URLSession.shared.dataTask(with: request, completionHandler: {data,urlResponse,error in
-//                
-//
-//            }).resume()
-//        }
         loggingService.addDelegate(delegate: self)
     }
 
@@ -79,17 +94,26 @@ class LoggingServiceManager: LoggingServiceDelegate {
             default:
                 levelStr = "unknown"
         }
-        guard let log = "\(levelStr) [\(domain)] \(message)".data(using: .utf8) else {
+        guard let log = "level=\(levelStr),package=[\(domain)],message=\(message),domain=\(userDomain)".data(using: .utf8) else {
             "Unable to convert string to data"
             return
         }
         DispatchQueue.main.async {
             do {
 
-                if FileManager.default.fileExists(atPath: self.fileUrl!.path) {
+                if self.fileManager.fileExists(atPath: self.fileUrl!.path) {
                     if let fileHandle = try? FileHandle(forWritingTo: self.fileUrl!) {
                         fileHandle.seekToEndOfFile()
                         fileHandle.write(log)
+                        
+                        let fileSize = try self.fileManager.attributesOfItem(
+                            atPath: self.fileUrl!.path)[FileAttributeKey.size] as? UInt64
+                        
+                        if(fileSize ?? 0 >= 250000) {
+                            sendLogsToServer(file: self.fileUrl!)
+                            try fileHandle.truncate(atOffset: 0)
+                            NSLog("MDBM file truncated")
+                        }
                         fileHandle.closeFile()
                     }
                 } else {
@@ -104,4 +128,9 @@ class LoggingServiceManager: LoggingServiceDelegate {
     }
 
     
+}
+
+struct Resp: Codable {
+    let success: Bool
+    let error: String?
 }
