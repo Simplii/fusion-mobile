@@ -29,6 +29,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
+import net.fusioncomm.android.FMUtils.Companion.sendLogsToServer
 import net.fusioncomm.android.http.Multipart
 import net.fusioncomm.android.notifications.NotificationsManager
 import net.fusioncomm.android.telecom.AudioRouteUtils
@@ -44,6 +45,7 @@ import org.linphone.core.LoggingServiceListenerStub
 import org.linphone.core.ProxyConfig
 import org.linphone.core.TransportType
 import java.io.File
+import java.io.PrintWriter
 import java.net.URL
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
@@ -106,53 +108,33 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
             ) {
                 when (level) {
                     LogLevel.Error ->
-                        writeLogToFile("level:${level.name},package:$domain,message:$message,uid:${username}")
+                        writeLogToFile("level:${level.name},package:$domain,message:$message,uid:$username")
                     LogLevel.Warning ->
-                        writeLogToFile("level:${level.name},package:$domain,message:$message,uid:${username}")
+                        writeLogToFile("level:${level.name},package:$domain,message:$message,uid:$username")
                     LogLevel.Message ->
-                        writeLogToFile("level:${level.name},package:$domain,message:$message,uid:${username}")
+                        writeLogToFile("level:${level.name},package:$domain,message:$message,uid:$username")
                     LogLevel.Fatal ->
-                        writeLogToFile("level:${level.name},package:$domain,message:$message,uid:${username}")
+                        writeLogToFile("level:${level.name},package:$domain,message:$message,uid:$username")
                     else ->
-                        writeLogToFile("level:${level.name},package:$domain,message:$message,uid:${username}")
+                        writeLogToFile("level:${level.name},package:$domain,message:$message,uid:$username")
                 }
-
             }
         }
         coroutineScope.launch {
             async {
                 Log.d(debugTag, "log file lookup")
                 val fileDir = context.filesDir
-                val filePath = File(fileDir, "TEXT_LOGGER.txt")
-                if (filePath.exists()) {
-                    // send the file here then delete it
-                    Log.d(debugTag, "File exist, size=${filePath.length()} bytes")
-
-                    for (line in  filePath.readLines()) {
-                        Log.d(debugTag, "$line")
-                    }
-                    val req = Multipart(
-                        URL("https://zaid-fusion-dev.fusioncomm.net/api/v2/logging/log")
-                    )
-                    req.addFilePart("fm_logs6695503dca9ca",filePath,"logs","txt")
-                    req.addHeaderField("Content-Type","multipart/form-data")
-                    val fileUploadListener = object: Multipart.OnFileUploadedListener {
-                        override fun onFileUploadingSuccess(response: String) {
-                            Log.d(debugTag, "upload resp = $response")
-                            filePath.delete()
-                        }
-
-                        override fun onFileUploadingFailed(responseCode: Int) {
-                            Log.e(debugTag, "upload fail statuscode = $responseCode")
-                        }
-
-                    }
-                    req.upload(fileUploadListener)
+                val logsFile = File(fileDir, "TEXT_LOGGER.txt")
+                if (logsFile.exists()) {
+                    Log.d(debugTag, "log file exist")
+                    // Send logs to server and empty the file
+                    sendLogsToServer(logsFile, truncateFile = true)
+                } else {
+                    //Create new logs file.
+                    logsFile.createNewFile()
                 }
                 runCatching {
-                    //Creating new txt file.
-                    filePath.createNewFile()
-                    logFile = filePath
+                    logFile = logsFile
                     factory.loggingService.addListener(loggingServiceListener)
                 }.onFailure {
                     Log.e(debugTag, "Error creating logFile ${it.message}")
@@ -178,10 +160,15 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
         Log.d(debugTag, "started ${this.lifecycle.currentState}")
     }
 
-    fun writeLogToFile(log: String) {
+    private fun writeLogToFile(log: String) {
         val stringBuilderLog = StringBuilder()
         stringBuilderLog.append(log).append("\n")
         logFile.appendText(stringBuilderLog.toString())
+        if(logFile.length() >= 250000) {
+            coroutineScope.launch {
+                sendLogsToServer(logFile, true)
+            }
+        }
     }
 
     private fun setupCore() {

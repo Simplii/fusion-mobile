@@ -22,6 +22,7 @@ import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import net.fusioncomm.android.FMUtils.Companion.sendLogsToServer
 import net.fusioncomm.android.FusionMobileApplication.Companion.engine
 import net.fusioncomm.android.compatibility.Compatibility
 import net.fusioncomm.android.flutterViewModels.ConversationVM
@@ -167,36 +168,9 @@ class MainActivity : FlutterActivity() {
             Log.d("MDBM", "last call ended")
             coroutineScope.launch {
                 val fileDir = context.filesDir
-                val filePath = File(fileDir, "TEXT_LOGGER.txt")
-                if (filePath.exists()) {
-                    // send the file here then delete it
-                    Log.d(debugTag, "File exist, size=${filePath.length()} bytes")
-
-                    for (line in  filePath.readLines()) {
-                        Log.d(debugTag, "$line")
-                    }
-                    val req = Multipart(
-                        URL("https://zaid-fusion-dev.fusioncomm.net/api/v2/logging/log")
-                    )
-                    req.addFilePart("fm_logs6695503dca9ca",filePath,"logs","txt")
-                    req.addHeaderField("Content-Type","multipart/form-data")
-                    val fileUploadListener = object: Multipart.OnFileUploadedListener {
-                        override fun onFileUploadingSuccess(response: String) {
-                            Log.d(debugTag, "upload resp = $response")
-                            Log.d(debugTag, "file size = ${filePath.length()}")
-                            val writer = PrintWriter(filePath)
-                            writer.print("")
-                            writer.close()
-                            Log.d(debugTag, "file size after upload = ${filePath.length()}")
-
-                        }
-
-                        override fun onFileUploadingFailed(responseCode: Int) {
-                            Log.e(debugTag, "upload fail statuscode = $responseCode")
-                        }
-
-                    }
-                    req.upload(fileUploadListener)
+                val logsFile = File(fileDir, "TEXT_LOGGER.txt")
+                if (logsFile.exists()) {
+                   sendLogsToServer(logsFile, truncateFile = true)
                 }
             }
             super.onLastCallEnded(core)
