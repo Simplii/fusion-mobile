@@ -7,6 +7,7 @@
 
 import Foundation
 import linphonesw
+import os
 
 extension String {
     func applyPatternOnNumbers(pattern: String, replacementCharacter: Character) -> String {
@@ -24,11 +25,11 @@ extension String {
 
 func sendLogsToServer(file:URL){
     let url = "https://zaid-fusion-dev.fusioncomm.net/api/v2/logging/log"
-    
     let request = MultipartFormDataRequest(url: URL(string: url)!)
+
     do {
         try request.addDataField(
-            fieldName:  "fm_logs6695503dca9ca",
+            fieldName: "fm_logs6695503dca9ca",
             fileName: "logs",
             data: Data(contentsOf: file),
             mimeType: "txt"
@@ -41,15 +42,40 @@ func sendLogsToServer(file:URL){
                         let resp:Resp = try JSONDecoder().decode(Resp.self, from: data!)
                         if (resp.success) {
                             NSLog("MDBM resp=\(resp.success)")
+                            if #available(iOS 14.0, *) {
+                                let logger =
+                                    Logger(subsystem: Bundle.main.bundleIdentifier!, category: "LoggingService")
+                                logger.debug("MDBM resp=\(resp.success)")
+                            } else {
+                                NSLog("MDBM resp=\(resp.success)")
+                            }
                         }
                     } catch {
-                        NSLog("MDBM Error decoding server resp")
+                        if #available(iOS 14.0, *) {
+                            let logger =
+                                Logger(subsystem: Bundle.main.bundleIdentifier!, category: "LoggingService")
+                            logger.error("MDBM Error decoding server message \(error)")
+                        } else {
+                            NSLog("MDBM Error decoding server message \(error)")
+                        }
                     }
                 }
-                NSLog("MDBM File completionHandler error=\(String(describing: error))")
+                if #available(iOS 14.0, *) {
+                    let logger =
+                        Logger(subsystem: Bundle.main.bundleIdentifier!, category: "LoggingService")
+                    logger.error("MDBM resposen error=\(String(describing: error))")
+                } else {
+                    NSLog("MDBM resposen error=\(String(describing: error))")
+                }
             }).resume()
     } catch {
-       NSLog("MDBM Error sending logs to server \(error)")
+        if #available(iOS 14.0, *) {
+            let logger =
+                Logger(subsystem: Bundle.main.bundleIdentifier!, category: "LoggingService")
+            logger.error("MDBM Error sending logs to server \(error)")
+        } else {
+            NSLog("MDBM Error sending logs to server \(error)")
+        }
     }
 }
 
@@ -62,10 +88,15 @@ class LoggingServiceManager: LoggingServiceDelegate {
         LoggingService.Instance.logLevel = LogLevel.Debug
         let loggingService = LoggingService.Instance
         do {
-            let dirUrl = try fileManager.url(for: .applicationDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
+            let dirUrl = try fileManager.url(
+                for: .documentDirectory,
+                in: .userDomainMask,
+                appropriateFor: nil,
+                create: true
+            )
             fileUrl = dirUrl.appendingPathComponent("TEXT_LOGGER").appendingPathExtension("txt")
         } catch {
-            NSLog("MDBM ERROR Getting fileUrl")
+            print("MDBM ERROR Getting fileUrl")
         }
         loggingService.addDelegate(delegate: self)
     }
@@ -100,7 +131,14 @@ class LoggingServiceManager: LoggingServiceDelegate {
         }
         DispatchQueue.main.async {
             do {
-
+                if(self.fileUrl == nil) {
+                    throw NSError(
+                        domain: "FM",
+                        code: NSFileNoSuchFileError ,
+                        userInfo: [NSLocalizedDescriptionKey: "log file is nil"]
+                    )
+                }
+                
                 if self.fileManager.fileExists(atPath: self.fileUrl!.path) {
                     if let fileHandle = try? FileHandle(forWritingTo: self.fileUrl!) {
                         fileHandle.seekToEndOfFile()
@@ -112,22 +150,25 @@ class LoggingServiceManager: LoggingServiceDelegate {
                         if(fileSize ?? 0 >= 250000) {
                             sendLogsToServer(file: self.fileUrl!)
                             try fileHandle.truncate(atOffset: 0)
-                            NSLog("MDBM file truncated")
+                            print("MDBM file truncated")
                         }
                         fileHandle.closeFile()
                     }
                 } else {
                     try? log.write(to: self.fileUrl!, options: .atomic)
                 }
+                
             } catch {
-                NSLog("MDBM Error writing logs to file \(error)")
+                if #available(iOS 14.0, *) {
+                    let logger =
+                        Logger(subsystem: Bundle.main.bundleIdentifier!, category: "LoggingService")
+                    logger.log("MDBM Error writing logs to file \(error)")
+                } else {
+                    NSLog("MDBM ERROR Getting fileUrl")
+                }
             }
         }
-       
-        
     }
-
-    
 }
 
 struct Resp: Codable {

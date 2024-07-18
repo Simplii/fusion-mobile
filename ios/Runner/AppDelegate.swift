@@ -17,6 +17,8 @@ import Foundation
     var callInfoEventChannel: FlutterEventChannel?
     var contactsProvider: ContactsProvider?
     var conversationsChannel: FlutterMethodChannel?
+    var loggingServiceManager = LoggingServiceManager()
+    
     var timer = Timer()
     
     static func shared() -> AppDelegate {
@@ -111,7 +113,7 @@ import Foundation
         print("providerpush app delegate starting")
         
         setupCallkitFlutterLink()
-        providerDelegate = ProviderDelegate(channel: callkitChannel)
+        providerDelegate = ProviderDelegate(channel: callkitChannel, loggingService: loggingServiceManager)
         contactsProvider = ContactsProvider(channel: contactsChannel)
         ConversationsVM(conversationsMethodChannel: conversationsChannel)
         let callQualityStream = CallInfoStream(providerDelegate: providerDelegate)

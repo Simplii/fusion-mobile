@@ -47,7 +47,7 @@ class ProviderDelegate: NSObject, CXCallObserverDelegate {
     var isBluetoothOn: Bool = false
     var regState: RegistrationState = RegistrationState.None
     var conferenceStarting: Bool = false
-    var loggingServiceManager: LoggingServiceManager
+    let loggingServiceManager :LoggingServiceManager
     
     @objc func handleInterruption(notification: Notification) {
         guard let userInfo = notification.userInfo,
@@ -198,9 +198,16 @@ print("audiointerruption")
             }
         },
         onLastCallEnded: { (core :Core) in
-            let logsFile = self.loggingServiceManager.fileUrl
-            if(logsFile != nil) {
-                sendLogsToServer(file: logsFile!)
+            if(self.loggingServiceManager.fileUrl != nil) {
+                sendLogsToServer(file: self.loggingServiceManager.fileUrl!)
+                do {
+                    if let fileHandle = try? FileHandle(forWritingTo: self.loggingServiceManager.fileUrl!) {
+                        try fileHandle.truncate(atOffset: 0)
+                        fileHandle.closeFile()
+                    }
+                } catch {
+                    NSLog("MDBM error trying to truncate logs file after call ended")
+                }
             }
         },
         onAudioDeviceChanged: { (core: Core, device: AudioDevice) in
@@ -635,10 +642,9 @@ print("audiointerruption")
         }
     }
     
-    public init(channel: FlutterMethodChannel) {
-        loggingServiceManager = LoggingServiceManager()
+    public init(channel: FlutterMethodChannel, loggingService :LoggingServiceManager) {
         provider = CXProvider(configuration: ProviderDelegate.providerConfiguration)
-
+        loggingServiceManager = loggingService
         callkitChannel = channel
         super.init()
         setupLinphone();
