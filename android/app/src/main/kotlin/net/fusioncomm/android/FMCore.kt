@@ -74,7 +74,7 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
     private var crashlytics: FirebaseCrashlytics
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
     private lateinit var logFile:File
-    private val executor: Executor = Executors.newSingleThreadExecutor()
+
     @SuppressLint("StaticFieldLeak")
     companion object{
         private const val debugTag = "MDBM FMCore"
@@ -128,7 +128,7 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
                 if (logsFile.exists()) {
                     Log.d(debugTag, "log file exist")
                     // Send logs to server and empty the file
-                    sendLogsToServer(logsFile, truncateFile = true)
+                    sendLogsToServer(logsFile, truncateFile = true, context= context)
                 } else {
                     //Create new logs file.
                     logsFile.createNewFile()
@@ -166,7 +166,7 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
         logFile.appendText(stringBuilderLog.toString())
         if(logFile.length() >= 250000) {
             coroutineScope.launch {
-                sendLogsToServer(logFile, true)
+                sendLogsToServer(logFile, truncateFile = true,context= context)
             }
         }
     }

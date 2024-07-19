@@ -1,16 +1,16 @@
 package net.fusioncomm.android.http
 
+import android.util.Log
 import java.io.IOException
 import java.io.*
 import java.net.HttpURLConnection
 import java.net.URL
-/*  
+/*
     Created by Zaid Jamil.
 */
-class Multipart(val url:URL) {
-
+class Multipart(private val url:URL, requestHeaders: Array<Map<String,String>>) {
         companion object {
-            private val LINE_FEED = "\r\n"
+            private const val LINE_FEED = "\r\n"
             private val maxBufferSize = 1024 * 1024
             private val charset = "UTF-8"
         }
@@ -28,8 +28,12 @@ class Multipart(val url:URL) {
             httpConnection.setRequestProperty("Cache-Control", "no-cache")
             httpConnection.setRequestProperty(
                 "Content-Type",
-                "multipart/form-data; boundary=" + boundary
+                "multipart/form-data; boundary=$boundary"
             )
+            for (header in requestHeaders) {
+                httpConnection.setRequestProperty("X-fusion-uid", header["X-fusion-uid"])
+                httpConnection.setRequestProperty("Authorization", header["Authorization"])
+            }
             httpConnection.setChunkedStreamingMode(maxBufferSize)
             httpConnection.doInput = true
             httpConnection.doOutput = true    // indicates POST method
@@ -86,7 +90,8 @@ class Multipart(val url:URL) {
          * @param value - value of the header field
          */
         fun addHeaderField(name: String, value: String) {
-            writer.append(name + ": " + value).append(LINE_FEED)
+            writer.append("$name: $value")
+            writer.append(LINE_FEED)
             writer.flush()
         }
 
@@ -107,17 +112,12 @@ class Multipart(val url:URL) {
                 // checks server's status code first
                 val status = httpConnection.responseCode
                 if (status == HttpURLConnection.HTTP_OK) {
-                    val reader = BufferedReader(
-                        InputStreamReader(
-                            httpConnection
-                                .inputStream
-                        )
-                    )
+                    val reader = BufferedReader(InputStreamReader(httpConnection.inputStream))
                     val response = reader.use(BufferedReader::readText)
                     httpConnection.disconnect()
                     onFileUploadedListener?.onFileUploadingSuccess(response)
                 } else {
-                    onFileUploadedListener?.onFileUploadingFailed(status)
+                    onFileUploadedListener?.onFileUploadingFailed(status, httpConnection.headerFields)
                 }
 
             } catch (e: IOException) {
@@ -129,6 +129,6 @@ class Multipart(val url:URL) {
         interface OnFileUploadedListener {
             fun onFileUploadingSuccess(response: String)
 
-            fun onFileUploadingFailed(responseCode: Int)
+            fun onFileUploadingFailed(responseCode: Int, headers:Map<String,List<String>>? = null)
         }
 }

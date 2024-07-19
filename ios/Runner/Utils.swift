@@ -8,6 +8,7 @@
 import Foundation
 import linphonesw
 import os
+import CryptoKit
 
 extension String {
     func applyPatternOnNumbers(pattern: String, replacementCharacter: Character) -> String {
@@ -25,7 +26,18 @@ extension String {
 
 func sendLogsToServer(file:URL){
     let url = "https://zaid-fusion-dev.fusioncomm.net/api/v2/logging/log"
-    let request = MultipartFormDataRequest(url: URL(string: url)!)
+    let token = ""
+    let signature = ""
+    let username = ""
+    let digest = Insecure.MD5.hash(data: Data("\(token):\(username):/api/v2/logging/log::\(signature)".utf8))
+    let authToken = digest.map {
+        String(format: "%02hhx", $0)
+    }.joined()
+    
+    let request = MultipartFormDataRequest(url: URL(string: url)!,requestHeaders: [
+        ["X-fusion-uid":""],
+        ["Authorization": ""]
+    ])
 
     do {
         try request.addDataField(

@@ -10,10 +10,12 @@ import Foundation
 struct MultipartFormDataRequest {
     private let boundary: String = UUID().uuidString
     var httpBody = NSMutableData()
+    var headers : [[String:String]]
     let url: URL
     
-    init(url: URL) {
+    init(url: URL, requestHeaders: [[String:String]]) {
         self.url = url
+        self.headers = requestHeaders
     }
     
     func addTextField(named name: String, value: String) {

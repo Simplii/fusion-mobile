@@ -170,7 +170,7 @@ class MainActivity : FlutterActivity() {
                 val fileDir = context.filesDir
                 val logsFile = File(fileDir, "TEXT_LOGGER.txt")
                 if (logsFile.exists()) {
-                   sendLogsToServer(logsFile, truncateFile = true)
+                   sendLogsToServer(logsFile, truncateFile = true, context= context)
                 }
             }
             super.onLastCallEnded(core)
