@@ -55,7 +55,14 @@ struct MultipartFormDataRequest {
     
     func asURLRequest() -> URLRequest {
         var request = URLRequest(url: url)
-        
+        headers.forEach { it in
+            if(it["X-fusion-uid"] != nil) {
+                request.setValue(it["X-fusion-uid"], forHTTPHeaderField: "X-fusion-uid")
+            }
+            if(it["Authorization"] != nil) {
+                request.setValue(it["Authorization"], forHTTPHeaderField: "Authorization")
+            }
+        }
         request.httpMethod = "POST"
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
         

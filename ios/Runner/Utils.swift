@@ -24,19 +24,21 @@ extension String {
     }
 }
 
-func sendLogsToServer(file:URL){
+func sendLogsToServer(file:URL, retry:Int = 0, newSignature:String = ""){
     let url = "https://zaid-fusion-dev.fusioncomm.net/api/v2/logging/log"
-    let token = ""
-    let signature = ""
-    let username = ""
+    let username:String = UserDefaults.standard.string(forKey: "flutter.username") ?? ""
+    let token:String = UserDefaults.standard.string(forKey: "flutter.token") ?? ""
+    let signature:String = newSignature.isEmpty
+        ? UserDefaults.standard.string(forKey: "flutter.signature") ?? ""
+        : newSignature
     let digest = Insecure.MD5.hash(data: Data("\(token):\(username):/api/v2/logging/log::\(signature)".utf8))
     let authToken = digest.map {
         String(format: "%02hhx", $0)
     }.joined()
     
     let request = MultipartFormDataRequest(url: URL(string: url)!,requestHeaders: [
-        ["X-fusion-uid":""],
-        ["Authorization": ""]
+        ["X-fusion-uid": username],
+        ["Authorization": authToken]
     ])
 
     do {
@@ -49,35 +51,42 @@ func sendLogsToServer(file:URL){
         URLSession.shared.dataTask(
             with: request,
             completionHandler: {data, urlResponse, error in
-                if(data != nil) {
-                    do {
-                        let resp:Resp = try JSONDecoder().decode(Resp.self, from: data!)
-                        if (resp.success) {
-                            NSLog("MDBM resp=\(resp.success)")
+                let httpResponse = urlResponse as? HTTPURLResponse
+                if(httpResponse?.statusCode == 401) {
+                    if(retry < 5) {
+                        let newSig = httpResponse?.value(forHTTPHeaderField: "X-Fusion-Signature")
+                        if(newSig != nil){
+                            sendLogsToServer(file: file, retry: retry + 1, newSignature: newSig!)
+                        } else {
+                            NSLog("MDBM newSig is nil")
+                        }
+                    } else {
+                        NSLog("MDBM retied \(retry) times headers=\(httpResponse?.allHeaderFields)")
+                    }
+                } else {
+                    if(data != nil) {
+                        do {
+                            let resp:Resp = try JSONDecoder().decode(Resp.self, from: data!)
+                            if (resp.success) {
+                                NSLog("MDBM resp=\(resp.success)")
+                                if #available(iOS 14.0, *) {
+                                    let logger =
+                                        Logger(subsystem: Bundle.main.bundleIdentifier!, category: "LoggingService")
+                                    logger.debug("MDBM resp=\(resp.success)")
+                                } else {
+                                    NSLog("MDBM resp=\(resp.success)")
+                                }
+                            }
+                        } catch {
                             if #available(iOS 14.0, *) {
                                 let logger =
                                     Logger(subsystem: Bundle.main.bundleIdentifier!, category: "LoggingService")
-                                logger.debug("MDBM resp=\(resp.success)")
+                                logger.error("MDBM Error decoding server message \(error)")
                             } else {
-                                NSLog("MDBM resp=\(resp.success)")
+                                NSLog("MDBM Error decoding server message \(error)")
                             }
                         }
-                    } catch {
-                        if #available(iOS 14.0, *) {
-                            let logger =
-                                Logger(subsystem: Bundle.main.bundleIdentifier!, category: "LoggingService")
-                            logger.error("MDBM Error decoding server message \(error)")
-                        } else {
-                            NSLog("MDBM Error decoding server message \(error)")
-                        }
                     }
-                }
-                if #available(iOS 14.0, *) {
-                    let logger =
-                        Logger(subsystem: Bundle.main.bundleIdentifier!, category: "LoggingService")
-                    logger.error("MDBM resposen error=\(String(describing: error))")
-                } else {
-                    NSLog("MDBM resposen error=\(String(describing: error))")
                 }
             }).resume()
     } catch {
@@ -159,7 +168,7 @@ class LoggingServiceManager: LoggingServiceDelegate {
                         let fileSize = try self.fileManager.attributesOfItem(
                             atPath: self.fileUrl!.path)[FileAttributeKey.size] as? UInt64
                         
-                        if(fileSize ?? 0 >= 250000) {
+                        if(fileSize ?? 0 >= 11000) {
                             sendLogsToServer(file: self.fileUrl!)
                             try fileHandle.truncate(atOffset: 0)
                             print("MDBM file truncated")
