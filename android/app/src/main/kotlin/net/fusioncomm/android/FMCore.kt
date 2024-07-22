@@ -30,7 +30,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import net.fusioncomm.android.FMUtils.Companion.sendLogsToServer
-import net.fusioncomm.android.http.Multipart
 import net.fusioncomm.android.notifications.NotificationsManager
 import net.fusioncomm.android.telecom.AudioRouteUtils
 import net.fusioncomm.android.telecom.CallsManager
@@ -45,10 +44,6 @@ import org.linphone.core.LoggingServiceListenerStub
 import org.linphone.core.ProxyConfig
 import org.linphone.core.TransportType
 import java.io.File
-import java.io.PrintWriter
-import java.net.URL
-import java.util.concurrent.Executor
-import java.util.concurrent.Executors
 
 
 class FMCore(private val context: Context, private val channel:MethodChannel): LifecycleOwner {
@@ -58,7 +53,7 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
         get() = _lifecycleRegistry
 
     private val factory: Factory = Factory.instance()
-    private val server: String = "services.fusioncom.com"
+    private val server: String = "services.fusioncom.co"
     private val audioManager:AudioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     private val telephonyManager = context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
     private val telephonySubscriptionManager: SubscriptionManager = context.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE) as SubscriptionManager
@@ -87,7 +82,7 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
             val applicationInfo = appContext.applicationInfo
             val stringId = applicationInfo.labelRes
             return if (stringId == 0) applicationInfo.nonLocalizedLabel.toString()
-            else "Fusion Mobile"
+                else "Fusion Mobile"
         }
     }
 
@@ -96,7 +91,7 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
         _lifecycleRegistry.currentState = Lifecycle.State.INITIALIZED
         Log.d(debugTag, "Init ${this.lifecycle.currentState}")
         crashlytics = Firebase.crashlytics
-        crashlytics.setUserId("123456789") //FIXME: change this to uid or remove
+        crashlytics.setUserId(username ?: "FM_Unknown_user")
         factory.loggingService.setLogLevel(LogLevel.Message)
 
         val loggingServiceListener = object : LoggingServiceListenerStub() {

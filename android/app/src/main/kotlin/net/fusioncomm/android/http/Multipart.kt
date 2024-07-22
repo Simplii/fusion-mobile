@@ -1,14 +1,15 @@
 package net.fusioncomm.android.http
 
-import android.util.Log
 import java.io.IOException
 import java.io.*
 import java.net.HttpURLConnection
 import java.net.URL
+
 /*
     Created by Zaid Jamil.
 */
-class Multipart(private val url:URL, requestHeaders: Array<Map<String,String>>) {
+
+class Multipart(url:URL, requestHeaders: Array<Map<String,String>>) {
         companion object {
             private const val LINE_FEED = "\r\n"
             private val maxBufferSize = 1024 * 1024

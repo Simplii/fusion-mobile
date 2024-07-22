@@ -165,7 +165,6 @@ class MainActivity : FlutterActivity() {
 
     private val coreListener = object : CoreListenerStub() {
         override fun onLastCallEnded(core: Core) {
-            Log.d("MDBM", "last call ended")
             coroutineScope.launch {
                 val fileDir = context.filesDir
                 val logsFile = File(fileDir, "TEXT_LOGGER.txt")

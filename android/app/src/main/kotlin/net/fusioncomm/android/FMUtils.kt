@@ -5,14 +5,10 @@ import android.content.SharedPreferences
 import android.util.Log
 import net.fusioncomm.android.http.Multipart
 import org.linphone.core.Address
-import org.linphone.core.Headers
 import java.io.File
 import java.io.PrintWriter
 import java.net.URL
-import java.math.BigInteger
-import java.net.HttpURLConnection
 import java.security.MessageDigest
-import java.security.Signature
 
 class FMUtils {
     companion object {
