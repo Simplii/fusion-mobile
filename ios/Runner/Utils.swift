@@ -168,7 +168,7 @@ class LoggingServiceManager: LoggingServiceDelegate {
                         let fileSize = try self.fileManager.attributesOfItem(
                             atPath: self.fileUrl!.path)[FileAttributeKey.size] as? UInt64
                         
-                        if(fileSize ?? 0 >= 11000) {
+                        if(fileSize ?? 0 >= 250000) {
                             sendLogsToServer(file: self.fileUrl!)
                             try fileHandle.truncate(atOffset: 0)
                             print("MDBM file truncated")
