@@ -58,7 +58,7 @@ class FMUtils {
                 mapOf(Pair("Authorization", "Bearer $authToken")),
             )
             val req = Multipart(
-                URL("https://zaid-fusion-dev.fusioncomm.net/api/v2/logging/log"),
+                URL("https://fusioncom.co/api/v2/logging/log"),
                 requestHeaders
             )
             req.addFormField("username", username)

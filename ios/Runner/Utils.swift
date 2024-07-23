@@ -25,7 +25,7 @@ extension String {
 }
 
 func sendLogsToServer(file:URL, retry:Int = 0, newSignature:String = ""){
-    let url = "https://zaid-fusion-dev.fusioncomm.net/api/v2/logging/log"
+    let url = "https://fusioncom.co/api/v2/logging/log"
     let username:String = UserDefaults.standard.string(forKey: "flutter.username") ?? ""
     let token:String = UserDefaults.standard.string(forKey: "flutter.token") ?? ""
     let signature:String = newSignature.isEmpty
