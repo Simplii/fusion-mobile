@@ -251,7 +251,7 @@ class MyHomePage extends StatefulWidget {
   _MyHomePageState createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
   SharedPreferences get sharedPreferences => widget.sharedPreferences;
   Softphone get softphone => widget.softphone;
 
@@ -275,6 +275,7 @@ class _MyHomePageState extends State<MyHomePage> {
   ConnectivityResult connectionStatus = ConnectivityResult.none;
   bool relogin = false;
   bool requestPermission = false;
+  static const platform = MethodChannel('net.fusioncomm.android/intents');
 
   _logOut() {
     sharedPreferences.remove('username');
@@ -296,8 +297,16 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      checkCallIntents();
+    }
+  }
+
+  @override
   initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     receivedMsg = "";
     fusionConnection.onLogOut(_logOut);
     softphone.onUpdate(() {
@@ -314,6 +323,7 @@ class _MyHomePageState extends State<MyHomePage> {
     fusionConnection.setRefreshUi(() {
       this.setState(() {});
     });
+    checkCallIntents();
     connectivitySubscription =
         fusionConnection.connectivity.onConnectivityChanged.listen(
       _updateConnectionStatus,
@@ -341,9 +351,19 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  Future<void> checkCallIntents() async {
+    String? numberToDial = await platform.invokeMethod('checkCallIntents');
+    if (numberToDial != null) {
+      setState(() {
+        _openDialPad(numberToDial: numberToDial);
+      });
+    }
+  }
+
   @override
   dispose() {
     connectivitySubscription.cancel();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
@@ -669,12 +689,16 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  void _openDialPad() {
+  void _openDialPad({String? numberToDial = null}) {
     showModalBottomSheet(
         context: context,
         backgroundColor: Colors.transparent,
         isScrollControlled: true,
-        builder: (context) => DialPadModal(fusionConnection, softphone));
+        builder: (context) => DialPadModal(
+              fusionConnection,
+              softphone,
+              numberToDial: numberToDial,
+            ));
   }
 
   void _openCallView() {
