@@ -97,6 +97,7 @@ class MainActivity : FlutterActivity() {
             debugTag,"Handling intent action [${intent.action}], type [${intent.type}], data [${intent.data}] and has ${if (hasExtra) "extras" else "no extra"}"
         )
         Log.d(debugTag, "extras= $extras data=${intent.data}")
+        checkAnswerCallIntent()
         val action = intent.action ?: return
         when (action) {
 //            Intent.ACTION_SEND -> {
@@ -109,7 +110,7 @@ class MainActivity : FlutterActivity() {
                 handleCallIntent(intent)
             }
             else -> {
-                checkAnswerCallIntent(intent)
+                return
             }
         }
     }
