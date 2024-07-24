@@ -15,19 +15,26 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.EventChannel.EventSink
 import io.flutter.plugin.common.MethodChannel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import net.fusioncomm.android.FMUtils.Companion.sendLogsToServer
 import net.fusioncomm.android.FusionMobileApplication.Companion.engine
 import net.fusioncomm.android.compatibility.Compatibility
 import net.fusioncomm.android.flutterViewModels.ConversationVM
+import net.fusioncomm.android.http.Multipart
 import net.fusioncomm.android.notifications.NotificationsManager
 import net.fusioncomm.android.telecom.AudioRouteUtils
 import net.fusioncomm.android.telecom.CallQualityStream
 import net.fusioncomm.android.telecom.CallsManager
 import org.linphone.core.*
+import java.io.File
+import java.io.PrintWriter
+import java.net.URL
 
 class MainActivity : FlutterActivity() {
     private val debugTag = "MDBM MainActivity"
@@ -41,7 +48,7 @@ class MainActivity : FlutterActivity() {
     private lateinit var audioManager:AudioManager
     private lateinit var telephonyManager: TelephonyManager
     private val callInfoStream = CallQualityStream()
-
+    private val coroutineScope = CoroutineScope(Dispatchers.IO)
     override fun onCreate(savedInstanceState: Bundle?) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             Compatibility.setShowWhenLocked(this, true)
@@ -158,7 +165,13 @@ class MainActivity : FlutterActivity() {
 
     private val coreListener = object : CoreListenerStub() {
         override fun onLastCallEnded(core: Core) {
-            Log.d("MDBM", "last call ended")
+            coroutineScope.launch {
+                val fileDir = context.filesDir
+                val logsFile = File(fileDir, "TEXT_LOGGER.txt")
+                if (logsFile.exists()) {
+                   sendLogsToServer(logsFile, truncateFile = true, context= context)
+                }
+            }
             super.onLastCallEnded(core)
         }
 

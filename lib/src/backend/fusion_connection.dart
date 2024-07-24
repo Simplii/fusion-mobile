@@ -880,7 +880,7 @@ class FusionConnection {
     _username = username;
     _domain = _username.split('@')[1];
     _extension = _username.split('@')[0];
-    developer.log("autoLogin t=$_token s=$_signature u=$_username", name: _TAG);
+    print("autoLogin t=$_token s=$_signature u=$_username");
     if (_token.isEmpty || _signature.isEmpty) return logout();
     loadDomainOptions();
   }

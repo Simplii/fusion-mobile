@@ -24,6 +24,7 @@
 		B87204092B1E939700D12701 /* AppIntentVocabulary.plist in Resources */ = {isa = PBXBuildFile; fileRef = B87204082B1E939700D12701 /* AppIntentVocabulary.plist */; };
 		B872040A2B1E939700D12701 /* AppIntentVocabulary.plist in Resources */ = {isa = PBXBuildFile; fileRef = B87204082B1E939700D12701 /* AppIntentVocabulary.plist */; };
 		B875D6E52AEB133B00E376F4 /* ContactsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B875D6E42AEB133B00E376F4 /* ContactsProvider.swift */; };
+		B877DF712C45D2FC00EC1BAC /* MultipartFormDataRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B877DF702C45D2FC00EC1BAC /* MultipartFormDataRequest.swift */; };
 		B884B694292D5CCF00205021 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = B884B693292D5CCF00205021 /* GoogleService-Info.plist */; };
 		B889E5D12C12475800C25C35 /* AudioRouteUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = B889E5D02C12475800C25C35 /* AudioRouteUtils.swift */; };
 		B88D87B32C29D4D8009867D0 /* ConversationsVM.swift in Sources */ = {isa = PBXBuildFile; fileRef = B88D87B22C29D4D8009867D0 /* ConversationsVM.swift */; };
@@ -91,6 +92,7 @@
 		B87203FA2B1E888600D12701 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B87204082B1E939700D12701 /* AppIntentVocabulary.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = AppIntentVocabulary.plist; sourceTree = "<group>"; };
 		B875D6E42AEB133B00E376F4 /* ContactsProvider.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ContactsProvider.swift; sourceTree = "<group>"; };
+		B877DF702C45D2FC00EC1BAC /* MultipartFormDataRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultipartFormDataRequest.swift; sourceTree = "<group>"; };
 		B884B693292D5CCF00205021 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		B889E5D02C12475800C25C35 /* AudioRouteUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRouteUtils.swift; sourceTree = "<group>"; };
 		B88D87B22C29D4D8009867D0 /* ConversationsVM.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationsVM.swift; sourceTree = "<group>"; };
@@ -167,6 +169,7 @@
 		97C146F01CF9000F007C117D /* Runner */ = {
 			isa = PBXGroup;
 			children = (
+				B877DF6F2C45D2DF00EC1BAC /* http */,
 				B88D87B12C29D4BA009867D0 /* ViewModels */,
 				B889E5CF2C12473300C25C35 /* utils */,
 				B86F1DA32B1A4AF1009B6B8C /* callIntents */,
@@ -207,6 +210,14 @@
 				B87203FA2B1E888600D12701 /* Info.plist */,
 			);
 			path = IntentsExtension;
+			sourceTree = "<group>";
+		};
+		B877DF6F2C45D2DF00EC1BAC /* http */ = {
+			isa = PBXGroup;
+			children = (
+				B877DF702C45D2FC00EC1BAC /* MultipartFormDataRequest.swift */,
+			);
+			path = http;
 			sourceTree = "<group>";
 		};
 		B889E5CF2C12473300C25C35 /* utils */ = {
@@ -466,6 +477,7 @@
 				B86F1D9E2B1A495A009B6B8C /* StartCallIntentHandler.swift in Sources */,
 				B8ED2FD7293A9BDE00AA03DA /* ProviderDelegate.swift in Sources */,
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
+				B877DF712C45D2FC00EC1BAC /* MultipartFormDataRequest.swift in Sources */,
 				B81AAFCD2BADDC28005850E3 /* CallQualityStream.swift in Sources */,
 				B87203F02B1E352F00D12701 /* Utils.swift in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,

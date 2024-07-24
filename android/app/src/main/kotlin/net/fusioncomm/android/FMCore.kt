@@ -17,7 +17,6 @@ import android.telephony.SubscriptionManager
 import android.telephony.TelephonyManager
 import android.util.Log
 import androidx.core.app.ActivityCompat
-import androidx.core.content.getSystemService
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
@@ -28,7 +27,9 @@ import com.google.gson.Gson
 import io.flutter.plugin.common.MethodChannel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
+import net.fusioncomm.android.FMUtils.Companion.sendLogsToServer
 import net.fusioncomm.android.notifications.NotificationsManager
 import net.fusioncomm.android.telecom.AudioRouteUtils
 import net.fusioncomm.android.telecom.CallsManager
@@ -37,8 +38,12 @@ import org.linphone.core.AudioDevice
 import org.linphone.core.AuthInfo
 import org.linphone.core.Core
 import org.linphone.core.Factory
+import org.linphone.core.LogLevel
+import org.linphone.core.LoggingService
+import org.linphone.core.LoggingServiceListenerStub
 import org.linphone.core.ProxyConfig
 import org.linphone.core.TransportType
+import java.io.File
 
 
 class FMCore(private val context: Context, private val channel:MethodChannel): LifecycleOwner {
@@ -56,7 +61,16 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
         "net.fusioncomm.android.fusionValues",
         Context.MODE_PRIVATE
     )
+    private val flutterSharedPref:SharedPreferences = context.getSharedPreferences(
+        "FlutterSharedPreferences",
+        Context.MODE_PRIVATE
+    )
+    val username = flutterSharedPref.getString("flutter.username", "")
     private var crashlytics: FirebaseCrashlytics
+    private val coroutineScope = CoroutineScope(Dispatchers.IO)
+    private lateinit var logFile:File
+
+    @SuppressLint("StaticFieldLeak")
     companion object{
         private const val debugTag = "MDBM FMCore"
         lateinit var core:Core
@@ -77,8 +91,46 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
         _lifecycleRegistry.currentState = Lifecycle.State.INITIALIZED
         Log.d(debugTag, "Init ${this.lifecycle.currentState}")
         crashlytics = Firebase.crashlytics
-        crashlytics.setUserId("123456789")
+        crashlytics.setUserId(username ?: "FM_Unknown_user")
+        factory.loggingService.setLogLevel(LogLevel.Message)
 
+        val loggingServiceListener = object : LoggingServiceListenerStub() {
+            override fun onLogMessageWritten(
+                logService: LoggingService,
+                domain: String,
+                level: LogLevel,
+                message: String
+            ) {
+                when (level) {
+                    LogLevel.Error ->
+                        writeLogToFile("level:${level.name},package:$domain,message:$message,uid:$username")
+                    LogLevel.Warning ->
+                        writeLogToFile("level:${level.name},package:$domain,message:$message,uid:$username")
+                    LogLevel.Message ->
+                        writeLogToFile("level:${level.name},package:$domain,message:$message,uid:$username")
+                    LogLevel.Fatal ->
+                        writeLogToFile("level:${level.name},package:$domain,message:$message,uid:$username")
+                    else ->
+                        writeLogToFile("level:${level.name},package:$domain,message:$message,uid:$username")
+                }
+            }
+        }
+        coroutineScope.launch {
+            async {
+                Log.d(debugTag, "log file lookup")
+                val fileDir = context.filesDir
+                val logsFile = File(fileDir, "TEXT_LOGGER.txt")
+                if (!logsFile.exists()) {
+                    logsFile.createNewFile()
+                }
+                runCatching {
+                    logFile = logsFile
+                    factory.loggingService.addListener(loggingServiceListener)
+                }.onFailure {
+                    Log.e(debugTag, "Error creating logFile ${it.message}")
+                }
+            }
+        }
         setupCore()
         setFlutterActionsHandler()
         val started: Int = core.start()
@@ -96,6 +148,18 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
         notificationsManager = NotificationsManager(context, callsManager)
         notificationsManager.onCoreReady()
         Log.d(debugTag, "started ${this.lifecycle.currentState}")
+    }
+
+    private fun writeLogToFile(log: String) {
+        val stringBuilderLog = StringBuilder()
+        stringBuilderLog.append(log).append("\n")
+        logFile.appendText(stringBuilderLog.toString())
+        if(logFile.length() >= 250000) {
+            coroutineScope.launch {
+                sendLogsToServer(logFile, context= context)
+                logFile.writeText("")
+            }
+        }
     }
 
     private fun setupCore() {
