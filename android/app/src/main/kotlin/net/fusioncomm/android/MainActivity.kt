@@ -5,6 +5,8 @@ import android.content.Intent
 import android.media.AudioManager
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.telephony.TelephonyManager
 import android.util.Log
 import android.view.KeyEvent
@@ -14,6 +16,7 @@ import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.EventChannel.EventSink
+import io.flutter.plugin.common.EventChannel.StreamHandler
 import io.flutter.plugin.common.MethodChannel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -48,7 +51,9 @@ class MainActivity : FlutterActivity() {
     private lateinit var audioManager:AudioManager
     private lateinit var telephonyManager: TelephonyManager
     private val callInfoStream = CallQualityStream()
+    private var numberToDial: String? = null
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             Compatibility.setShowWhenLocked(this, true)
@@ -75,13 +80,58 @@ class MainActivity : FlutterActivity() {
             appOpenedFromBackground = true
             intent.removeExtra("incomingCallUUID")
         }
-        checkAnswerCallIntent()
+        handleIntent(intent)
         eventChannel.setStreamHandler(callInfoStream)
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        checkAnswerCallIntent(intent)
+        Log.d(debugTag, "Handling new intent")
+        handleIntent(intent)
+    }
+
+    private fun handleIntent(intent: Intent) {
+        val extras = intent.extras
+        val hasExtra = extras != null && !extras.isEmpty
+        Log.d(
+            debugTag,"Handling intent action [${intent.action}], type [${intent.type}], data [${intent.data}] and has ${if (hasExtra) "extras" else "no extra"}"
+        )
+        Log.d(debugTag, "extras= $extras data=${intent.data}")
+        checkAnswerCallIntent()
+        val action = intent.action ?: return
+        when (action) {
+//            Intent.ACTION_SEND -> {
+//                handleSendIntent(intent, false)
+//            }
+//            Intent.ACTION_SEND_MULTIPLE -> {
+//                handleSendIntent(intent, true)
+//            }
+            Intent.ACTION_DIAL, Intent.ACTION_CALL, Intent.ACTION_VIEW -> {
+                handleCallIntent(intent)
+            }
+            else -> {
+                return
+            }
+        }
+    }
+
+    private fun handleCallIntent(intent: Intent) {
+        val uri = intent.data?.toString()
+        if (uri.isNullOrEmpty()) {
+            Log.d(debugTag, "Intent data is null or empty, can't process [${intent.action}] intent")
+            return
+        }
+
+        Log.d(debugTag,"Found URI [$uri] as data for intent [${intent.action}]")
+        val sipUriToCall = when {
+            uri.startsWith("tel:") -> uri.substring("tel:".length)
+            uri.startsWith("voicemail:") -> uri.substring("callto:".length)
+            uri.startsWith("callto:") -> uri.substring("callto:".length)
+            else -> uri.replace("%40", "@") // Unescape @ character if needed
+        }
+
+        Log.d(debugTag,"sipUri= $sipUriToCall")
+        numberToDial = sipUriToCall
     }
 
     override fun onDestroy() {
@@ -410,6 +460,15 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun provideFlutterEngine(context: Context): FlutterEngine? {
+        MethodChannel(
+            engine.dartExecutor.binaryMessenger,
+            "net.fusioncomm.android/intents"
+        ).setMethodCallHandler { call, result ->
+            if(call.method.contentEquals("checkCallIntents")) {
+                result.success(numberToDial);
+                numberToDial = null
+            }
+        }
         return engine
     }
 }
