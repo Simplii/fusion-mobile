@@ -157,8 +157,8 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
         if(logFile.length() >= 250000) {
             coroutineScope.launch {
                 sendLogsToServer(logFile, context= context)
-                logFile.writeText("")
             }
+            logFile.writeText("")
         }
     }
 
