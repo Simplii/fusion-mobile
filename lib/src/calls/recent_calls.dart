@@ -456,8 +456,8 @@ class _CallHistorySummaryViewState extends State<CallHistorySummaryView> {
 
   String _getLinePrefix(String? callerId) {
     String? linePrefix;
-    List<dynamic>? domainPrefixes = _fusionConnection.settings.domainPrefixes();
-    if (domainPrefixes != null && callerId != null) {
+    List<String> domainPrefixes = _fusionConnection.settings.domainPrefixes();
+    if (domainPrefixes.isNotEmpty && callerId != null) {
       domainPrefixes.forEach((prefix) {
         if (callerId.startsWith(prefix)) {
           linePrefix = prefix;

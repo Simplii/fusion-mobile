@@ -457,8 +457,9 @@ class Softphone implements SipUaHelperListener {
         var toAddress = args[2] as String;
         toAddress = _cleanToAddress(toAddress);
         var callerId = args[4] as String? ?? "Unknown";
-        var domainPrefixes = _fusionConnection!.settings.domainPrefixes();
-        if (domainPrefixes != null) {
+        List<String> domainPrefixes =
+            _fusionConnection.settings.domainPrefixes();
+        if (domainPrefixes.isNotEmpty) {
           domainPrefixes.forEach((prefix) {
             if (callerId.startsWith(prefix)) {
               callerId = callerId.replaceAll(prefix + "_", "") != ""
@@ -480,8 +481,9 @@ class Softphone implements SipUaHelperListener {
         var toAddress = args[2] as String;
         toAddress = _cleanToAddress(toAddress);
         var callerId = args[4] as String? ?? "Unknown";
-        var domainPrefixes = _fusionConnection!.settings.domainPrefixes();
-        if (domainPrefixes != null) {
+        List<String> domainPrefixes =
+            _fusionConnection.settings.domainPrefixes();
+        if (domainPrefixes.isNotEmpty) {
           domainPrefixes.forEach((prefix) {
             if (callerId.startsWith(prefix)) {
               callerId = callerId.replaceAll(prefix + "_", "") != ""
@@ -504,8 +506,9 @@ class Softphone implements SipUaHelperListener {
         var toAddress = args[2] as String;
         toAddress = _cleanToAddress(toAddress);
         var callerId = args[4] as String? ?? "Unknown";
-        var domainPrefixes = _fusionConnection!.settings.domainPrefixes();
-        if (domainPrefixes != null) {
+        List<String> domainPrefixes =
+            _fusionConnection.settings.domainPrefixes();
+        if (domainPrefixes.isNotEmpty) {
           domainPrefixes.forEach((prefix) {
             if (callerId.startsWith(prefix)) {
               callerId = callerId.replaceAll(prefix + "_", "") != ""
@@ -1641,9 +1644,10 @@ class Softphone implements SipUaHelperListener {
       } else {
         if (call.remote_display_name != null &&
             call.remote_display_name!.trim().length > 0) {
-          var domainPrefixes = _fusionConnection.settings.domainPrefixes();
+          List<String> domainPrefixes =
+              _fusionConnection.settings.domainPrefixes();
           String name = "";
-          if (domainPrefixes != null) {
+          if (domainPrefixes.isNotEmpty) {
             domainPrefixes.forEach((prefix) {
               if (call.remote_display_name!.startsWith(prefix)) {
                 name = call.remote_display_name!.replaceAll(prefix + "_", "");
@@ -2154,5 +2158,12 @@ class Softphone implements SipUaHelperListener {
   void setIOSCallsPrefs(bool value) {
     _callKit?.invokeMethod("setUserPrefs", [value]);
     UserSettings.disableSyncCallsToIPhone = value;
+  }
+
+  void setDomainPrefixes() {
+    List<String> prefixes = _fusionConnection.settings.domainPrefixes();
+    if (prefixes.isNotEmpty) {
+      _getMethodChannel()?.invokeMethod('setDomainPrefixes', prefixes);
+    }
   }
 }

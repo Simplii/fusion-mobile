@@ -4,6 +4,7 @@ import android.annotation.TargetApi
 import android.app.Notification
 import android.app.PendingIntent
 import android.content.Context
+import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.telephony.PhoneNumberUtils
@@ -54,9 +55,15 @@ class Api31Compatibility {
             pendingIntent: PendingIntent,
             notificationsManager: NotificationsManager,
         ) : Notification {
-            Log.d(debugTag, "creating incoming call notification ...")
+            Log.d(debugTag, "creating incoming call notification ... ")
+            val sharedPref: SharedPreferences = context.getSharedPreferences(
+                "net.fusioncomm.android.fusionValues",
+                Context.MODE_PRIVATE
+            )
+            val domainPrefixes:String = sharedPref.getString("domainPrefixes", "") ?: ""
             val callerNumber :String = FMUtils.getPhoneNumber(call.remoteAddress)
             val callerId = FMUtils.getDisplayName(call.remoteAddress)
+            val prefixes = domainPrefixes.split(",")
             val formattedCallerNumber = PhoneNumberUtils.formatNumber(callerNumber,"US")
             val contact:Contact? = NotificationsManager.contacts[callerNumber]
 
@@ -66,8 +73,12 @@ class Api31Compatibility {
                     pic = getImage(URL(avatarLink))
                 }
             }
-            val displayName: String = contact?.name ?: callerId.ifEmpty { formattedCallerNumber }
-
+            var displayName: String = contact?.name ?: callerId.ifEmpty { formattedCallerNumber }
+            prefixes.forEach{
+                if (callerId.replace(" ", "").startsWith(it.replace(" ",""))) {
+                    displayName = "$it ${displayName.replace(it, "")}"
+                }
+            }
             val incomingCallerBuilder: Person.Builder = Person.Builder()
                 .setName(displayName)
                 .setImportant(false)
