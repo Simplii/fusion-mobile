@@ -120,12 +120,7 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
                 Log.d(debugTag, "log file lookup")
                 val fileDir = context.filesDir
                 val logsFile = File(fileDir, "TEXT_LOGGER.txt")
-                if (logsFile.exists()) {
-                    Log.d(debugTag, "log file exist")
-                    // Send logs to server and empty the file
-                    sendLogsToServer(logsFile, truncateFile = true, context= context)
-                } else {
-                    //Create new logs file.
+                if (!logsFile.exists()) {
                     logsFile.createNewFile()
                 }
                 runCatching {
@@ -161,8 +156,9 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
         logFile.appendText(stringBuilderLog.toString())
         if(logFile.length() >= 250000) {
             coroutineScope.launch {
-                sendLogsToServer(logFile, truncateFile = true,context= context)
+                sendLogsToServer(logFile, context= context)
             }
+            logFile.writeText("")
         }
     }
 
