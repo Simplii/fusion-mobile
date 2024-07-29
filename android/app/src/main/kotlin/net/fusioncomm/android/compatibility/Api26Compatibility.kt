@@ -3,6 +3,7 @@ package net.fusioncomm.android.compatibility
 import android.annotation.TargetApi
 import android.app.*
 import android.content.Context
+import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.telecom.CallAudioState
@@ -111,11 +112,22 @@ class Api26Compatibility {
                 context.packageName,
                 R.layout.incoming_call_notification
             )
+            val sharedPref: SharedPreferences = context.getSharedPreferences(
+                "net.fusioncomm.android.fusionValues",
+                Context.MODE_PRIVATE
+            )
+            val domainPrefixes:String = sharedPref.getString("domainPrefixes", "") ?: ""
+            val prefixes = domainPrefixes.split(",")
             val callerNumber = FMUtils.getPhoneNumber(call.remoteAddress)
             val callerId = FMUtils.getDisplayName(call.remoteAddress)
             val formattedCallerNumber = PhoneNumberUtils.formatNumber(callerNumber,"US")
             val contact:Contact? = NotificationsManager.contacts[callerNumber]
-            val displayName: String = contact?.name ?: callerId.ifEmpty { formattedCallerNumber }
+            var displayName: String = contact?.name ?: callerId.ifEmpty { formattedCallerNumber }
+            prefixes.forEach{
+                if (callerId.replace(" ", "").startsWith(it.replace(" ",""))) {
+                    displayName = "$it ${displayName.replace(it, "")}"
+                }
+            }
             val number = contact?.number
             val callerAvatar = contact?.avatar ?: ""
             val notificationTitle = "Incoming call"

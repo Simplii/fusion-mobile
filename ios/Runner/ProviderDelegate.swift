@@ -1121,6 +1121,11 @@ print("audiointerruption")
                 let pref = args[0] as! Bool
                 UserDefaults.standard.set(pref, forKey: "includesCallsInRecents")
             }
+            else if (call.method == "setDomainPrefixes") {
+                //this is not being hit from flutter
+                let args = call.arguments as! [String]
+                UserDefaults.standard.set(args.joined(separator: ","), forKey: "domainPrefixes")
+            }
         })
         print("providerpush set delegate callkit")
         provider.setDelegate(self, queue: nil)
@@ -1168,7 +1173,19 @@ print("audiointerruption")
         completion: ((Error?) -> Void)?
     ) {
         let update = CXCallUpdate()
-        update.localizedCallerName = callerName
+        let domainPrefixes:String = userDefaults.string(forKey: "domainPrefixes") ?? ""
+        let prefixes = domainPrefixes.split(separator: ",")
+        let call: Call? = findCallByUuid(uuid: uuid.uuidString)
+        let callerId = call?.remoteAddress?.displayName
+        var displayName = callerName
+        
+        prefixes.forEach { prefix in
+            if(callerId != nil &&
+               callerId!.replacingOccurrences(of: " ", with: "").starts(with: prefix.replacingOccurrences(of: " ", with: ""))) {
+                displayName = "\(prefix) \(callerName.replacingOccurrences(of: prefix, with: ""))"
+            }
+        }
+        update.localizedCallerName = displayName
         print("thehandle", handle)
         update.remoteHandle = CXHandle(type: .phoneNumber, value: handle)
         update.hasVideo = hasVideo

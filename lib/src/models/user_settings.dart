@@ -172,8 +172,9 @@ class UserSettings {
     });
   }
 
-  domainPrefixes() {
-    return options["prefixes"];
+  List<String> domainPrefixes() {
+    List prefixes = options["prefixes"] ?? [];
+    return options.containsKey('prefixes') ? prefixes.cast<String>() : [];
   }
 
   bool isV2User() {

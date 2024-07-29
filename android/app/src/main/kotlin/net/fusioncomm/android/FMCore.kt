@@ -466,19 +466,13 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
                 Log.d(debugTag, "lpUnregister")
                 unregister()
             }
-            else if (call.method == "crashTest") {
+            else if (call.method == "setDomainPrefixes") {
                 //this is not being hit from flutter
                 val args = call.arguments as List<*>
-
-//                try {
-//                    throw RuntimeException("test crash")
-//                } catch (ex: RuntimeException) {
-//                    // [START crashlytics_log_and_report]
-//                    crashlytics.log("RTE caught!")
-//                    crashlytics.recordException(ex)
-//                    // [END crashlytics_log_and_report]
-//                }
-                Log.d(debugTag,"ttt $args")
+                with (sharedPref.edit()) {
+                    putString("domainPrefixes", args.joinToString())
+                    apply()
+                }
 
             }
             else if (call.method == "testANR") {
@@ -529,7 +523,7 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
 
         core.addAuthInfo(authInfo)
         core.addAccount(account)
-        core.loadConfigFromXml("android.resource://net.fusioncomm.net/" + R.raw.fusion_config)
+//        core.loadConfigFromXml("android.resource://net.fusioncomm.net/" + R.raw.fusion_config)
 
         var proxyConfig = core.defaultProxyConfig
         if (proxyConfig == null) {

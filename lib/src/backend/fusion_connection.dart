@@ -776,6 +776,7 @@ class FusionConnection {
         );
       });
     }
+    _softphone?.setDomainPrefixes();
   }
 
   Future<Map<String, dynamic>> nsAnsweringRules() async {
