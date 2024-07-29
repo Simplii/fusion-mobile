@@ -38,18 +38,27 @@ class _MenuState extends State<Menu> {
   late UserSettings userSettings;
   bool? DND = false;
   bool disableSyncCallsToIPhone = UserSettings.disableSyncCallsToIPhone;
+  late bool useTls;
   @override
   initState() {
     super.initState();
+    bool? tls = _fusionConnection.sharedPreferences.getBool('useTls');
+    if (tls == null) {
+      // this is a fallback it should already been created from native code at this point.
+      _fusionConnection.sharedPreferences.setBool('useTls', true);
+      useTls = true;
+    } else {
+      useTls = tls;
+    }
     userSettings = _fusionConnection.settings;
-    DND = userSettings!.dnd;
-    myPhoneNumber = userSettings!.myCellPhoneNumber!.isNotEmpty
-        ? userSettings!.myCellPhoneNumber!.formatPhone()
-        : _softphone!.devicePhoneNumber;
-    usingCarrierCalls = userSettings!.usesCarrier;
-    _fusionConnection!.nsAnsweringRules().then((Map<String, dynamic> value) {
-      userSettings!.devices = value['devices'];
-      if (userSettings!.usesCarrier != value["usesCarrier"]) {
+    DND = userSettings.dnd;
+    myPhoneNumber = userSettings.myCellPhoneNumber.isNotEmpty
+        ? userSettings.myCellPhoneNumber.formatPhone()
+        : _softphone.devicePhoneNumber;
+    usingCarrierCalls = userSettings.usesCarrier;
+    _fusionConnection.nsAnsweringRules().then((Map<String, dynamic> value) {
+      userSettings.devices = value['devices'];
+      if (userSettings.usesCarrier != value["usesCarrier"]) {
         setState(() {
           usingCarrierCalls = value["usesCarrier"];
           if (value["usesCarrier"]) {
@@ -57,23 +66,23 @@ class _MenuState extends State<Menu> {
           }
         });
         List<SettingsPayload> payload = [
-          SettingsPayload(_fusionConnection!.getUid(), "uses_carrier",
+          SettingsPayload(_fusionConnection.getUid(), "uses_carrier",
               value["usesCarrier"] ? value["usesCarrier"].toString() : "")
         ];
         if (value["usesCarrier"]) {
           payload.add(SettingsPayload(_fusionConnection!.getUid(),
               "cell_phone_number", value['phoneNumber']));
         }
-        userSettings!.updateUserSettings(payload);
+        userSettings.updateUserSettings(payload);
       }
     });
     List<SMSDepartment> deps =
-        _fusionConnection!.smsDepartments.allDepartments();
-    selectedOutboundDid = userSettings!.myOutboundCallerId;
+        _fusionConnection.smsDepartments.allDepartments();
+    selectedOutboundDid = userSettings.myOutboundCallerId;
     Iterable filter =
         deps.where((SMSDepartment dep) => dep.usesDynamicOutbound!);
     List<SMSDepartment> dynamicDailingDepts =
-        userSettings!.dynamicDialingIsActive &&
+        userSettings.dynamicDialingIsActive &&
                 deps.isNotEmpty &&
                 filter.isNotEmpty
             ? filter.toList() as List<SMSDepartment>
@@ -414,59 +423,52 @@ class _MenuState extends State<Menu> {
         child: Container(
             decoration: BoxDecoration(color: Colors.transparent),
             margin: EdgeInsets.only(left: 18, right: 18, top: 12, bottom: 12),
-            child: Row(
-                crossAxisAlignment: trailingWidget != null
-                    ? CrossAxisAlignment.center
-                    : CrossAxisAlignment.start,
-                children: [
-                  Container(
-                      margin: EdgeInsets.only(right: 24),
-                      width: 22,
-                      height: 22,
-                      child: ico != null
-                          ? label == "Log Out" && loggingOut
-                              ? CircularProgressIndicator()
-                              : ico
-                          : Opacity(
-                              opacity: icon.contains("call_view") ? 0.45 : 1.0,
-                              child: Image.asset(
-                                  "assets/icons/" + icon + ".png",
-                                  width: 22,
-                                  height: 22))),
-                  Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        LimitedBox(
-                          maxWidth: labelMaxWidth ?? double.infinity,
-                          child: Text(label,
-                              textAlign: TextAlign.left,
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700)),
-                        ),
-                        if (smallText.length > 0) Container(height: 4),
-                        if (smallText.length > 0)
-                          Text(smallText,
-                              textAlign: TextAlign.left,
-                              style: TextStyle(
-                                  color: smoke,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w400))
-                      ]),
-                  if (trailingWidget != null)
-                    Expanded(
-                      child: Align(
-                        alignment: Alignment.centerRight,
-                        child: Container(
-                            decoration: BoxDecoration(
-                                border: Border(
-                                    left: BorderSide(width: 1, color: smoke))),
-                            // height: 24,
-                            child: trailingWidget),
-                      ),
-                    )
-                ])));
+            child:
+                Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+              Container(
+                  margin: EdgeInsets.only(right: 24),
+                  width: 22,
+                  height: 22,
+                  child: ico != null
+                      ? label == "Log Out" && loggingOut
+                          ? CircularProgressIndicator()
+                          : ico
+                      : Opacity(
+                          opacity: icon.contains("call_view") ? 0.45 : 1.0,
+                          child: Image.asset("assets/icons/" + icon + ".png",
+                              width: 22, height: 22))),
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                LimitedBox(
+                  maxWidth: labelMaxWidth ?? double.infinity,
+                  child: Text(label,
+                      textAlign: TextAlign.left,
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700)),
+                ),
+                if (smallText.length > 0) Container(height: 4),
+                if (smallText.length > 0)
+                  Text(smallText,
+                      textAlign: TextAlign.left,
+                      style: TextStyle(
+                          color: smoke,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400))
+              ]),
+              if (trailingWidget != null)
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: Container(
+                        decoration: BoxDecoration(
+                            border: Border(
+                                left: BorderSide(width: 1, color: smoke))),
+                        // height: 24,
+                        child: trailingWidget),
+                  ),
+                )
+            ])));
   }
 
   _line() {
@@ -1023,6 +1025,44 @@ class _MenuState extends State<Menu> {
     });
   }
 
+  void _handleTlsChange(bool value) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Attention"),
+        content: Text(
+            "This action requires closing and reopening the app to take effect"),
+        actions: [
+          TextButton(
+              onPressed: () async {
+                await _fusionConnection.sharedPreferences
+                    .setBool("useTls", value);
+                setState(() {
+                  useTls = value;
+                });
+                Navigator.of(context).pop();
+              },
+              child: Text(
+                "Okay",
+                style: TextStyle(color: crimsonLight),
+              )),
+          TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text("Cancel")),
+        ],
+      ),
+    );
+  }
+
+  Widget _useTls() {
+    return Switch(
+      value: useTls,
+      activeColor: crimsonLight,
+      inactiveTrackColor: smoke,
+      onChanged: _handleTlsChange,
+    );
+  }
+
   void _performLogout() {
     setState(() {
       loggingOut = true;
@@ -1083,16 +1123,16 @@ class _MenuState extends State<Menu> {
           ),
           trailingWidget: _toggleDND()),
       _row(
-        "",
-        "Report a bug",
-        "",
-        _reportBug,
-        Icon(
-          Icons.bug_report,
-          color: smoke.withOpacity(0.45),
-          size: 26,
-        ),
-      ),
+          "",
+          "Use TLS",
+          "",
+          _reportBug,
+          Icon(
+            Icons.import_export,
+            color: smoke.withOpacity(0.45),
+            size: 28,
+          ),
+          trailingWidget: _useTls()),
       if (Platform.isIOS)
         _row(
             "",
@@ -1106,7 +1146,17 @@ class _MenuState extends State<Menu> {
             ),
             trailingWidget: _toggleDisableCallsSync(),
             labelMaxWidth: 150),
-
+      // _row(
+      //   "",
+      //   "Report a bug",
+      //   "",
+      //   _reportBug,
+      //   Icon(
+      //     Icons.bug_report,
+      //     color: smoke.withOpacity(0.45),
+      //     size: 26,
+      //   ),
+      // ),
       _line(),
 
       _row("", "Log Out", "", _performLogout,

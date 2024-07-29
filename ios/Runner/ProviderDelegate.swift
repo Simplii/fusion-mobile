@@ -22,7 +22,7 @@ class ProviderDelegate: NSObject, CXCallObserverDelegate {
     var passwd : String = "pwd"
     var domain : String = "sip.example.org"
     var loggedIn: Bool = false
-    var transportType : String = "TCP"
+    var transportType : TransportType
     var uuidCalls: [String: Call] = [:];
     
     var callMsg : String = ""
@@ -48,6 +48,10 @@ class ProviderDelegate: NSObject, CXCallObserverDelegate {
     var regState: RegistrationState = RegistrationState.None
     var conferenceStarting: Bool = false
     let loggingServiceManager :LoggingServiceManager
+    let server = "services.fusioncom.co"
+    let userDefaults:UserDefaults = UserDefaults.standard
+    let useTls: Bool
+    let port: String
     
     @objc func handleInterruption(notification: Notification) {
         guard let userInfo = notification.userInfo,
@@ -265,7 +269,7 @@ print("audiointerruption")
             }
         })
         mCore?.callkitEnabled = true
-        mCore?.stunServer = "turn:services.fusioncom.co"
+        mCore?.stunServer = "turn:\(server)"
         mCore?.natPolicy?.turnEnabled = true
         mCore?.natPolicy?.stunServerUsername = "fuser"
         do {
@@ -278,7 +282,7 @@ print("audiointerruption")
         }
         mCore?.echoLimiterEnabled = false
         mCore?.echoCancellationEnabled = false
-        mCore?.natPolicy?.stunServer = "services.fusioncom.co"
+        mCore?.natPolicy?.stunServer = server
         mCore?.addDelegate(delegate: mCoreDelegate)
         mCore?.remoteRingbackTone = Bundle.main.path(forResource: "outgoing", ofType: "wav") ?? ""
         mCore?.ring = Bundle.main.path(forResource: "inbound", ofType: "mp3") ?? ""
@@ -290,11 +294,6 @@ print("audiointerruption")
             // Get the transport protocol to use.
             // TLS is strongly recommended
             // Only use UDP if you don't have the choice
-            var transport : TransportType
-            if (transportType == "TLS") { transport = TransportType.Tls }
-            else if (transportType == "TCP") { transport = TransportType.Tcp }
-            else  { transport = TransportType.Udp }
-            
             // To configure a SIP account, we need an Account object and an AuthInfo object
             // The first one is how to connect to the proxy server, the second one stores the credentials
             
@@ -309,9 +308,9 @@ print("audiointerruption")
             let identity = try Factory.Instance.createAddress(addr: String("sip:" + username + "@" + domain))
             try! accountParams!.setIdentityaddress(newValue: identity)
             
-            let address = try Factory.Instance.createAddress(addr: String("sip:services.fusioncom.co:5060"))
+            let address = try Factory.Instance.createAddress(addr: String("sip:\(server):\(port)"))
             
-            try address.setTransport(newValue: transport)
+            try address.setTransport(newValue: transportType)
             try accountParams!.setServeraddress(newValue: address)
             accountParams!.registerEnabled = true
             print("registering")
@@ -342,8 +341,8 @@ print("audiointerruption")
     func createProxyConfig(proxyConfig: ProxyConfig, aor: String, authInfo: AuthInfo) throws -> ProxyConfig {
         let address = try mCore?.createAddress(address: aor)
         try proxyConfig.setIdentityaddress(newValue: address!)
-        try proxyConfig.setServeraddr(newValue: "<sip:services.fusioncom.co:5060;transport=tcp>")
-        try proxyConfig.setRoute(newValue: "<sip:services.fusioncom.co:5060;transport=tcp>")
+        try proxyConfig.setServeraddr(newValue: "<sip:\(server):\(port);transport=\(useTls ? "tls" : "tcp")>")
+        try proxyConfig.setRoute(newValue: "<sip:\(server):\(port);transport=\(useTls ? "tls" : "tcp")>")
         proxyConfig.realm = authInfo.realm
         proxyConfig.registerEnabled = true
         proxyConfig.avpfMode = .Disabled
@@ -592,6 +591,7 @@ print("audiointerruption")
     }
     
     func clearCache(){
+        LoggingService.Instance.removeDelegate(delegate: loggingServiceManager)
         let cacheURL =  FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
         let fileManager = FileManager.default
         do {
@@ -645,6 +645,20 @@ print("audiointerruption")
     public init(channel: FlutterMethodChannel, loggingService :LoggingServiceManager) {
         provider = CXProvider(configuration: ProviderDelegate.providerConfiguration)
         loggingServiceManager = loggingService
+        let tls:Any? = userDefaults.object(forKey: "flutter.useTls")
+        if (tls == nil) {
+            userDefaults.set(true, forKey: "flutter.useTls")
+            useTls = true
+        } else {
+            useTls = userDefaults.bool(forKey: "flutter.useTls")
+        }
+        if (useTls) {
+            transportType = TransportType.Tls
+            port = "5061"
+        } else {
+            transportType = TransportType.Tcp
+            port = "5060"
+        }
         callkitChannel = channel
         super.init()
         setupLinphone();

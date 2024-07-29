@@ -44,6 +44,7 @@ import org.linphone.core.LoggingServiceListenerStub
 import org.linphone.core.ProxyConfig
 import org.linphone.core.TransportType
 import java.io.File
+import java.util.Locale
 
 
 class FMCore(private val context: Context, private val channel:MethodChannel): LifecycleOwner {
@@ -69,7 +70,10 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
     private var crashlytics: FirebaseCrashlytics
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
     private lateinit var logFile:File
-
+    private var useTls:Boolean
+    private var transport:TransportType
+    private var port:String
+    private val loggingServiceListener: LoggingServiceListenerStub
     @SuppressLint("StaticFieldLeak")
     companion object{
         private const val debugTag = "MDBM FMCore"
@@ -94,7 +98,7 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
         crashlytics.setUserId(username ?: "FM_Unknown_user")
         factory.loggingService.setLogLevel(LogLevel.Message)
 
-        val loggingServiceListener = object : LoggingServiceListenerStub() {
+        loggingServiceListener = object : LoggingServiceListenerStub() {
             override fun onLogMessageWritten(
                 logService: LoggingService,
                 domain: String,
@@ -131,6 +135,31 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
                 }
             }
         }
+        if (!flutterSharedPref.contains("flutter.useTls")) {
+            Log.d(debugTag, "shared flutter.useTls don't exist")
+            //if the key doesn't exist we can assume user is using tls for the first time
+            with (flutterSharedPref.edit()) {
+                putBoolean("flutter.useTls", true)
+                apply()
+            }
+            Log.d(debugTag, "shared flutter.useTls created in kotlin")
+            useTls = true
+        } else {
+            useTls = flutterSharedPref.getBoolean(
+                "flutter.useTls",
+                false // this value never used due to the if clause, its required for getBoolean though.
+            )
+            Log.d(debugTag, "shared flutter.useTls found in kotlin and its value = $useTls")
+        }
+
+        if(useTls) {
+            transport = TransportType.Tls
+            port = "5061"
+        } else {
+            transport = TransportType.Tcp
+            port = "5060"
+        }
+        Log.d(debugTag, "shared useTls=$useTls Transport=${transport.name.toLowerCase(Locale.ROOT)} port=$port")
         setupCore()
         setFlutterActionsHandler()
         val started: Int = core.start()
@@ -165,6 +194,7 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
     private fun setupCore() {
         Log.d(debugTag, "setup core")
         core = factory.createCore(null, null, context)
+        factory.setDebugMode(true, "FM")
         core.enableIpv6(false)
         core.stunServer = "turn:$server"
         core.natPolicy?.stunServerUsername = "fuser"
@@ -210,6 +240,7 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
     }
 
     private fun unregister() {
+        factory.loggingService.removeListener(loggingServiceListener)
         val account = core.defaultAccount
         account ?: return
         val params = account.params
@@ -469,7 +500,7 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
         domain:String,
     ) {
         Log.d(debugTag, "LPRegister FMCOre $username $password $domain ")
-        val transportType = TransportType.Tcp
+        val transportType = transport
         val authInfo =
             factory.createAuthInfo(
                 username,
@@ -484,7 +515,7 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
         val identity = Factory.instance().createAddress("sip:$username@$domain")
         accountParams.identityAddress = identity
 
-        val address = Factory.instance().createAddress("sip:${server}:5060")
+        val address = Factory.instance().createAddress("sip:$server:$port")
         address?.transport = transportType
         accountParams.serverAddress = address
         accountParams.registerEnabled = true
@@ -528,8 +559,8 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
         val address = core.createAddress(aor)
         proxyConfig.identityAddress = address
 
-        proxyConfig.serverAddr = "<sip:${server}:5060;transport=tcp>"
-        proxyConfig.setRoute("<sip:${server}:5060;transport=tcp>")
+        proxyConfig.serverAddr = "<sip:$server:$port;transport=${transport.name.toLowerCase(Locale.ROOT)}>"
+        proxyConfig.setRoute("<sip:$server:$port;transport=${transport.name.toLowerCase(Locale.ROOT)}>")
 
         proxyConfig.realm = authInfo.realm
         proxyConfig.enableRegister(true)
