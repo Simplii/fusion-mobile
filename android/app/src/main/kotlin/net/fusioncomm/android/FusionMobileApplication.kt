@@ -8,7 +8,6 @@ import io.flutter.embedding.engine.FlutterEngineCache
 import io.flutter.embedding.engine.dart.DartExecutor
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
-import net.fusioncomm.android.telecom.CallQualityStream
 
 class FusionMobileApplication : Application() {
 

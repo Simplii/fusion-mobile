@@ -47,6 +47,7 @@ class ProviderDelegate: NSObject, CXCallObserverDelegate {
     var isBluetoothOn: Bool = false
     var regState: RegistrationState = RegistrationState.None
     var conferenceStarting: Bool = false
+    let loggingServiceManager :LoggingServiceManager
     
     @objc func handleInterruption(notification: Notification) {
         guard let userInfo = notification.userInfo,
@@ -109,13 +110,11 @@ print("audiointerruption")
     
     
     public func setupLinphone() {
-        LoggingService.Instance.logLevel = LogLevel.Debug
         let factory = Factory.Instance
         try! mCore = factory.createCore(configPath: "", factoryConfigPath: "", systemContext: nil)
         try! mCore?.start()
         mCore?.ipv6Enabled = false
         mCore?.nortpTimeout = 0
-
         var mCoreDelegate = CoreDelegateStub( onCallStateChanged: { (core: Core, call: Call, state: Call.State, message: String) in
             // This function will be called each time a call state changes,
             // which includes new incoming/outgoing calls
@@ -196,6 +195,19 @@ print("audiointerruption")
                 self.remoteAddress = call.remoteAddress!.asStringUriOnly()
             } else if (state == .Error) {
                 self.callkitChannel.invokeMethod("lnCallError", arguments: [uuid])
+            }
+        },
+        onLastCallEnded: { (core :Core) in
+            if(self.loggingServiceManager.fileUrl != nil) {
+                sendLogsToServer(file: self.loggingServiceManager.fileUrl!)
+                do {
+                    if let fileHandle = try? FileHandle(forWritingTo: self.loggingServiceManager.fileUrl!) {
+                        try fileHandle.truncate(atOffset: 0)
+                        fileHandle.closeFile()
+                    }
+                } catch {
+                    NSLog("MDBM error trying to truncate logs file after call ended")
+                }
             }
         },
         onAudioDeviceChanged: { (core: Core, device: AudioDevice) in
@@ -630,9 +642,9 @@ print("audiointerruption")
         }
     }
     
-    public init(channel: FlutterMethodChannel) {
+    public init(channel: FlutterMethodChannel, loggingService :LoggingServiceManager) {
         provider = CXProvider(configuration: ProviderDelegate.providerConfiguration)
-
+        loggingServiceManager = loggingService
         callkitChannel = channel
         super.init()
         setupLinphone();
