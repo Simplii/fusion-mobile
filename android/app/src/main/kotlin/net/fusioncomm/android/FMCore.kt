@@ -66,7 +66,7 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
         "FlutterSharedPreferences",
         Context.MODE_PRIVATE
     )
-    val username = flutterSharedPref.getString("flutter.username", "")
+    private val username = flutterSharedPref.getString("flutter.username", "")
     private var crashlytics: FirebaseCrashlytics
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
     private lateinit var logFile:File
@@ -74,6 +74,8 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
     private var transport:TransportType = TransportType.Tcp
     private var port:String = "5060"
 //    private val loggingServiceListener: LoggingServiceListenerStub
+    private val versionName = context.packageManager.getPackageInfo(context.packageName, 0).versionName
+    private val versionCode = context.packageManager.getPackageInfo(context.packageName, 0).versionCode
     @SuppressLint("StaticFieldLeak")
     companion object{
         private const val debugTag = "MDBM FMCore"
@@ -435,7 +437,7 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
                 val gson = Gson()
                 channel.invokeMethod(
                     "setAppVersion",
-                    gson.toJson("1.2.29")
+                    gson.toJson("$versionName")
                 )
                 var myPhoneNumber = ""
 
