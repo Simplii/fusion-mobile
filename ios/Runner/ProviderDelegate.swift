@@ -22,7 +22,7 @@ class ProviderDelegate: NSObject, CXCallObserverDelegate {
     var passwd : String = "pwd"
     var domain : String = "sip.example.org"
     var loggedIn: Bool = false
-    var transportType : TransportType
+    var transportType : TransportType = TransportType.Tcp
     var uuidCalls: [String: Call] = [:];
     
     var callMsg : String = ""
@@ -47,11 +47,11 @@ class ProviderDelegate: NSObject, CXCallObserverDelegate {
     var isBluetoothOn: Bool = false
     var regState: RegistrationState = RegistrationState.None
     var conferenceStarting: Bool = false
-    let loggingServiceManager :LoggingServiceManager
+//    let loggingServiceManager :LoggingServiceManager
     let server = "services.fusioncom.co"
     let userDefaults:UserDefaults = UserDefaults.standard
-    let useTls: Bool
-    let port: String
+    let useTls: Bool = false
+    let port: String = "5060"
     
     @objc func handleInterruption(notification: Notification) {
         guard let userInfo = notification.userInfo,
@@ -202,17 +202,17 @@ print("audiointerruption")
             }
         },
         onLastCallEnded: { (core :Core) in
-            if(self.loggingServiceManager.fileUrl != nil) {
-                sendLogsToServer(file: self.loggingServiceManager.fileUrl!)
-                do {
-                    if let fileHandle = try? FileHandle(forWritingTo: self.loggingServiceManager.fileUrl!) {
-                        try fileHandle.truncate(atOffset: 0)
-                        fileHandle.closeFile()
-                    }
-                } catch {
-                    NSLog("MDBM error trying to truncate logs file after call ended")
-                }
-            }
+//            if(self.loggingServiceManager.fileUrl != nil) {
+//                sendLogsToServer(file: self.loggingServiceManager.fileUrl!)
+//                do {
+//                    if let fileHandle = try? FileHandle(forWritingTo: self.loggingServiceManager.fileUrl!) {
+//                        try fileHandle.truncate(atOffset: 0)
+//                        fileHandle.closeFile()
+//                    }
+//                } catch {
+//                    NSLog("MDBM error trying to truncate logs file after call ended")
+//                }
+//            }
         },
         onAudioDeviceChanged: { (core: Core, device: AudioDevice) in
             // This method get triggered only in active call
@@ -591,7 +591,7 @@ print("audiointerruption")
     }
     
     func clearCache(){
-        LoggingService.Instance.removeDelegate(delegate: loggingServiceManager)
+//        LoggingService.Instance.removeDelegate(delegate: loggingServiceManager)
         let cacheURL =  FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
         let fileManager = FileManager.default
         do {
@@ -642,23 +642,24 @@ print("audiointerruption")
         }
     }
     
-    public init(channel: FlutterMethodChannel, loggingService :LoggingServiceManager) {
+//    public init(channel: FlutterMethodChannel, loggingService :LoggingServiceManager) {
+    public init(channel: FlutterMethodChannel) {
         provider = CXProvider(configuration: ProviderDelegate.providerConfiguration)
-        loggingServiceManager = loggingService
-        let tls:Any? = userDefaults.object(forKey: "flutter.useTls")
-        if (tls == nil) {
-            userDefaults.set(true, forKey: "flutter.useTls")
-            useTls = true
-        } else {
-            useTls = userDefaults.bool(forKey: "flutter.useTls")
-        }
-        if (useTls) {
-            transportType = TransportType.Tls
-            port = "5061"
-        } else {
-            transportType = TransportType.Tcp
-            port = "5060"
-        }
+//        loggingServiceManager = loggingService
+//        let tls:Any? = userDefaults.object(forKey: "flutter.useTls")
+//        if (tls == nil) {
+//            userDefaults.set(true, forKey: "flutter.useTls")
+//            useTls = true
+//        } else {
+//            useTls = userDefaults.bool(forKey: "flutter.useTls")
+//        }
+//        if (useTls) {
+//            transportType = TransportType.Tls
+//            port = "5061"
+//        } else {
+//            transportType = TransportType.Tcp
+//            port = "5060"
+//        }
         callkitChannel = channel
         super.init()
         setupLinphone();

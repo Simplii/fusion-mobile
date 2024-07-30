@@ -70,10 +70,10 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
     private var crashlytics: FirebaseCrashlytics
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
     private lateinit var logFile:File
-    private var useTls:Boolean
-    private var transport:TransportType
-    private var port:String
-    private val loggingServiceListener: LoggingServiceListenerStub
+//    private var useTls:Boolean
+    private var transport:TransportType = TransportType.Tcp
+    private var port:String = "5060"
+//    private val loggingServiceListener: LoggingServiceListenerStub
     @SuppressLint("StaticFieldLeak")
     companion object{
         private const val debugTag = "MDBM FMCore"
@@ -98,68 +98,68 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
         crashlytics.setUserId(username ?: "FM_Unknown_user")
         factory.loggingService.setLogLevel(LogLevel.Message)
 
-        loggingServiceListener = object : LoggingServiceListenerStub() {
-            override fun onLogMessageWritten(
-                logService: LoggingService,
-                domain: String,
-                level: LogLevel,
-                message: String
-            ) {
-                when (level) {
-                    LogLevel.Error ->
-                        writeLogToFile("level:${level.name},package:$domain,message:$message,uid:$username")
-                    LogLevel.Warning ->
-                        writeLogToFile("level:${level.name},package:$domain,message:$message,uid:$username")
-                    LogLevel.Message ->
-                        writeLogToFile("level:${level.name},package:$domain,message:$message,uid:$username")
-                    LogLevel.Fatal ->
-                        writeLogToFile("level:${level.name},package:$domain,message:$message,uid:$username")
-                    else ->
-                        writeLogToFile("level:${level.name},package:$domain,message:$message,uid:$username")
-                }
-            }
-        }
-        coroutineScope.launch {
-            async {
-                Log.d(debugTag, "log file lookup")
-                val fileDir = context.filesDir
-                val logsFile = File(fileDir, "TEXT_LOGGER.txt")
-                if (!logsFile.exists()) {
-                    logsFile.createNewFile()
-                }
-                runCatching {
-                    logFile = logsFile
-                    factory.loggingService.addListener(loggingServiceListener)
-                }.onFailure {
-                    Log.e(debugTag, "Error creating logFile ${it.message}")
-                }
-            }
-        }
-        if (!flutterSharedPref.contains("flutter.useTls")) {
-            Log.d(debugTag, "shared flutter.useTls don't exist")
-            //if the key doesn't exist we can assume user is using tls for the first time
-            with (flutterSharedPref.edit()) {
-                putBoolean("flutter.useTls", true)
-                apply()
-            }
-            Log.d(debugTag, "shared flutter.useTls created in kotlin")
-            useTls = true
-        } else {
-            useTls = flutterSharedPref.getBoolean(
-                "flutter.useTls",
-                false // this value never used due to the if clause, its required for getBoolean though.
-            )
-            Log.d(debugTag, "shared flutter.useTls found in kotlin and its value = $useTls")
-        }
+//        loggingServiceListener = object : LoggingServiceListenerStub() {
+//            override fun onLogMessageWritten(
+//                logService: LoggingService,
+//                domain: String,
+//                level: LogLevel,
+//                message: String
+//            ) {
+//                when (level) {
+//                    LogLevel.Error ->
+//                        writeLogToFile("level:${level.name},package:$domain,message:$message,uid:$username")
+//                    LogLevel.Warning ->
+//                        writeLogToFile("level:${level.name},package:$domain,message:$message,uid:$username")
+//                    LogLevel.Message ->
+//                        writeLogToFile("level:${level.name},package:$domain,message:$message,uid:$username")
+//                    LogLevel.Fatal ->
+//                        writeLogToFile("level:${level.name},package:$domain,message:$message,uid:$username")
+//                    else ->
+//                        writeLogToFile("level:${level.name},package:$domain,message:$message,uid:$username")
+//                }
+//            }
+//        }
+//        coroutineScope.launch {
+//            async {
+//                Log.d(debugTag, "log file lookup")
+//                val fileDir = context.filesDir
+//                val logsFile = File(fileDir, "TEXT_LOGGER.txt")
+//                if (!logsFile.exists()) {
+//                    logsFile.createNewFile()
+//                }
+//                runCatching {
+//                    logFile = logsFile
+//                    factory.loggingService.addListener(loggingServiceListener)
+//                }.onFailure {
+//                    Log.e(debugTag, "Error creating logFile ${it.message}")
+//                }
+//            }
+//        }
+//        if (!flutterSharedPref.contains("flutter.useTls")) {
+//            Log.d(debugTag, "shared flutter.useTls don't exist")
+//            //if the key doesn't exist we can assume user is using tls for the first time
+//            with (flutterSharedPref.edit()) {
+//                putBoolean("flutter.useTls", true)
+//                apply()
+//            }
+//            Log.d(debugTag, "shared flutter.useTls created in kotlin")
+//            useTls = true
+//        } else {
+//            useTls = flutterSharedPref.getBoolean(
+//                "flutter.useTls",
+//                false // this value never used due to the if clause, its required for getBoolean though.
+//            )
+//            Log.d(debugTag, "shared flutter.useTls found in kotlin and its value = $useTls")
+//        }
 
-        if(useTls) {
-            transport = TransportType.Tls
-            port = "5061"
-        } else {
-            transport = TransportType.Tcp
-            port = "5060"
-        }
-        Log.d(debugTag, "shared useTls=$useTls Transport=${transport.name.toLowerCase(Locale.ROOT)} port=$port")
+//        if(useTls) {
+//            transport = TransportType.Tls
+//            port = "5061"
+//        } else {
+//            transport = TransportType.Tcp
+//            port = "5060"
+//        }
+//        Log.d(debugTag, "shared useTls=$useTls Transport=${transport.name.toLowerCase(Locale.ROOT)} port=$port")
         setupCore()
         setFlutterActionsHandler()
         val started: Int = core.start()
@@ -240,7 +240,7 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
     }
 
     private fun unregister() {
-        factory.loggingService.removeListener(loggingServiceListener)
+//        factory.loggingService.removeListener(loggingServiceListener)
         val account = core.defaultAccount
         account ?: return
         val params = account.params
@@ -523,7 +523,7 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
 
         core.addAuthInfo(authInfo)
         core.addAccount(account)
-//        core.loadConfigFromXml("android.resource://net.fusioncomm.net/" + R.raw.fusion_config)
+        core.loadConfigFromXml("android.resource://net.fusioncomm.net/" + R.raw.fusion_config)
 
         var proxyConfig = core.defaultProxyConfig
         if (proxyConfig == null) {

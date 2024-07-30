@@ -86,7 +86,6 @@ class MainActivity : FlutterActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        Log.d(debugTag, "Handling new intent")
         handleIntent(intent)
     }
 
@@ -97,7 +96,7 @@ class MainActivity : FlutterActivity() {
             debugTag,"Handling intent action [${intent.action}], type [${intent.type}], data [${intent.data}] and has ${if (hasExtra) "extras" else "no extra"}"
         )
         Log.d(debugTag, "extras= $extras data=${intent.data}")
-        checkAnswerCallIntent()
+        checkAnswerCallIntent(intent)
         val action = intent.action ?: return
         when (action) {
 //            Intent.ACTION_SEND -> {
@@ -215,13 +214,13 @@ class MainActivity : FlutterActivity() {
 
     private val coreListener = object : CoreListenerStub() {
         override fun onLastCallEnded(core: Core) {
-            coroutineScope.launch {
-                val fileDir = context.filesDir
-                val logsFile = File(fileDir, "TEXT_LOGGER.txt")
-                if (logsFile.exists()) {
-                   sendLogsToServer(logsFile, truncateFile = true, context= context)
-                }
-            }
+//            coroutineScope.launch {
+//                val fileDir = context.filesDir
+//                val logsFile = File(fileDir, "TEXT_LOGGER.txt")
+//                if (logsFile.exists()) {
+//                   sendLogsToServer(logsFile, truncateFile = true, context= context)
+//                }
+//            }
             super.onLastCallEnded(core)
         }
 
