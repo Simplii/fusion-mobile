@@ -251,7 +251,8 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
         clonedParams.registerEnabled = false
 
         account.params = clonedParams
-        sharedPref.edit().clear().commit()
+        with(sharedPref){ edit().clear().apply()}
+        with(flutterSharedPref) { edit().clear().apply() }
 //        finishAndRemoveTask()
     }
 

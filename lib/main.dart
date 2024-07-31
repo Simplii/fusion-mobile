@@ -352,7 +352,7 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
   }
 
   Future<void> checkCallIntents() async {
-    if (Platform.isAndroid) {
+    if (Platform.isAndroid && _logged_in) {
       String? numberToDial = await platform.invokeMethod('checkCallIntents');
       if (numberToDial != null) {
         setState(() {

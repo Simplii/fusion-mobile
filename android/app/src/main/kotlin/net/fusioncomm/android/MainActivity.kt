@@ -466,6 +466,8 @@ class MainActivity : FlutterActivity() {
             if(call.method.contentEquals("checkCallIntents")) {
                 result.success(numberToDial);
                 numberToDial = null
+            } else {
+                result.notImplemented()
             }
         }
         return engine
