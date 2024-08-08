@@ -24,9 +24,6 @@ dependencies:
   flutter:
     sdk: flutter
   crypto: ^3.0.3
-  firebase_core: ^2.31.0
-  firebase_messaging: ^14.9.2
-  firebase_core_platform_interface: ^5.0.0
   # flutter_dtmf: ^2.0.2
   flutter_gravatar: ^2.0.2
   ringtone_player: ^0.1.1
@@ -61,9 +58,12 @@ dependencies:
   internet_connection_checker: ^1.0.0+1
   flutter_exif_rotation: ^0.5.1
   feedback: ^3.1.0
-  firebase_crashlytics: ^3.5.5
-  firebase_performance: ^0.9.4+5
-  firebase_analytics: ^10.10.6
+  firebase_core: ^3.3.0
+  firebase_messaging: ^15.0.4
+  firebase_core_platform_interface: ^5.0.0
+  firebase_crashlytics: ^4.0.4
+  firebase_performance: ^0.10.0+4
+  firebase_analytics: ^11.2.1
 dependency_overrides:
   intl: ^0.19.0
 dev_dependencies:

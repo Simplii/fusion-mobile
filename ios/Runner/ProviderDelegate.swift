@@ -1279,7 +1279,7 @@ extension ProviderDelegate: CXProviderDelegate {
   }
   
     func provider(_ provider: CXProvider, didDeactivate audioSession: AVAudioSession) {
-        mCore?.activateAudioSession(actived: false)
+        mCore?.activateAudioSession(activated: false)
         return
     }
     
@@ -1293,7 +1293,7 @@ extension ProviderDelegate: CXProviderDelegate {
     }
     
   func provider(_ provider: CXProvider, didActivate audioSession: AVAudioSession) {
-      mCore?.activateAudioSession(actived: true)
+      mCore?.activateAudioSession(activated: true)
       return;
   }
   

@@ -353,11 +353,15 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
 
   Future<void> checkCallIntents() async {
     if (Platform.isAndroid && _logged_in) {
-      String? numberToDial = await platform.invokeMethod('checkCallIntents');
-      if (numberToDial != null) {
-        setState(() {
-          _openDialPad(numberToDial: numberToDial);
-        });
+      try {
+        String? numberToDial = await platform.invokeMethod('checkCallIntents');
+        if (numberToDial != null) {
+          setState(() {
+            _openDialPad(numberToDial: numberToDial);
+          });
+        }
+      } catch (e) {
+        print("MDBM Activity not ready ${e}");
       }
     }
   }
