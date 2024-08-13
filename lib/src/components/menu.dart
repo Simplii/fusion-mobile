@@ -42,14 +42,14 @@ class _MenuState extends State<Menu> {
   @override
   initState() {
     super.initState();
-    bool? tls = _fusionConnection.sharedPreferences.getBool('useTls');
-    if (tls == null) {
-      // this is a fallback it should already been created from native code at this point.
-      _fusionConnection.sharedPreferences.setBool('useTls', true);
-      useTls = true;
-    } else {
-      useTls = tls;
-    }
+    // bool? tls = _fusionConnection.sharedPreferences.getBool('useTls');
+    // if (tls == null) {
+    //   // this is a fallback it should already been created from native code at this point.
+    //   _fusionConnection.sharedPreferences.setBool('useTls', true);
+    //   useTls = true;
+    // } else {
+    //   useTls = tls;
+    // }
     userSettings = _fusionConnection.settings;
     DND = userSettings.dnd;
     myPhoneNumber = userSettings.myCellPhoneNumber.isNotEmpty
@@ -1025,43 +1025,43 @@ class _MenuState extends State<Menu> {
     });
   }
 
-  void _handleTlsChange(bool value) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text("Attention"),
-        content: Text(
-            "This action requires closing and reopening the app to take effect"),
-        actions: [
-          TextButton(
-              onPressed: () async {
-                await _fusionConnection.sharedPreferences
-                    .setBool("useTls", value);
-                setState(() {
-                  useTls = value;
-                });
-                Navigator.of(context).pop();
-              },
-              child: Text(
-                "Okay",
-                style: TextStyle(color: crimsonLight),
-              )),
-          TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text("Cancel")),
-        ],
-      ),
-    );
-  }
+  // void _handleTlsChange(bool value) {
+  //   showDialog(
+  //     context: context,
+  //     builder: (context) => AlertDialog(
+  //       title: Text("Attention"),
+  //       content: Text(
+  //           "This action requires closing and reopening the app to take effect"),
+  //       actions: [
+  //         TextButton(
+  //             onPressed: () async {
+  //               await _fusionConnection.sharedPreferences
+  //                   .setBool("useTls", value);
+  //               setState(() {
+  //                 useTls = value;
+  //               });
+  //               Navigator.of(context).pop();
+  //             },
+  //             child: Text(
+  //               "Okay",
+  //               style: TextStyle(color: crimsonLight),
+  //             )),
+  //         TextButton(
+  //             onPressed: () => Navigator.of(context).pop(),
+  //             child: Text("Cancel")),
+  //       ],
+  //     ),
+  //   );
+  // }
 
-  Widget _useTls() {
-    return Switch(
-      value: useTls,
-      activeColor: crimsonLight,
-      inactiveTrackColor: smoke,
-      onChanged: _handleTlsChange,
-    );
-  }
+  // Widget _useTls() {
+  //   return Switch(
+  //     value: useTls,
+  //     activeColor: crimsonLight,
+  //     inactiveTrackColor: smoke,
+  //     onChanged: _handleTlsChange,
+  //   );
+  // }
 
   void _performLogout() {
     setState(() {
@@ -1122,17 +1122,17 @@ class _MenuState extends State<Menu> {
             size: 26,
           ),
           trailingWidget: _toggleDND()),
-      _row(
-          "",
-          "Use TLS",
-          "",
-          _reportBug,
-          Icon(
-            Icons.import_export,
-            color: smoke.withOpacity(0.45),
-            size: 28,
-          ),
-          trailingWidget: _useTls()),
+      // _row(
+      //     "",
+      //     "Use TLS",
+      //     "",
+      //     _reportBug,
+      //     Icon(
+      //       Icons.import_export,
+      //       color: smoke.withOpacity(0.45),
+      //       size: 28,
+      //     ),
+      //     trailingWidget: _useTls()),
       if (Platform.isIOS)
         _row(
             "",

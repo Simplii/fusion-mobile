@@ -124,7 +124,7 @@ class Api26Compatibility {
             val contact:Contact? = NotificationsManager.contacts[callerNumber]
             var displayName: String = contact?.name ?: callerId.ifEmpty { formattedCallerNumber }
             prefixes.forEach{
-                if (callerId.replace(" ", "").startsWith(it.replace(" ",""))) {
+                if (it.isNotEmpty() && callerId.replace(" ", "").startsWith(it.replace(" ",""))) {
                     displayName = "$it ${displayName.replace(it, "")}"
                 }
             }
