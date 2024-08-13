@@ -26,7 +26,8 @@ class EditContactView extends StatefulWidget {
   final Contact _contact;
   final Function? onCreate;
 
-  EditContactView(this._fusionConnection, this._contact, this._goBack, this.onCreate,
+  EditContactView(
+      this._fusionConnection, this._contact, this._goBack, this.onCreate,
       {Key? key})
       : super(key: key);
 
@@ -40,7 +41,7 @@ class _EditContactViewState extends State<EditContactView> {
   Contact get _contact => widget._contact;
   Contact? _edited = null;
   Function? get _onCreate => widget.onCreate;
-  bool _saving = false; 
+  bool _saving = false;
   Map<String, TextEditingController> textControllers = {};
   XFile? pickedImage = null;
 
@@ -201,12 +202,13 @@ class _EditContactViewState extends State<EditContactView> {
     return Column(children: [
       Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
         Expanded(
-            child: _renderField("social" + index.toString() + "social",
-                social['value'], "Name", (String newSocialValue) {
+            child: _renderField(
+                "social" + index.toString() + "social", social['value'], "Name",
+                (String newSocialValue) {
           _edited!.socials![index]['value'] = newSocialValue;
         })),
-        _renderDropDownField(
-            "social" + index.toString() + "type", social['social'], "Social Platform", [
+        _renderDropDownField("social" + index.toString() + "type",
+            social['social'], "Social Platform", [
           ["Linkedin", "Linkedin"],
           ["Facebook", "Facebook"],
           ["Twitter", "Twitter"],
@@ -321,26 +323,39 @@ class _EditContactViewState extends State<EditContactView> {
       contact.addresses = [{}];
 
     groups.add(_renderFieldGroup("geopointer_filled_dark", [
-      _renderFieldEditor("address1line1", contact.addresses![0]['address1'], "Address line 1",
-          (String newVal) { contact.addresses![0]['address1'] = newVal; }),
-      _renderFieldEditor("address1line2", contact.addresses![0]['address2'], "Address line 2",
-          (String newVal) { contact.addresses![0]['address2'] = newVal; }),
+      _renderFieldEditor(
+          "address1line1", contact.addresses![0]['address1'], "Address line 1",
+          (String newVal) {
+        contact.addresses![0]['address1'] = newVal;
+      }),
+      _renderFieldEditor(
+          "address1line2", contact.addresses![0]['address2'], "Address line 2",
+          (String newVal) {
+        contact.addresses![0]['address2'] = newVal;
+      }),
       _renderFieldEditor("address1city", contact.addresses![0]['city'], "City",
-          (String newVal) { contact.addresses![0]['city'] = newVal; }),
-      Row(
-        children: [
-          Expanded(
-              child: _renderField("address1state", contact.addresses![0]['state'], "State",
-                      (String newVal) { contact.addresses![0]['state'] = newVal; },
-                  margin: EdgeInsets.only(top: 12, bottom: 4, right: 12))),
-          Expanded(
-              child: _renderField("address1zip", contact.addresses![0]['zip'], "Zip code",
-                      (String newVal) { contact.addresses![0]['zip'] = newVal; },
-                  margin: EdgeInsets.only(top: 12, bottom: 4))),
-        ]
-      ),
-      _renderFieldEditor("address1country", contact.addresses![0]['country'], "Country",
-          (String newVal) { contact.addresses![0]['country'] = newVal; }),
+          (String newVal) {
+        contact.addresses![0]['city'] = newVal;
+      }),
+      Row(children: [
+        Expanded(
+            child: _renderField(
+                "address1state", contact.addresses![0]['state'], "State",
+                (String newVal) {
+          contact.addresses![0]['state'] = newVal;
+        }, margin: EdgeInsets.only(top: 12, bottom: 4, right: 12))),
+        Expanded(
+            child: _renderField(
+                "address1zip", contact.addresses![0]['zip'], "Zip code",
+                (String newVal) {
+          contact.addresses![0]['zip'] = newVal;
+        }, margin: EdgeInsets.only(top: 12, bottom: 4))),
+      ]),
+      _renderFieldEditor(
+          "address1country", contact.addresses![0]['country'], "Country",
+          (String newVal) {
+        contact.addresses![0]['country'] = newVal;
+      }),
     ]));
 
     if (contact.socials == null || contact.socials!.length == 0)
@@ -432,17 +447,17 @@ class _EditContactViewState extends State<EditContactView> {
               color: crimsonLight,
               borderRadius: BorderRadius.all(Radius.circular(50)),
             ),
-            child:Row(children: [
-              _saving ? Container(
-                margin: EdgeInsets.only(right: 8),
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(color: Colors.white)
-              ) :
-               Container(
-                  child: Image.asset("assets/icons/check_white.png",
-                      width: 16, height: 11),
-                  margin: EdgeInsets.only(right: 8)),
+            child: Row(children: [
+              _saving
+                  ? Container(
+                      margin: EdgeInsets.only(right: 8),
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(color: Colors.white))
+                  : Container(
+                      child: Image.asset("assets/icons/check_white.png",
+                          width: 16, height: 11),
+                      margin: EdgeInsets.only(right: 8)),
               Text("SAVE",
                   style: TextStyle(
                     color: Colors.white,
@@ -457,9 +472,10 @@ class _EditContactViewState extends State<EditContactView> {
       _saving = true;
     });
     _edited!.name = _edited!.firstName! + " " + _edited!.lastName!;
-    if(pickedImage != null){
-      _fusionConnection!.contacts.uploadProfilePic("contact", pickedImage!, _edited! , (Contact updatedContact){
-        _fusionConnection!.contacts.save(updatedContact, (){
+    if (pickedImage != null) {
+      _fusionConnection!.contacts.uploadProfilePic(
+          "contact", pickedImage!, _edited!, (Contact updatedContact) {
+        _fusionConnection!.contacts.save(updatedContact, () {
           setState(() {
             _contact!.copy(updatedContact);
             _saving = false;
@@ -468,20 +484,21 @@ class _EditContactViewState extends State<EditContactView> {
         });
       });
     } else {
-      _fusionConnection!.contacts.save(_edited, ()=>{});
+      _fusionConnection!.contacts.save(_edited, () => {});
       _contact!.copy(_edited!);
       widget._goBack();
     }
   }
 
-  _createContact() { 
+  _createContact() {
     setState(() {
       _saving = true;
     });
-    if(pickedImage != null){
-      _fusionConnection!.contacts.createContact(_edited!,(Contact newContact){
-        _fusionConnection!.contacts.uploadProfilePic("contact", pickedImage!, newContact, (Contact updatedContact){
-          _fusionConnection!.contacts.save(updatedContact, (){
+    if (pickedImage != null) {
+      _fusionConnection!.contacts.createContact(_edited!, (Contact newContact) {
+        _fusionConnection!.contacts.uploadProfilePic(
+            "contact", pickedImage!, newContact, (Contact updatedContact) {
+          _fusionConnection!.contacts.save(updatedContact, () {
             setState(() {
               _saving = false;
               _contact!.copy(newContact);
@@ -492,7 +509,7 @@ class _EditContactViewState extends State<EditContactView> {
         });
       });
     } else {
-      _fusionConnection!.contacts.createContact(_edited!,(Contact newContact){
+      _fusionConnection!.contacts.createContact(_edited!, (Contact newContact) {
         _contact!.copy(newContact);
         _onCreate!();
         widget._goBack();
@@ -500,13 +517,13 @@ class _EditContactViewState extends State<EditContactView> {
     }
   }
 
-  void _selectImage(String source){
+  void _selectImage(String source) {
     final ImagePicker _picker = ImagePicker();
     Contact? contact = _editingContact();
     if (source == "camera") {
       _picker.pickImage(source: ImageSource.camera).then((XFile? image) {
         setState(() {
-          if(image == null) return;
+          if (image == null) return;
           setState(() {
             pickedImage = image;
             _edited = contact;
@@ -516,7 +533,7 @@ class _EditContactViewState extends State<EditContactView> {
       });
     } else {
       _picker.pickImage(source: ImageSource.gallery).then((XFile? image) {
-        if(image == null) return;
+        if (image == null) return;
         setState(() {
           pickedImage = image;
           _edited = contact;
@@ -526,9 +543,9 @@ class _EditContactViewState extends State<EditContactView> {
     }
   }
 
-  _uploadPic(){
+  _uploadPic() {
     showModalBottomSheet(
-      context: context, 
+      context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (BuildContext context) => PopupMenu(
@@ -539,39 +556,35 @@ class _EditContactViewState extends State<EditContactView> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               GestureDetector(
-                onTap: ()=>_selectImage("camera"),
+                onTap: () => _selectImage("camera"),
                 child: Container(
-                  padding: EdgeInsets.only(
-                    bottom:10,
-                    top: 14,
-                    left: 12),
+                  padding: EdgeInsets.only(bottom: 10, top: 14, left: 12),
                   decoration: BoxDecoration(
-                    border: Border(bottom: BorderSide(color: lightDivider, width: 1.0))
-                  ),
-                  child: Text('Camera', 
+                      border: Border(
+                          bottom: BorderSide(color: lightDivider, width: 1.0))),
+                  child: Text(
+                    'Camera',
                     style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
               ),
               GestureDetector(
-                onTap: ()=>_selectImage("photos"),
+                onTap: () => _selectImage("photos"),
                 child: Container(
-                  padding: EdgeInsets.only(
-                    bottom:10,
-                    top: 14,
-                    left: 12),
+                  padding: EdgeInsets.only(bottom: 10, top: 14, left: 12),
                   decoration: BoxDecoration(
-                    border: Border(bottom: BorderSide(color: lightDivider, width: 1.0))
-                  ),
-                  child: Text('Photos', 
+                      border: Border(
+                          bottom: BorderSide(color: lightDivider, width: 1.0))),
+                  child: Text(
+                    'Photos',
                     style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
@@ -586,55 +599,57 @@ class _EditContactViewState extends State<EditContactView> {
   @override
   Widget build(BuildContext context) {
     String? pictureUrl = _contact!.pictureUrl();
-
+    print("MDBM ${_edited?.firstName} ${_edited?.lastName}");
     return Column(children: [
       _header(),
       Expanded(
-        child: Stack(
-          children: [
-          Column(
-            children: [
-            Container(
+          child: Stack(children: [
+        Column(children: [
+          Container(
               height: 250,
               decoration: BoxDecoration(
                   color: Colors.black,
                   image: DecorationImage(
                       fit: BoxFit.cover,
-                      colorFilter: 
-                        ColorFilter.mode(Colors.black.withOpacity(0.6), 
-                        BlendMode.dstATop),
+                      colorFilter: ColorFilter.mode(
+                          Colors.black.withOpacity(0.6), BlendMode.dstATop),
                       image: pickedImage != null
                           ? FileImage(File(pickedImage!.path))
                           : (pictureUrl != null
-                            ? NetworkImage(pictureUrl)
-                            : AssetImage("assets/blank_avatar.png")) as ImageProvider<Object>))),
-            Expanded(
+                                  ? NetworkImage(pictureUrl)
+                                  : AssetImage("assets/blank_avatar.png"))
+                              as ImageProvider<Object>))),
+          Expanded(
               child: Container(
                   decoration: BoxDecoration(color: Colors.white),
                   child: ListView(
                       padding: EdgeInsets.only(bottom: 72),
                       children: _fieldGroups())))
-          ]),
-          Positioned(
+        ]),
+        Positioned(
             height: 250,
             width: MediaQuery.of(context).size.width,
-              child: GestureDetector(
-                behavior: HitTestBehavior.translucent,
-                onTap: _uploadPic,
-                child: Center(
-                  child: Icon(Icons.local_see_outlined, color: Colors.white, size: 35,)),
+            child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onTap: _uploadPic,
+              child: Center(
+                  child: Icon(
+                Icons.local_see_outlined,
+                color: Colors.white,
+                size: 35,
               )),
-        if (_edited != null)
+            )),
+        if ((_edited?.firstName != null && _edited!.firstName!.isNotEmpty) &&
+            (_edited?.lastName != null && _edited!.lastName!.isNotEmpty))
           Container(
               alignment: Alignment.bottomCenter,
               padding: EdgeInsets.only(bottom: 32),
-              child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    GestureDetector(
-                        onTap: _onCreate != null ? _createContact : _saveContact,
-                        child: _saveButton())
-                  ]))
+              child:
+                  Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                GestureDetector(
+                    onTap: _onCreate != null ? _createContact : _saveContact,
+                    child: _saveButton())
+              ]))
       ]))
     ]);
   }
