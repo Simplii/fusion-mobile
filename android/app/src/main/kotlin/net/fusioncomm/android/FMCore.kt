@@ -178,6 +178,7 @@ class FMCore(private val context: Context, private val channel:MethodChannel): L
         callsManager = CallsManager.getInstance(context, channel)
         notificationsManager = NotificationsManager(context, callsManager)
         notificationsManager.onCoreReady()
+        ContactsProvider(context)
         Log.d(debugTag, "started ${this.lifecycle.currentState}")
     }
 

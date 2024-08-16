@@ -1039,19 +1039,13 @@ class Softphone implements SipUaHelperListener {
     if (setMute) {
       _setCallDataValue(call!.id, "muted", true);
       call.mute();
-      if (Platform.isAndroid && fromUi) {
-        // _callKeep.setMutedCall(_uuidFor(call), true);
-      }
-      if (fromUi) {
+      if (Platform.isIOS && fromUi) {
         _getMethodChannel()?.invokeMethod('muteCall', [_uuidFor(call)]);
       }
     } else {
       _setCallDataValue(call!.id, "muted", false);
       call.unmute();
-      if (Platform.isAndroid && fromUi) {
-        // _callKeep.setMutedCall(_uuidFor(call), false);
-      }
-      if (fromUi) {
+      if (Platform.isIOS && fromUi) {
         _getMethodChannel()?.invokeMethod('unMuteCall', [_uuidFor(call)]);
       }
     }

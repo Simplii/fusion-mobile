@@ -70,7 +70,6 @@ class MainActivity : FlutterActivity() {
         audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
         telephonyManager = getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
         // Create Contacts Provider Channel
-        ContactsProvider(this)
         ConversationVM(this)
         Log.d(debugTag, "core started ${FMCore.coreStarted}")
         core.addListener(coreListener)

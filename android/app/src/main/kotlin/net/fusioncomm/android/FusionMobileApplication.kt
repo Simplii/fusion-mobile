@@ -16,6 +16,7 @@ class FusionMobileApplication : Application() {
         lateinit var fmCore: FMCore
         lateinit var engine : FlutterEngine
         lateinit var callingChannel: MethodChannel
+        lateinit var contactsChannel: MethodChannel
         lateinit var callEventChannel: EventChannel
         fun ensureCoreExists(
             context: Context,
@@ -63,6 +64,11 @@ class FusionMobileApplication : Application() {
         callEventChannel = EventChannel(
             engine.dartExecutor.binaryMessenger,
             "channel/callInfo"
+        )
+
+        contactsChannel = MethodChannel(
+            FusionMobileApplication.engine.dartExecutor.binaryMessenger,
+            "net.fusioncomm.ios/contacts"
         )
 
         fmCore = FMCore(applicationContext, callingChannel)

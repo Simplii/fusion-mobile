@@ -11,21 +11,9 @@ import io.flutter.plugin.common.MethodChannel
 class ContactsProvider(context: Context) {
     private val debugTag = "MDBM ContactsProvider"
     private val contentResolver:ContentResolver = context.contentResolver
-    init {
-        var contactsChannel: MethodChannel? = null
-        val engine: FlutterEngine? = FlutterEngineCache
-            .getInstance()
-            .get("fusion_flutter_engine")
+    private val contactsChannel = FusionMobileApplication.contactsChannel
 
-        if (engine != null) {
-            contactsChannel = MethodChannel(
-                FusionMobileApplication.engine.dartExecutor.binaryMessenger,
-                "net.fusioncomm.ios/contacts"
-            )
-        }
-        if (contactsChannel == null) {
-            Log.d(debugTag,"Coludn't create contacts provider channel")
-        } else {
+    init {
             Log.d(debugTag,"contacts provider channel created")
             contactsChannel.setMethodCallHandler { call, result ->
                 when (call.method) {
@@ -40,6 +28,5 @@ class ContactsProvider(context: Context) {
                     }
                 }
             }
-        }
     }
 }

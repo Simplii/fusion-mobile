@@ -97,7 +97,7 @@ class CallHistory extends FusionModel {
       queue = (obj["isQueue"] == 1).toString();
     }
     if (obj.containsKey("queue")) {
-      queue = obj["queue"];
+      queue = obj["queue"] ?? "false";
     }
   }
 
