@@ -157,6 +157,13 @@ class _LoginViewState extends State<LoginView> {
             style: TextStyle(color: ash, fontSize: 14)),
       ),
       Row(children: [_usernameInput()]),
+      Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Text(
+          "Username is case sensitive",
+          style: TextStyle(color: ash),
+        ),
+      ),
       Container(
         margin: EdgeInsets.only(top: 12, bottom: 6),
         alignment: Alignment.centerLeft,
